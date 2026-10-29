@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KampusCircle — Filter Kos</title>
+<style>
+  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .phone{width:100%;max-width:440px;height:100vh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow:hidden;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;box-shadow:0 0 24px rgba(0,0,0,0.08)}
+  .scroll{flex:1;overflow-y:auto;scrollbar-width:none;padding:0 20px 20px}
+  .scroll::-webkit-scrollbar{display:none}
+
+  /* Status Bar */
+  .status{height:24px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#1E3A38;margin-bottom:8px}
+  .status .icons{display:flex;gap:6px;align-items:center}
+  .status svg{width:14px;height:14px;fill:#1E3A38}
+
+  /* Header */
+  .header{height:44px;display:flex;align-items:center;gap:14px;margin-bottom:12px}
+  .header .back{display:flex;align-items:center;cursor:pointer;color:#1E3A38;text-decoration:none}
+  .header .back svg{width:22px;height:22px;stroke:#1E3A38;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .header .title{font-size:20px;font-weight:800;color:#1E3A38}
+
+  /* Campus Card */
+  .campus-card{background:#EAF6F3;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .campus-card .pin-circle{width:34px;height:34px;border-radius:50%;background:#DDF1EC;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .campus-card .pin-circle svg{width:18px;height:18px;stroke:#00917C;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .campus-card .sub{font-size:11px;font-weight:600;color:#00917C}
+  .campus-card .name{font-size:14px;font-weight:700;color:#1E3A38;margin-top:2px}
+
+  /* Section */
+  .section{margin-bottom:22px}
+  .sec-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+  .sec-title{font-size:15px;font-weight:800;color:#1E3A38}
+  .sec-sub{font-size:11px;color:#7A8583}
+
+  /* Price inputs */
+  .price-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  .price-box{border:1.5px solid #E3E8E7;border-radius:14px;padding:10px 14px;background:#fff}
+  .price-box .lbl{font-size:11px;color:#7A8583}
+  .price-box input{border:none;outline:none;font-size:15px;font-weight:700;color:#1E3A38;width:100%;margin-top:2px;background:transparent;font-family:inherit}
+
+  /* Range Bar */
+  .range-container{position:relative;height:28px;display:flex;align-items:center;margin-bottom:4px}
+  .range-track{position:absolute;left:0;right:0;height:4px;background:#E3E8E7;border-radius:999px}
+  .range-highlight{position:absolute;left:15%;right:25%;height:4px;background:#00917C;border-radius:999px}
+  .range-thumb{position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid #00917C;box-shadow:0 2px 6px rgba(0,0,0,0.15);cursor:pointer;top:50%;transform:translateY(-50%)}
+  .range-thumb.left{left:15%;transform:translate(-50%, -50%)}
+  .range-thumb.right{right:25%;transform:translate(50%, -50%)}
+  .range-note{font-size:11px;color:#7A8583;margin-top:4px}
+
+  /* Chips */
+  .chips-row{display:flex;gap:8px;flex-wrap:wrap}
+  .chip-opt{height:38px;border-radius:999px;padding:0 18px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1.5px solid #E3E8E7;background:#fff;color:#1E3A38;cursor:pointer;transition:all .15s}
+  .chip-opt.active{background:#EAF6F3;border-color:#00917C;color:#00917C}
+  .chip-opt.active svg{stroke:#00917C}
+
+  /* Facility Checkboxes */
+  .facility-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 10px}
+  .fac-item{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#1E3A38;font-weight:500;user-select:none}
+  .checkbox{width:20px;height:20px;border-radius:6px;border:1.5px solid #D5DCDA;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+  .checkbox.checked{background:#00917C;border-color:#00917C}
+  .checkbox svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2.5;display:none}
+  .checkbox.checked svg{display:block}
+
+  /* Bottom Actions */
+  .bottom-bar{padding:14px 20px;border-top:1px solid #E8ECEB;display:flex;align-items:center;gap:16px;background:#fff;flex-shrink:0}
+  .btn-reset{background:none;border:none;font-size:14px;font-weight:700;color:#00917C;cursor:pointer;padding:8px 4px;font-family:inherit}
+  .btn-apply{flex:1;height:48px;background:#00917C;border:none;border-radius:14px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
+  .homeind{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:130px;height:5px;background:#1E3A38;border-radius:999px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="scroll">
+    <div class="status">
+      <span>09.41</span>
+      <div class="icons">
+        <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.95 9.05 8.05 9.05 5 13z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+      </div>
+    </div>
+
+    <div class="header">
+      <a class="back" href="/kos.html" aria-label="Kembali">
+        <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </a>
+      <span class="title">Filter Kos</span>
+    </div>
+
+    <!-- Campus Card -->
+    <div class="campus-card">
+      <div class="pin-circle">
+        <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+      <div>
+        <div class="sub">Jarak dihitung dari kampus</div>
+        <div class="name">Institut Teknologi Garut</div>
+      </div>
+    </div>
+
+    <!-- Section: Harga sewa per bulan -->
+    <div class="section">
+      <div class="sec-title">Harga sewa per bulan</div>
+      <div class="price-row">
+        <div class="price-box">
+          <div class="lbl">Minimum</div>
+          <input id="inMinPrice" value="Rp500.000">
+        </div>
+        <div class="price-box">
+          <div class="lbl">Maksimum</div>
+          <input id="inMaxPrice" value="Rp1.000.000">
+        </div>
+      </div>
+      <div class="range-container">
+        <div class="range-track"></div>
+        <div class="range-highlight" id="rangeHighlight"></div>
+        <div class="range-thumb left" id="thumbLeft"></div>
+        <div class="range-thumb right" id="thumbRight"></div>
+      </div>
+      <div class="range-note">Anggaran bulanan, bukan harga harian.</div>
+    </div>
+
+    <!-- Section: Jarak maksimum -->
+    <div class="section">
+      <div class="sec-title" style="margin-bottom:12px">Jarak maksimum</div>
+      <div class="chips-row" id="distChipsGroup">
+        <div class="chip-opt" data-dist="1">1 km</div>
+        <div class="chip-opt active" data-dist="2">2 km</div>
+        <div class="chip-opt" data-dist="5">5 km</div>
+        <div class="chip-opt" data-dist="all">Semua</div>
+      </div>
+    </div>
+
+    <!-- Section: Tipe kos -->
+    <div class="section">
+      <div class="sec-header">
+        <span class="sec-title" style="margin-bottom:0">Tipe kos</span>
+        <span class="sec-sub">Bisa pilih lebih dari satu</span>
+      </div>
+      <div class="chips-row" id="genderChipsGroup">
+        <div class="chip-opt active" data-gender="putra">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="#00917C" fill="none" stroke-width="2.5" style="margin-right:4px"><path d="m5 12 5 5L20 7"/></svg>
+          Putra
+        </div>
+        <div class="chip-opt active" data-gender="putri">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="#00917C" fill="none" stroke-width="2.5" style="margin-right:4px"><path d="m5 12 5 5L20 7"/></svg>
+          Putri
+        </div>
+        <div class="chip-opt active" data-gender="campur">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="#00917C" fill="none" stroke-width="2.5" style="margin-right:4px"><path d="m5 12 5 5L20 7"/></svg>
+          Campur
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Fasilitas yang kamu butuhkan -->
+    <div class="section">
+      <div class="sec-title" style="margin-bottom:14px">Fasilitas yang kamu butuhkan</div>
+      <div class="facility-grid">
+        <div class="fac-item" data-fac="wifi">
+          <div class="checkbox checked"><svg viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg></div>
+          <span>Wi-Fi</span>
+        </div>
+        <div class="fac-item" data-fac="km">
+          <div class="checkbox"><svg viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg></div>
+          <span>KM dalam</span>
+        </div>
+        <div class="fac-item" data-fac="furnitur">
+          <div class="checkbox"><svg viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg></div>
+          <span>Furnitur</span>
+        </div>
+        <div class="fac-item" data-fac="parkir">
+          <div class="checkbox"><svg viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg></div>
+          <span>Parkir motor</span>
+        </div>
+        <div class="fac-item" data-fac="dapur">
+          <div class="checkbox"><svg viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg></div>
+          <span>Dapur bersama</span>
+        </div>
+        <div class="fac-item" data-fac="ac">
+          <div class="checkbox"><svg viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg></div>
+          <span>AC</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Actions -->
+  <div class="bottom-bar">
+    <button class="btn-reset" id="btnReset">Reset</button>
+    <button class="btn-apply" id="btnApply">Terapkan filter</button>
+  </div>
+
+  <div class="homeind"></div>
+</div>
+<script src="/js/filter-kos.js"></script>
+</body>
+</html>

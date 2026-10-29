@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KampusCircle — Cari barang</title>
+<style>
+  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .phone{width:100%;max-width:440px;height:100vh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow:hidden;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;box-shadow:0 0 24px rgba(0,0,0,0.08)}
+  .top{flex-shrink:0}
+  .status{height:24px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#1E3A38}
+  .status .icons{display:flex;gap:6px;align-items:center}
+  .status svg{width:14px;height:14px;fill:#1E3A38}
+  .header{height:56px;margin-top:8px;padding:0 20px;display:flex;align-items:center;gap:14px}
+  .header .t{font-size:18px;font-weight:700;color:#1E3A38}
+  .header .spacer{margin-left:auto}
+  .header svg{width:24px;height:24px;stroke:#1E3A38;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .searchbox{margin:22px 20px 0;height:43px;background:#fff;border:1.5px solid #00917C;border-radius:14px;padding:0 14px;display:flex;align-items:center;gap:10px}
+  .searchbox svg{width:20px;height:20px;stroke:#00917C;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .searchbox input{flex:1;border:none;outline:none;font-size:14px;color:#1E3A38;background:transparent;font-family:inherit}
+  .searchbox input::placeholder{color:#A3ACAA}
+  .searchbox .clear{width:20px;height:20px;cursor:pointer;display:none;align-items:center;justify-content:center}
+  .searchbox .clear svg{stroke:#7A8583}
+  .chips{margin:18px 20px 0;display:flex;gap:8px;flex-wrap:wrap}
+  .chip{height:30px;border-radius:999px;padding:0 14px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;border:1px solid #E3E8E7;background:#fff;color:#1E3A38}
+  .chip.filter{background:#00917C;color:#fff;border:none}
+  .chip.active{background:#DDF1EC;border:1px solid #00917C;color:#00917C}
+  .chip svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .countrow{margin:16px 20px 0;display:flex;justify-content:space-between;align-items:center}
+  .countrow .count{font-size:13px;font-weight:700;color:#1E3A38}
+  .countrow .sort{font-size:12px;font-weight:700;color:#00917C;display:flex;align-items:center;gap:4px;cursor:pointer;position:relative}
+  .countrow .sort svg{width:14px;height:14px;stroke:#00917C;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .dropdown{position:absolute;top:20px;right:0;background:#fff;border:1px solid #E3E8E7;border-radius:12px;padding:6px 0;min-width:120px;display:none;z-index:10}
+  .dropdown.open{display:block}
+  .dropdown .opt{padding:8px 14px;font-size:12px;color:#1E3A38;cursor:pointer}
+  .dropdown .opt:hover{background:#DDF1EC}
+  .list{flex:1;overflow-y:auto;padding:12px 20px 12px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none}
+  .list::-webkit-scrollbar{display:none}
+  .result-card{background:#fff;border:1px solid #E3E8E7;border-radius:16px;padding:10px;display:flex;gap:12px;align-items:center;min-height:118px}
+  .result-card .img{width:88px;height:98px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .result-card .img.lav{background:#EDEAF7}
+  .result-card .img.mint{background:#DDF1EC}
+  .result-card .img.peach{background:#FFF0DB}
+  .result-card .info{flex:1;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+  .badge{padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
+  .badge.sewa{background:#FFF0DB;color:#A65A00}
+  .badge.beli{background:#DDF1EC;color:#00917C}
+  .badge.pinjam{background:#EDEAF7;color:#6B5BB5}
+  .title{font-size:14px;font-weight:700;color:#1E3A38;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+  .price{font-size:15px;font-weight:700;color:#00917C}
+  .loc{display:flex;align-items:center;gap:4px;font-size:11px;color:#7A8583}
+  .loc svg{width:12px;height:12px;stroke:#7A8583;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:40px 0}
+  .empty svg{width:40px;height:40px;stroke:#DDF1EC;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .empty .t{font-size:14px;font-weight:700;color:#1E3A38}
+  .empty .s{font-size:12px;color:#7A8583}
+  .infobox{background:#DDF1EC;border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;margin-top:4px}
+  .infobox svg{width:20px;height:20px;stroke:#00917C;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+  .infobox p{font-size:12px;color:#1E3A38;line-height:1.45}
+  .nav{height:72px;background:#fff;border-top:1px solid #E8ECEB;padding-top:8px;display:flex;justify-content:space-around;align-items:flex-start;flex-shrink:0}
+  .nav .item{display:flex;flex-direction:column;align-items:center;gap:4px;width:64px}
+  .nav .item .box{width:64px;height:34px;display:flex;align-items:center;justify-content:center}
+  .nav .item .pill{width:64px;height:34px;border-radius:17px;background:#DDF1EC;display:flex;align-items:center;justify-content:center}
+  .nav .item svg{width:22px;height:22px;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;fill:none}
+  .nav .item.active svg{stroke:#00917C}
+  .nav .item svg.dark{stroke:#1E3A38}
+  .nav .item .lbl{font-size:11px}
+  .nav .item.active .lbl{font-weight:700;color:#00917C}
+  .nav .item .lbl.dark{color:#1E3A38}
+  .nav .center .circle{width:48px;height:48px;border-radius:50%;background:#F28C28;display:flex;align-items:center;justify-content:center;margin-top:-2px}
+  .nav .center .circle svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .homeind{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:130px;height:5px;background:#1E3A38;border-radius:999px}
+
+  /* Bottom Sheet "Sesuaikan Pencarian" (Figma Pixel-Perfect) */
+  .filter-overlay {
+    position: absolute; inset: 0; background: rgba(30,58,56,0.48);
+    z-index: 50; display: none; align-items: flex-end; justify-content: center;
+    backdrop-filter: blur(2px);
+  }
+  .filter-overlay.open { display: flex; }
+  .filter-sheet {
+    background: #fff; width: 100%; border-top-left-radius: 28px;
+    border-top-right-radius: 28px; padding: 12px 20px 24px;
+    display: flex; flex-direction: column; gap: 16px; position: relative;
+    box-shadow: 0 -8px 28px rgba(0,0,0,0.18); max-height: 88%; overflow-y: auto;
+    z-index: 52;
+  }
+  .filter-handle {
+    width: 38px; height: 4px; background: #D5DCDA; border-radius: 999px;
+    margin: 0 auto 2px;
+  }
+  .filter-header {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .filter-title {
+    font-size: 20px; font-weight: 700; color: #1E3A38;
+  }
+  .filter-close {
+    background: none; border: none; font-size: 22px; color: #1E3A38;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    padding: 4px; line-height: 1;
+  }
+  .f-sec-title {
+    font-size: 14px; font-weight: 700; color: #1E3A38; margin-bottom: 10px;
+  }
+  .f-chips {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .f-chip {
+    height: 38px; border-radius: 999px; padding: 0 18px;
+    font-size: 13px; font-weight: 700; display: flex;
+    align-items: center; justify-content: center;
+    border: 1px solid #E3E8E7; background: #fff; color: #1E3A38;
+    cursor: pointer; transition: all .15s;
+  }
+  .f-chip.active {
+    background: #008272; border-color: #008272; color: #fff;
+  }
+  .f-price-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .f-sublabel {
+    font-size: 12px; font-weight: 700; color: #1E3A38; margin-bottom: 6px;
+  }
+  .f-input {
+    width: 100%; height: 48px; border: 1.5px solid #D8E0DE;
+    border-radius: 14px; padding: 0 14px; font-size: 14px;
+    color: #1E3A38; outline: none; font-family: inherit; font-weight: 600;
+  }
+  .f-input:focus { border-color: #008272; }
+  .f-dist-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .f-dist-val {
+    font-size: 14px; font-weight: 700; color: #008272;
+  }
+  .f-slider {
+    width: 100%; height: 6px; border-radius: 999px;
+    outline: none; -webkit-appearance: none;
+    background: linear-gradient(to right, #008272 0%, #008272 20%, #DDF1EC 20%, #DDF1EC 100%);
+    cursor: pointer;
+  }
+  .f-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 20px; height: 20px;
+    border-radius: 50%; background: #008272; cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  .f-dist-scale {
+    display: flex; justify-content: space-between; font-size: 11px;
+    color: #7A8583; margin-top: 6px; font-weight: 600;
+  }
+  .f-dist-loc {
+    display: flex; align-items: center; gap: 6px; font-size: 12px;
+    color: #7A8583; margin-top: 10px; font-weight: 500;
+  }
+  .f-dist-loc svg {
+    width: 14px; height: 14px; stroke: #008272; fill: none;
+    stroke-width: 1.8;
+  }
+  .f-divider {
+    height: 1px; background: #E8ECEB; margin: 4px 0 0;
+  }
+  .f-actions {
+    display: flex; gap: 12px; align-items: center;
+  }
+  .f-btn-reset {
+    width: 110px; height: 50px; border-radius: 16px;
+    border: 1.5px solid #D8E0DE; background: #fff;
+    color: #008272; font-size: 14px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+  }
+  .f-btn-apply {
+    flex: 1; height: 50px; border-radius: 16px;
+    border: none; background: #008272; color: #fff;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    font-family: inherit;
+  }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="top">
+    <div class="status">
+      <span>09.41</span>
+      <div class="icons">
+        <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.95 9.05 8.05 9.05 5 13z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+      </div>
+    </div>
+    <div class="header">
+      <a href="/beranda.html" style="color:inherit;text-decoration:none;display:flex;align-items:center;cursor:pointer">
+        <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </a>
+      <span class="t">Cari barang</span>
+      <span class="spacer"></span>
+      <a href="/kos.html" style="color:inherit;text-decoration:none;display:flex;align-items:center;cursor:pointer" title="Cari Kos">
+        <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      </a>
+    </div>
+
+    <!-- Tab Pilihan: Barang vs Kos -->
+    <div style="display:flex;background:#F4F7F6;border-radius:12px;padding:3px;margin:10px 20px 0">
+      <div style="flex:1;text-align:center;padding:7px;font-size:12px;font-weight:700;border-radius:9px;background:#fff;color:#00917C;box-shadow:0 2px 6px rgba(0,0,0,0.06)">
+        Barang Kuliah
+      </div>
+      <a href="/kos.html" style="flex:1;text-align:center;padding:7px;font-size:12px;font-weight:700;border-radius:9px;text-decoration:none;color:#7A8583;display:flex;align-items:center;justify-content:center;gap:4px">
+        🏠 Kos Mahasiswa
+      </a>
+    </div>
+    <div class="searchbox">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="q" type="text" value="kalkulator" placeholder="Cari buku, laptop, alat praktikum...">
+      <div class="clear" id="clearBtn"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+    </div>
+    <div class="chips">
+      <div class="chip filter" id="filterChip">
+        <svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+        Filter
+      </div>
+      <div class="chip" id="priceChip">≤ Rp100.000</div>
+      <div class="chip" id="distChip">≤ 2 km</div>
+    </div>
+    <div class="countrow">
+      <div class="count" id="countText">3 barang ditemukan</div>
+      <div class="sort" id="sortBtn">
+        Terdekat
+        <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        <div class="dropdown" id="sortDrop">
+          <div class="opt" data-val="near">Terdekat</div>
+          <div class="opt" data-val="cheap">Termurah</div>
+          <div class="opt" data-val="new">Terbaru</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <div class="nav">
+    <a class="item" href="/beranda.html" style="text-decoration:none">
+      <div class="box"><svg class="dark" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+      <div class="lbl dark">Beranda</div>
+    </a>
+    <div class="item active">
+      <div class="pill"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+      <div class="lbl">Cari</div>
+    </div>
+    <a class="item center" href="/unggah.html" style="text-decoration:none">
+      <div class="circle"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="lbl dark">Tambah</div>
+    </a>
+    <a class="item" href="/chat.html" style="text-decoration:none">
+      <div class="box"><svg class="dark" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <div class="lbl dark">Chat</div>
+    </a>
+    <a class="item" href="/profil.html" style="text-decoration:none">
+      <div class="box"><svg class="dark" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div class="lbl dark">Profil</div>
+    </a>
+  </div>
+
+  <!-- Bottom Sheet "Sesuaikan pencarian" Modal -->
+  <div class="filter-overlay" id="filterModal">
+    <div class="filter-sheet">
+      <div class="filter-handle"></div>
+      <div class="filter-header">
+        <div class="filter-title">Sesuaikan pencarian</div>
+        <button class="filter-close" id="closeFilterBtn">&times;</button>
+      </div>
+
+      <!-- Cara mendapatkan barang -->
+      <div>
+        <div class="f-sec-title">Cara mendapatkan barang</div>
+        <div class="f-chips" id="methodChips">
+          <div class="f-chip" data-method="semua">Semua</div>
+          <div class="f-chip" data-method="beli">Beli</div>
+          <div class="f-chip active" data-method="sewa">Sewa</div>
+          <div class="f-chip" data-method="pinjam">Pinjam</div>
+        </div>
+      </div>
+
+      <!-- Harga sewa per hari -->
+      <div>
+        <div class="f-sec-title">Harga sewa per hari</div>
+        <div class="f-price-row">
+          <div>
+            <div class="f-sublabel">Minimum</div>
+            <input class="f-input" id="filterMinPrice" value="Rp0">
+          </div>
+          <div>
+            <div class="f-sublabel">Maksimum</div>
+            <input class="f-input" id="filterMaxPrice" value="Rp10.000">
+          </div>
+        </div>
+      </div>
+
+      <!-- Jarak maksimum -->
+      <div>
+        <div class="f-dist-head">
+          <span class="f-sec-title" style="margin-bottom:0">Jarak maksimum</span>
+          <span class="f-dist-val" id="filterDistText">1 km</span>
+        </div>
+        <input type="range" class="f-slider" id="filterDistSlider" min="100" max="5000" step="100" value="1000">
+        <div class="f-dist-scale">
+          <span>100 m</span>
+          <span>5 km</span>
+        </div>
+        <div class="f-dist-loc">
+          <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span>Dari Institut Teknologi Garut</span>
+        </div>
+      </div>
+
+      <!-- Kondisi -->
+      <div>
+        <div class="f-sec-title">Kondisi</div>
+        <div class="f-chips" id="conditionChips">
+          <div class="f-chip" data-cond="semua">Semua</div>
+          <div class="f-chip" data-cond="baru">Seperti baru</div>
+          <div class="f-chip active" data-cond="baik">Baik</div>
+        </div>
+      </div>
+
+      <div class="f-divider"></div>
+
+      <!-- Action Buttons -->
+      <div class="f-actions">
+        <button class="f-btn-reset" id="filterResetBtn">Atur ulang</button>
+        <button class="f-btn-apply" id="filterApplyBtn">Terapkan filter</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="homeind"></div>
+</div>
+<script src="/js/cari.js"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1f5a41">
+<title>Estimasi harga · Kampus Market</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="top" id="top"></header>
+<main class="wrap">
+  <h1>Estimasi harga</h1>
+  <p class="lead">Masukkan harga barang baru. Harga rekomendasi dihitung dari kondisi barang.</p>
+  <div class="panel">
+    <form id="form">
+      <label>Barang<select name="id_barang" id="barang" required></select></label>
+      <label>Jenis<select name="jenis_transaksi"><option value="beli">Beli</option><option value="sewa">Sewa</option></select></label>
+      <label>Harga barang baru (Rp)<input name="harga_acuan" type="number" min="1" step="1" required></label>
+      <button class="btn">Hitung</button>
+    </form>
+    <p class="msg" id="msg" role="alert"></p>
+    <div class="result" id="hasil" hidden></div>
+  </div>
+</main>
+<script type="module" src="/js/pages/estimasi.js"></script>
+</body>
+</html>

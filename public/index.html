@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KampusCircle — Onboarding</title>
+<style>
+  :root{
+    --teal:#00917C; --dark:#1E3A38; --orange:#F28C28; --mint:#DDF1EC;
+    --lav:#EDEAF7; --peach:#FFF0DB; --card:#F4F7F6; --muted:#7A8583;
+  }
+  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .phone{width:100%;max-width:440px;min-height:100vh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow-y:auto;padding:0 20px 28px;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;box-shadow:0 0 24px rgba(0,0,0,0.08)}
+  .center{text-align:center}
+
+  .status{height:24px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:var(--dark);margin-bottom:20px}
+  .status .icons{display:flex;gap:6px;align-items:center}
+  .status svg{width:14px;height:14px;fill:var(--dark)}
+
+  .logo{font-size:22px;font-weight:700;text-align:center;margin-bottom:20px}
+
+  .hero-wrap{position:relative;width:312px;margin:0 auto 13px;align-self:center}
+  .hero{width:312px;height:222px;background:var(--mint);border-radius:28px;position:relative;overflow:hidden}
+  .hero .dashed{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:200px;height:120px;border-top:1.5px dashed #9FD6CB;border-radius:50% 50% 0 0;opacity:.8}
+  .badge{position:absolute;right:24px;top:24px;width:48px;height:48px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+  .pill{position:absolute;left:24px;bottom:-13px;height:26px;padding:0 10px;border-radius:999px;background:#fff;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,.08);font-size:11px;font-weight:700;color:var(--dark);z-index:5}
+
+  .calc{position:absolute;left:24px;top:24px;width:130px;height:165px;background:var(--lav);border:4px solid #fff;border-radius:20px;transform:rotate(-5deg);box-shadow:0 4px 12px rgba(0,0,0,.08);padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px}
+  .calc .body{width:100%;height:100%;background:var(--dark);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px}
+  .calc .screen{background:#C9E4DC;border-radius:6px;padding:4px 6px;font-family:monospace;font-size:11px;color:var(--dark);text-align:right;font-weight:600}
+  .calc .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;flex:1}
+  .calc .key{background:#fff;border-radius:3px;opacity:.9}
+  .calc .key.o{background:var(--orange)}
+  .calc .shadow{width:60px;height:8px;background:rgba(0,0,0,.06);border-radius:50%;margin-top:4px;filter:blur(4px)}
+
+  .book{position:absolute;right:24px;bottom:24px;width:105px;height:135px;background:#f7faf9;border:4px solid #fff;border-radius:20px;transform:rotate(5deg);box-shadow:0 4px 12px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .book .cover{width:70px;height:100px;background:#0B7A68;border-radius:6px;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px}
+  .book .line{width:30px;height:2px;background:rgba(255,255,255,.8);border-radius:1px}
+  .book .title{color:#fff;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+  .book .num{color:#fff;font-size:32px;font-weight:800;line-height:1}
+  .book .spine{position:absolute;right:0;top:0;width:6px;height:100%;background:#fff;opacity:.9}
+
+  .title{margin-top:32px;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;font-weight:700;font-size:28px;letter-spacing:-0.3px;line-height:1.2;color:var(--dark);text-align:center;margin-bottom:10px}
+  .subtitle{font-size:14px;color:var(--muted);line-height:1.4;text-align:center;margin-bottom:24px}
+
+  .features{display:flex;gap:6px;margin:0 24px 20px;padding:0 24px;box-sizing:border-box;width:100%}
+  .fcard{flex:1;min-width:0;height:88px;border-radius:16px;padding:14px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .fcard .icon{width:22px;height:22px}
+  .fcard h4{font-size:14px;font-weight:700;color:var(--dark)}
+  .fcard p{font-size:10px;color:var(--muted)}
+  .fcard.gray{background:var(--card)} .fcard.peach{background:var(--peach)}
+
+  .info{font-size:11px;color:var(--muted);line-height:1.4;text-align:center;margin-bottom:auto;margin-left:24px;margin-right:24px}
+
+  .divider{height:1px;background:#E8ECEB;margin:12px 0 0;width:100%}
+
+  .btn{width:100%;height:48px;background:var(--teal);border:none;outline:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;margin:12px 0 0;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif}
+  .btn:focus{outline:none}
+  .login{text-align:center;font-size:13px;color:var(--muted);margin-top:12px}
+  .login a{color:var(--teal);font-weight:700;text-decoration:none}
+
+  .homeind{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:130px;height:5px;background:var(--dark);border-radius:999px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status">
+    <span>09.41</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.95 9.05 8.05 9.05 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+
+  <div class="logo"><span style="color:var(--teal)">Kampus</span><span style="color:var(--orange)">Circle</span></div>
+
+  <div class="hero-wrap">
+    <div class="hero">
+      <div class="dashed"></div>
+      <div class="calc">
+        <div class="body">
+          <div class="screen">1.618</div>
+          <div class="grid">
+            <div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+            <div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+            <div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+            <div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+            <div class="key"></div><div class="key"></div><div class="key"></div><div class="key o"></div>
+          </div>
+        </div>
+        <div class="shadow"></div>
+      </div>
+      <div class="book">
+        <div class="cover">
+          <div class="line"></div>
+          <div class="line"></div>
+          <div class="title">KALKULUS</div>
+          <div class="num">2</div>
+        </div>
+        <div class="spine"></div>
+      </div>
+      <div class="badge">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="#fff">
+          <path d="M12 2 C13 8 16 11 22 12 C16 13 13 16 12 22 C11 16 8 13 2 12 C8 11 11 8 12 2 Z"/>
+          <path d="M19 3 C19.5 5.5 21 7 23 7.5 C21 8 19.5 9.5 19 12 C18.5 9.5 17 8 15 7.5 C17 7 18.5 5.5 19 3 Z" transform="scale(.55) translate(16,2)"/>
+        </svg>
+      </div>
+    </div>
+    <div class="pill">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="var(--teal)"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm-1 14l-4-4 1.4-1.4L11 13.2l5.6-5.6L18 9l-7 7z"/></svg>
+      <span>Dari teman kampusmu</span>
+    </div>
+  </div>
+
+  <div class="title">Teman Setia<br>Kebutuhan Kampus</div>
+  <div class="subtitle">Barang yang kamu butuhkan,<br>ada di lingkaran kampusmu.</div>
+
+  <div class="features">
+    <div class="fcard gray">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><path d="M6 2h12l2 4v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6l2-4z"/><path d="M3 6h18M16 10a4 4 0 01-8 0"/></svg>
+      <h4>Beli</h4><p>Lebih hemat</p>
+    </div>
+    <div class="fcard peach">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      <h4>Sewa</h4><p>Sesuai durasi</p>
+    </div>
+    <div class="fcard gray">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#00917C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 14h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 16"/><path d="m7 20 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/><path d="m2 15 6 6"/><path d="M19.5 8.5c.7-.7 1.5-1.6 1.5-2.7A2.73 2.73 0 0 0 16 4a2.78 2.78 0 0 0-5 1.8c0 1.2.8 2 1.5 2.8L16 12Z"/></svg>
+      <h4>Pinjam</h4><p>Tanpa biaya</p>
+    </div>
+  </div>
+
+  <div class="info">Satu akun untuk mencari dan berbagi barang.<br>Khusus komunitas mahasiswa terverifikasi.</div>
+
+  <div class="divider"></div>
+  <a class="btn" href="/verifikasi.html" style="text-decoration:none">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+    Mulai bergabung
+  </a>
+  <div class="login">Sudah punya akun? <a href="/masuk.html">Masuk</a></div>
+
+  <div class="homeind"></div>
+</div>
+</body>
+</html>

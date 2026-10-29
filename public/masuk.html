@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KampusCircle — Masuk</title>
+<style>
+  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .phone{width:100%;max-width:440px;min-height:100vh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow-y:auto;padding:0 24px 30px;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;box-shadow:0 0 24px rgba(0,0,0,0.08)}
+  .status{height:24px;padding:0 20px;margin:0 -24px 0;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#1E3A38}
+  .status .icons{display:flex;gap:6px;align-items:center}
+  .status svg{width:14px;height:14px;fill:#1E3A38}
+  .header{height:36px;margin-top:18px;display:flex;align-items:center;position:relative}
+  .back{width:36px;height:36px;border-radius:12px;background:#F4F7F6;display:flex;align-items:center;justify-content:center;border:none;outline:none;cursor:pointer}
+  .back svg{width:20px;height:20px;stroke:#1E3A38;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .logo{position:absolute;left:50%;transform:translateX(-50%);font-size:22px;font-weight:700}
+  .logo .k{color:#00917C} .logo .c{color:#F28C28}
+  .pill{margin-top:28px;display:inline-flex;align-items:center;gap:6px;background:#DDF1EC;border-radius:999px;padding:5px 12px}
+  .pill svg{width:14px;height:14px;stroke:#00917C;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .pill span{font-size:11px;font-weight:700;color:#0B6B5B}
+  .title{margin-top:14px;font-size:28px;font-weight:700;color:#1E3A38;line-height:1.2;letter-spacing:-0.3px}
+  .sub{margin-top:10px;font-size:14px;color:#7A8583;line-height:1.4}
+  .field{margin-top:24px}
+  .field+.field{margin-top:16px}
+  .label{font-size:13px;font-weight:700;color:#1E3A38;margin-bottom:8px;display:block}
+  .inputbox{width:100%;height:47px;background:#F4F7F6;border:1.5px solid transparent;border-radius:14px;padding:0 14px;display:flex;align-items:center;gap:10px}
+  .inputbox svg{width:20px;height:20px;stroke:#5E6967;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+  .inputbox input{flex:1;border:none;outline:none;background:transparent;font-size:14px;color:#1E3A38;font-family:inherit}
+  .inputbox input::placeholder{color:#A3ACAA;font-size:13px}
+  .inputbox:focus-within{border-color:#00917C;background:#fff}
+  .inputbox.error{border-color:#D64545}
+  .toggle{cursor:pointer;background:none;border:none;outline:none;padding:0}
+  .toggle svg{width:20px;height:20px;stroke:#5E6967;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .err{margin-top:6px;font-size:11px;color:#D64545;display:none}
+  .row{margin-top:14px;display:flex;justify-content:space-between;align-items:center}
+  .checkbox{display:flex;align-items:center;gap:8px;cursor:pointer}
+  .box{width:18px;height:18px;border-radius:5px;border:1.5px solid #C5CDCB;background:#fff;display:flex;align-items:center;justify-content:center}
+  .box.checked{background:#00917C;border-color:#00917C}
+  .box svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:none}
+  .box.checked svg{display:block}
+  .remember{font-size:12px;color:#7A8583}
+  .forgot{font-size:12px;font-weight:700;color:#00917C;cursor:pointer}
+  .btn{margin-top:22px;width:100%;height:50px;background:#00917C;border:none;outline:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+  .btn:active{background:#007A68}
+  .info{margin-top:24px;background:#DDF1EC;border-radius:16px;padding:14px;display:flex;gap:12px;align-items:center}
+  .info .iconbox{width:40px;height:40px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .info .iconbox svg{width:22px;height:22px;stroke:#00917C;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .info .t1{font-size:12px;font-weight:700;color:#0B6B5B}
+  .info .t2{margin-top:3px;font-size:11px;color:#7A8583;line-height:1.4}
+  .sec{margin-top:24px;display:flex;align-items:center;justify-content:center;gap:6px}
+  .sec svg{width:14px;height:14px;stroke:#5E6967;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .sec span{font-size:11px;color:#7A8583}
+  .bottom{margin-top:auto}
+  .sep{height:1px;background:#E8ECEB;width:100%;margin:0 -24px}
+  .bottomrow{padding-top:18px;text-align:center;font-size:13px;color:#7A8583}
+  .bottomrow a{color:#00917C;font-weight:700;text-decoration:none;cursor:pointer}
+  .bottompad{padding-bottom:30px}
+  .homeind{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:130px;height:5px;background:#1E3A38;border-radius:999px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status">
+    <span>09.41</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.95 9.05 8.05 9.05 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+
+  <div class="header">
+    <button class="back" id="backBtn"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+    <div class="logo"><span class="k">Kampus</span><span class="c">Circle</span></div>
+  </div>
+
+  <div class="pill">
+    <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+    <span>Kembali ke lingkaranmu</span>
+  </div>
+
+  <div class="title">Senang kamu kembali!</div>
+  <div class="sub">Masuk untuk cari kebutuhan kuliah dan berbagi<br>dengan teman kampusmu.</div>
+
+  <div class="field">
+    <label class="label">Email</label>
+    <div class="inputbox" id="emailBox">
+      <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
+      <input id="email" type="email" placeholder="Masukkan email kamu" autocomplete="email">
+    </div>
+    <div class="err" id="emailErr">Masukkan email yang valid.</div>
+  </div>
+
+  <div class="field">
+    <label class="label">Kata sandi</label>
+    <div class="inputbox" id="passBox">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <input id="pass" type="password" placeholder="Masukkan kata sandi" autocomplete="current-password">
+      <button class="toggle" id="togglePass" type="button"><svg id="eyeIcon" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
+    </div>
+    <div class="err" id="passErr">Kata sandi minimal 6 karakter.</div>
+  </div>
+
+  <div class="row">
+    <div class="checkbox" id="rememberWrap">
+      <div class="box" id="rememberBox"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <span class="remember">Ingat saya</span>
+    </div>
+    <div class="forgot" id="forgotBtn" style="cursor:pointer">Lupa kata sandi?</div>
+  </div>
+
+  <button class="btn" id="loginBtn">
+    Masuk
+    <svg viewBox="0 0 24 24" width="18" height="18" stroke="#fff" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+  </button>
+
+  <div class="info">
+    <div class="iconbox">
+      <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 22l7.8-8.6 1-1a5.5 5.5 0 000-7.8z"/></svg>
+    </div>
+    <div>
+      <div class="t1">Kebutuhan kuliah, lebih hemat.</div>
+      <div class="t2">Beli, sewa, atau pinjam barang dari teman<br>satu kampus.</div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+    <span>Akunmu aman, berbagi jadi nyaman.</span>
+  </div>
+
+  <div class="bottom">
+    <div class="sep"></div>
+    <div class="bottomrow">Belum punya akun? <a id="daftarLink">Daftar sekarang</a></div>
+    <div class="bottompad"></div>
+  </div>
+
+  <div class="homeind"></div>
+
+  <!-- Modal Lupa Kata Sandi -->
+  <div id="modalResetPw" style="display:none;position:absolute;inset:0;background:rgba(30,58,56,0.6);z-index:50;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)">
+    <div style="background:#fff;border-radius:24px;padding:24px 20px;width:100%;max-width:340px;box-shadow:0 10px 30px rgba(0,0,0,0.2);display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 style="font-size:17px;font-weight:700;color:#1E3A38">Atur Ulang Kata Sandi</h3>
+        <button id="closeModalReset" style="background:transparent;border:none;font-size:22px;color:#7A8583;cursor:pointer;line-height:1">&times;</button>
+      </div>
+      <p style="font-size:12px;color:#7A8583;line-height:1.4">Masukkan email kampus terdaftar dan kata sandi baru untuk akun Anda.</p>
+      
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#1E3A38;display:block;margin-bottom:4px">Email Kampus</label>
+        <div class="inputbox" id="resetEmailBox" style="height:42px">
+          <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
+          <input id="resetEmail" type="email" placeholder="nama@kampus.ac.id" style="font-size:13px">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#1E3A38;display:block;margin-bottom:4px">Kata Sandi Baru</label>
+        <div class="inputbox" id="resetPassBox" style="height:42px">
+          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input id="resetPass" type="password" placeholder="Minimal 8 karakter" style="font-size:13px">
+        </div>
+      </div>
+
+      <div id="resetMsg" style="display:none;font-size:11px;padding:8px 10px;border-radius:8px"></div>
+
+      <button id="btnSubmitReset" class="btn" style="margin-top:4px;height:44px;font-size:14px">
+        Simpan Kata Sandi Baru
+      </button>
+    </div>
+  </div>
+</div>
+<script src="/js/masuk.js"></script>
+</body>
+</html>

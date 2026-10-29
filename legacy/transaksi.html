@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1f5a41">
+<title>Transaksi · Kampus Market</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="top" id="top"></header>
+<main class="wrap">
+  <h1 id="judul">Transaksi</h1>
+  <div class="panel">
+    <p id="info"></p>
+    <form id="form" hidden>
+      <div id="sewa">
+        <label>Mulai sewa<input name="tanggal_mulai" type="date"></label>
+        <label>Durasi (hari)<input name="durasi_sewa" type="number" min="1" max="365" step="1" value="1"></label>
+      </div>
+      <label>Lokasi pengambilan<input name="lokasi" required placeholder="Contoh: Perpustakaan pusat"></label>
+      <label>Metode pembayaran
+        <select name="metode_pembayaran"><option value="cash">Tunai di tempat</option><option value="transfer">Transfer</option><option value="qris">QRIS</option></select>
+      </label>
+      <div class="summary"><span>Total</span><strong id="total"></strong></div>
+      <button class="btn">Konfirmasi</button>
+    </form>
+    <p class="msg" id="msg" role="alert"></p>
+  </div>
+</main>
+<script type="module" src="/js/pages/transaksi.js"></script>
+</body>
+</html>

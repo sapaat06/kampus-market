@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1f5a41">
+<title>Masuk · Kampus Market</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="top" id="top"></header>
+<main class="wrap">
+  <div class="panel">
+    <div class="tabs" role="tablist">
+      <button role="tab" id="t-masuk" aria-selected="true">Masuk</button>
+      <button role="tab" id="t-daftar" aria-selected="false">Daftar</button>
+    </div>
+    <form id="f-masuk">
+      <label>Email<input name="email" type="email" required autocomplete="email"></label>
+      <label>Password<input name="password" type="password" required autocomplete="current-password"></label>
+      <button class="btn">Masuk</button>
+    </form>
+    <form id="f-daftar" hidden>
+      <label>Nama<input name="nama" required autocomplete="name"></label>
+      <label>Email kampus<input name="email" type="email" required autocomplete="email"></label>
+      <label>No. HP<input name="no_hp" type="tel" autocomplete="tel"></label>
+      <label>Password (minimal 8 karakter)<input name="password" type="password" minlength="8" required autocomplete="new-password"></label>
+      <button class="btn">Buat akun</button>
+    </form>
+    <p class="msg" id="msg" role="alert"></p>
+  </div>
+</main>
+<script type="module" src="/js/pages/login.js"></script>
+</body>
+</html>

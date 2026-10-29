@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KampusCircle — Obrolan Kampus</title>
+<style>
+  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .phone{width:100%;max-width:440px;height:100vh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08)}
+
+  /* Status Bar */
+  .status{height:24px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#1E3A38;flex-shrink:0}
+  .status .icons{display:flex;gap:6px;align-items:center}
+  .status svg{width:14px;height:14px;fill:#1E3A38}
+
+  /* ============================================================ */
+  /* VIEW 1: CHAT LIST (KOTAK MASUK / PILIH ORANG)                */
+  /* ============================================================ */
+  .view-container{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+  .list-header{padding:10px 20px 8px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+  .list-title{font-size:20px;font-weight:800;color:#1E3A38}
+  .list-sub{font-size:12px;color:#7A8583}
+
+  /* Search bar */
+  .search-wrap{padding:4px 20px 10px;flex-shrink:0}
+  .search-box{height:42px;border-radius:14px;background:#F4F7F6;border:1px solid #E3E8E7;display:flex;align-items:center;padding:0 12px;gap:8px}
+  .search-box svg{width:18px;height:18px;stroke:#7A8583;fill:none;stroke-width:2}
+  .search-box input{flex:1;border:none;background:transparent;outline:none;font-size:13px;color:#1E3A38;font-family:inherit}
+
+  /* Filter chips */
+  .filter-row{display:flex;gap:8px;padding:0 20px 12px;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+  .filter-row::-webkit-scrollbar{display:none}
+  .filter-chip{height:30px;padding:0 14px;border-radius:999px;border:1px solid #E3E8E7;background:#fff;font-size:12px;font-weight:700;color:#7A8583;cursor:pointer;white-space:nowrap;display:flex;align-items:center}
+  .filter-chip.active{background:#DDF1EC;border-color:#00917C;color:#00917C}
+
+  /* Conversation List */
+  .inbox-list{flex:1;overflow-y:auto;padding:0 16px;display:flex;flex-direction:column;gap:8px;scrollbar-width:none}
+  .inbox-list::-webkit-scrollbar{display:none}
+
+  .chat-item{background:#fff;border:1px solid #EAEFEF;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .15s, border-color .15s}
+  .chat-item:hover{background:#F8FBFA;border-color:#00917C}
+  .chat-item:active{transform:scale(0.99)}
+  .chat-item.unread{background:#F2FAF8;border-color:#C2E4DC}
+
+  .user-avatar-wrap{position:relative;flex-shrink:0}
+  .user-avatar{width:46px;height:46px;border-radius:50%;background:#DDF1EC;display:flex;align-items:center;justify-content:center}
+  .user-avatar svg{width:26px;height:26px;stroke:#00917C;fill:none;stroke-width:1.8}
+  .user-avatar.indigo{background:#EDEAF7}
+  .user-avatar.indigo svg{stroke:#5C6BC0}
+  .user-avatar.orange{background:#FFF0DB}
+  .user-avatar.orange svg{stroke:#F28C28}
+
+  .online-badge{position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;background:#00C853;border:2px solid #fff}
+
+  .item-content{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+  .item-top-row{display:flex;justify-content:space-between;align-items:center}
+  .item-name-wrap{display:flex;align-items:center;gap:5px}
+  .item-name{font-size:14px;font-weight:700;color:#1E3A38}
+  .verified-icon{width:14px;height:14px;border-radius:50%;background:#00917C;display:inline-flex;align-items:center;justify-content:center}
+  .verified-icon svg{width:8px;height:8px;stroke:#fff;fill:none;stroke-width:2.5}
+  
+  .item-time{font-size:11px;color:#78909C;font-weight:500}
+  .item-tag{font-size:11px;font-weight:600;color:#F28C28;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item-tag.pinjam{color:#5C6BC0}
+  .item-tag.beli{color:#00917C}
+
+  .item-preview-row{display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .item-msg{font-size:12px;color:#5E6E6B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+  .chat-item.unread .item-msg{font-weight:700;color:#1E3A38}
+  .unread-pill{width:18px;height:18px;border-radius:50%;background:#F28C28;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+  /* Bottom Navigation */
+  .nav{height:72px;background:#fff;border-top:1px solid #E8ECEB;padding-top:8px;display:flex;justify-content:space-around;align-items:flex-start;flex-shrink:0;z-index:20}
+  .nav .item{display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;cursor:pointer;text-decoration:none}
+  .nav .item .box{width:64px;height:34px;display:flex;align-items:center;justify-content:center}
+  .nav .item .pill{width:64px;height:34px;border-radius:17px;background:#DDF1EC;display:flex;align-items:center;justify-content:center}
+  .nav .item svg{width:22px;height:22px;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;fill:none;stroke:#7A8583}
+  .nav .item.active svg{stroke:#00917C}
+  .nav .item .lbl{font-size:11px;color:#7A8583}
+  .nav .item.active .lbl{font-weight:700;color:#00917C}
+  .nav .center .circle{width:48px;height:48px;border-radius:50%;background:#F28C28;display:flex;align-items:center;justify-content:center;margin-top:-4px;box-shadow:0 3px 10px rgba(242,140,40,0.35);transition:transform .15s}
+  .nav .center .circle:active{transform:scale(0.92)}
+  .nav .center .circle svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ============================================================ */
+  /* VIEW 2: CHAT ROOM (RUANG PESAN DENGAN ORANG TERPILIH)       */
+  /* ============================================================ */
+  #viewChatRoom{display:none;background:#F7FAFA}
+
+  .chat-header{height:58px;padding:0 16px;background:#fff;border-bottom:1px solid #E8ECEB;display:flex;align-items:center;gap:12px;flex-shrink:0}
+  .back-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .back-btn svg{width:22px;height:22px;stroke:#1E3A38;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  
+  .avatar-wrap{position:relative}
+  .avatar{width:40px;height:40px;border-radius:50%;background:#DDF1EC;display:flex;align-items:center;justify-content:center}
+  .avatar svg{width:24px;height:24px;stroke:#00917C;fill:none;stroke-width:1.8}
+  
+  .user-meta{display:flex;flex-direction:column;gap:2px}
+  .user-name{font-size:15px;font-weight:700;color:#1E3A38}
+  .user-status{font-size:11px;color:#7A8583;display:flex;align-items:center;gap:5px}
+  .online-dot{width:7px;height:7px;border-radius:50%;background:#00C853}
+
+  /* Pinned Item Snippet */
+  .pinned-item-wrap{padding:10px 16px 4px;flex-shrink:0}
+  .pinned-card{background:#fff;border:1px solid #E3E8E7;border-radius:16px;padding:10px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.03);transition:transform .15s}
+  .pinned-card:active{transform:scale(0.99)}
+  .pinned-icon{width:44px;height:44px;border-radius:12px;background:#EDEAF7;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .pinned-icon svg{width:22px;height:22px;stroke:#6B5BB5;fill:none;stroke-width:1.8}
+  .pinned-info{flex:1;display:flex;flex-direction:column;gap:3px}
+  .pinned-title{font-size:13px;font-weight:700;color:#1E3A38}
+  .pinned-price{font-size:12px;font-weight:700;color:#F28C28}
+
+  /* Date Divider */
+  .date-divider{text-align:center;margin:12px 0 8px;font-size:11px;font-weight:600;color:#94A3B8}
+
+  /* Chat Thread */
+  .chat-thread{flex:1;overflow-y:auto;padding:8px 16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none}
+  .chat-thread::-webkit-scrollbar{display:none}
+
+  .bubble-wrap{display:flex;flex-direction:column;max-width:78%}
+  .bubble-wrap.left{align-self:flex-start}
+  .bubble-wrap.right{align-self:flex-end}
+
+  .bubble{padding:10px 14px;font-size:13px;line-height:1.45;position:relative}
+  .bubble-wrap.left .bubble{background:#fff;color:#1E3A38;border:1px solid #E6ECEB;border-radius:16px;border-bottom-left-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,0.03)}
+  .bubble-wrap.right .bubble{background:#00695C;color:#fff;border-radius:16px;border-bottom-right-radius:4px;box-shadow:0 2px 6px rgba(0,105,92,0.2)}
+  
+  .bubble-meta{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:4px;font-size:10px}
+  .bubble-wrap.left .bubble-meta{color:#94A3B8}
+  .bubble-wrap.right .bubble-meta{color:rgba(255,255,255,0.75)}
+  .bubble-meta svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+
+  /* Quick Reply Action Chips */
+  .quick-chips{padding:8px 16px 6px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+  .quick-chips::-webkit-scrollbar{display:none}
+  .quick-chip{height:32px;padding:0 14px;border-radius:999px;border:1px solid #D0DBDA;background:#fff;font-size:12px;font-weight:600;color:#1E3A38;white-space:nowrap;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s}
+  .quick-chip:hover{background:#EDF5F3;border-color:#00917C;color:#00917C}
+
+  /* Chat Input Bar */
+  .chat-input-bar{height:68px;background:#fff;border-top:1px solid #E8ECEB;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .msg-input{flex:1;height:44px;border-radius:999px;border:1.5px solid #D0DBDA;background:#F9FBFA;padding:0 18px;font-size:13px;color:#1E3A38;outline:none;font-family:inherit;transition:border-color .2s}
+  .msg-input:focus{border-color:#00917C;background:#fff}
+  .send-btn{width:44px;height:44px;border-radius:50%;background:#00695C;border:none;outline:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;box-shadow:0 2px 6px rgba(0,105,92,0.25);transition:transform .15s}
+  .send-btn:active{transform:scale(0.92)}
+  .send-btn svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+  .homeind{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:130px;height:4px;background:#1E3A38;border-radius:999px;z-index:35}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <!-- Status Bar (Shared) -->
+  <div class="status">
+    <span>09:41</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M2 17h3v4H2v-4zm5-4h3v8H7v-8zm5-4h3v12h-3V9zm5-4h3v16h-3V5z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/></svg>
+      <svg viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- VIEW 1: DAFTAR CHAT (KOTAK MASUK / PILIH ORANG)              -->
+  <!-- ============================================================ -->
+  <div class="view-container" id="viewChatList">
+    <div class="list-header">
+      <div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <h1 class="list-title">Pesan</h1>
+          <span style="font-size:10px;font-weight:700;background:#FFF0DB;color:#A65A00;padding:2px 8px;border-radius:999px">Simulasi Demo</span>
+        </div>
+        <div class="list-sub" id="chatCountText">4 percakapan aktif</div>
+      </div>
+    </div>
+
+    <!-- Search bar -->
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="text" id="searchChatInput" placeholder="Cari percakapan atau mahasiswa..." autocomplete="off">
+      </div>
+    </div>
+
+    <!-- Filter chips -->
+    <div class="filter-row" id="filterChips">
+      <button class="filter-chip active" data-filter="semua">Semua</button>
+      <button class="filter-chip" data-filter="unread">Belum Dibaca</button>
+      <button class="filter-chip" data-filter="sewa">Sewa</button>
+      <button class="filter-chip" data-filter="pinjam">Pinjam</button>
+    </div>
+
+    <!-- List of Conversations (Sinkron dengan Ruang Chat) -->
+    <div class="inbox-list" id="inboxList">
+      <!-- Item 1: Dimas A. -->
+      <div class="chat-item" data-user="dimas" data-name="Dimas A." data-item="1" data-type="sewa">
+        <div class="user-avatar-wrap">
+          <div class="user-avatar">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <span class="online-badge"></span>
+        </div>
+        <div class="item-content">
+          <div class="item-top-row">
+            <div class="item-name-wrap">
+              <span class="item-name">Dimas A.</span>
+              <span class="verified-icon" title="Mahasiswa Terverifikasi">
+                <svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
+              </span>
+            </div>
+            <span class="item-time">Online</span>
+          </div>
+          <div class="item-tag">Kalkulator Scientific Casio · Sewa</div>
+          <div class="item-preview-row">
+            <span class="item-msg" style="color:#7A8583;font-style:italic">Belum ada pesan · Ketuk untuk mulai obrolan</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Item 2: Salsa P. -->
+      <div class="chat-item" data-user="salsa" data-name="Salsa P." data-item="4" data-type="pinjam">
+        <div class="user-avatar-wrap">
+          <div class="user-avatar indigo">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <span class="online-badge"></span>
+        </div>
+        <div class="item-content">
+          <div class="item-top-row">
+            <div class="item-name-wrap">
+              <span class="item-name">Salsa P.</span>
+              <span class="verified-icon">
+                <svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
+              </span>
+            </div>
+            <span class="item-time">15m lalu</span>
+          </div>
+          <div class="item-tag pinjam">Modul Kalkulus 2 · Pinjam (Gratis)</div>
+          <div class="item-preview-row">
+            <span class="item-msg" style="color:#7A8583;font-style:italic">Belum ada pesan · Ketuk untuk mulai obrolan</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Item 3: Koperasi Mahasiswa -->
+      <div class="chat-item" data-user="koperasi" data-name="Koperasi Mahasiswa" data-item="8" data-type="sewa">
+        <div class="user-avatar-wrap">
+          <div class="user-avatar orange">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          </div>
+        </div>
+        <div class="item-content">
+          <div class="item-top-row">
+            <div class="item-name-wrap">
+              <span class="item-name">Koperasi Mahasiswa</span>
+              <span class="verified-icon">
+                <svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
+              </span>
+            </div>
+            <span class="item-time">Kampus ITG</span>
+          </div>
+          <div class="item-tag">Jas Lab Putih (M) · Sewa</div>
+          <div class="item-preview-row">
+            <span class="item-msg" style="color:#7A8583;font-style:italic">Belum ada pesan · Ketuk untuk mulai obrolan</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Item 4: Budi Santoso -->
+      <div class="chat-item" data-user="budi" data-name="Budi Santoso" data-item="2" data-type="sewa">
+        <div class="user-avatar-wrap">
+          <div class="user-avatar">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+        </div>
+        <div class="item-content">
+          <div class="item-top-row">
+            <div class="item-name-wrap">
+              <span class="item-name">Budi Santoso</span>
+            </div>
+            <span class="item-time">Teknik Elektro</span>
+          </div>
+          <div class="item-tag">Power Bank 20.000 mAh · Sewa</div>
+          <div class="item-preview-row">
+            <span class="item-msg" style="color:#7A8583;font-style:italic">Belum ada pesan · Ketuk untuk mulai obrolan</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="nav">
+      <a href="/beranda.html" class="item">
+        <div class="box">
+          <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/></svg>
+        </div>
+        <span class="lbl">Beranda</span>
+      </a>
+      <a href="/cari.html" class="item">
+        <div class="box">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        </div>
+        <span class="lbl">Cari</span>
+      </a>
+      <a href="/unggah.html" class="item center" aria-label="Unggah Barang">
+        <div class="circle">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+      </a>
+      <a href="/chat.html" class="item active">
+        <div class="pill">
+          <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-4-.9L3 21l1.7-4.4A8.4 8.4 0 1 1 21 11.5Z"/></svg>
+        </div>
+        <span class="lbl">Chat</span>
+      </a>
+      <a href="/profil.html" class="item">
+        <div class="box">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        </div>
+        <span class="lbl">Profil</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- VIEW 2: RUANG CHAT ORANG TERPILIH                           -->
+  <!-- ============================================================ -->
+  <div class="view-container" id="viewChatRoom">
+    <!-- Header -->
+    <div class="chat-header">
+      <button class="back-btn" id="roomBackBtn" aria-label="Kembali ke Daftar Pesan">
+        <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="avatar-wrap">
+        <div class="avatar" id="roomAvatar">
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+      </div>
+      <div class="user-meta">
+        <div class="user-name" id="chatUserName">Dimas A.</div>
+        <div class="user-status">
+          <span class="online-dot"></span>
+          <span id="chatUserStatus">Online · Terverifikasi</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pinned Item Snippet -->
+    <div class="pinned-item-wrap">
+      <div class="pinned-card" id="pinnedCard" title="Lihat detail barang">
+        <div class="pinned-icon">
+          <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M8 6h8M8 11h2M12 11h2M16 11h.01M8 15h2M12 15h2M16 15h.01M8 19h2M12 19h2M16 19h.01"/></svg>
+        </div>
+        <div class="pinned-info">
+          <div class="pinned-title" id="pinnedTitle">Kalkulator Scientific Casio</div>
+          <div class="pinned-price" id="pinnedPrice">Rp5.000 / hari · Sewa</div>
+        </div>
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#7A8583;fill:none;stroke-width:2"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+    </div>
+
+    <!-- Date Divider -->
+    <div class="date-divider">Hari ini</div>
+
+    <!-- Chat Thread -->
+    <div class="chat-thread" id="chatThread">
+      <div class="empty-chat-state" id="emptyChatState" style="text-align:center;padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="width:48px;height:48px;border-radius:50%;background:#DDF1EC;display:flex;align-items:center;justify-content:center;margin-bottom:2px">
+          <svg viewBox="0 0 24 24" style="width:26px;height:26px;stroke:#00917C;fill:none;stroke-width:1.8"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-4-.9L3 21l1.7-4.4A8.4 8.4 0 1 1 21 11.5Z"/></svg>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:#1E3A38" id="emptyGreeting">Mulai Obrolan dengan Dimas A.</div>
+        <div style="font-size:12px;color:#7A8583;max-width:240px;line-height:1.45">Tanyakan ketersediaan barang, tawar harga, atau sepakati lokasi serah terima di kampus.</div>
+        <div style="font-size:11px;color:#00917C;background:#E0F2F1;padding:4px 12px;border-radius:999px;font-weight:600;margin-top:2px">✓ Mahasiswa Kampus Terverifikasi</div>
+      </div>
+    </div>
+
+    <!-- Quick Reply Action Chips -->
+    <div class="quick-chips">
+      <button class="quick-chip" id="chipAjukanSewa">Ajukan Sewa</button>
+      <button class="quick-chip" data-msg="Halo kak, apakah barangnya masih tersedia?">Tanya ketersediaan</button>
+      <button class="quick-chip" data-msg="Halo kak, boleh nego harganya?">Nego harga</button>
+      <button class="quick-chip" data-msg="Bisa ketemuan di dekat kampus mana ya kak?">Lokasi temu</button>
+    </div>
+
+    <!-- Chat Input Bar -->
+    <div class="chat-input-bar">
+      <input type="text" class="msg-input" id="msgInput" placeholder="Tulis pesan..." autocomplete="off">
+      <button class="send-btn" id="sendBtn" aria-label="Kirim Pesan">
+        <svg viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4 20-7Z"/><path d="M22 2 11 13"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="homeind"></div>
+</div>
+
+<script src="/js/chat.js"></script>
+</body>
+</html>

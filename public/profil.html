@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KampusCircle — Profil & Green Points</title>
+<style>
+  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .phone{width:100%;max-width:440px;height:100vh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08)}
+
+  /* Scrollable Body */
+  .profile-scroll{flex:1;overflow-y:auto;padding-bottom:16px;scrollbar-width:none}
+  .profile-scroll::-webkit-scrollbar{display:none}
+
+  /* Header Section (Teal Curved) */
+  .profile-header{background:#00897B;padding:0 20px 34px;position:relative;overflow:hidden}
+  .profile-header::after{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.08);pointer-events:none}
+
+  .status{height:24px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fff}
+  .status .icons{display:flex;gap:6px;align-items:center}
+  .status svg{width:14px;height:14px;fill:#fff}
+
+  .header-title-row{margin-top:14px;display:flex;justify-content:space-between;align-items:center}
+  .header-title{font-size:18px;font-weight:700;color:#fff}
+  .logout-btn{background:transparent;border:none;color:#E0F2F1;cursor:pointer;display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600}
+  .logout-btn svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:1.8}
+
+  .user-info-row{margin-top:16px;display:flex;align-items:center;gap:14px}
+  .avatar-circle{width:60px;height:60px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+  .avatar-circle svg{width:34px;height:34px;stroke:#00897B;fill:none;stroke-width:1.8}
+
+  .user-texts{display:flex;flex-direction:column;gap:3px}
+  .user-name{font-size:18px;font-weight:700;color:#fff}
+  .user-dept{font-size:12px;color:#D0EBE8}
+  .badge-ktm{margin-top:2px;background:#004D40;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;width:fit-content}
+
+  /* Green Points Card (Floating Over Header) */
+  .green-card{margin:-20px 20px 0;background:#fff;border-radius:20px;padding:18px 20px;box-shadow:0 4px 16px rgba(0,0,0,0.06);border:1px solid #EBF0EF;position:relative;z-index:5}
+  .green-top{display:flex;justify-content:space-between;align-items:flex-start}
+  .green-lbl{font-size:12px;color:#78909C;font-weight:600}
+  .green-points-wrap{display:flex;align-items:baseline;gap:5px;margin-top:2px}
+  .green-val{font-size:28px;font-weight:800;color:#00897B}
+  .green-unit{font-size:13px;color:#78909C;font-weight:600}
+
+  .leaf-badge{width:46px;height:46px;border-radius:50%;background:#DDF1EC;display:flex;align-items:center;justify-content:center}
+  .leaf-badge svg{width:24px;height:24px;stroke:#00917C;fill:none;stroke-width:2}
+
+  .progress-wrap{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+  .progress-track{height:8px;border-radius:999px;background:#E8ECEB;overflow:hidden;position:relative}
+  .progress-fill{position:absolute;left:0;top:0;bottom:0;width:78%;border-radius:999px;background:linear-gradient(90deg, #F28C28, #F5A623)}
+
+  .progress-labels{display:flex;justify-content:space-between;font-size:11px}
+  .level-curr{color:#00695C;font-weight:700}
+  .level-next{color:#78909C;font-weight:500}
+
+  /* 3 Stats Grid */
+  .stats-row{margin:14px 20px 0;display:grid;grid-template-columns:repeat(3, 1fr);gap:10px}
+  .stat-box{background:#fff;border:1px solid #EAEFEF;border-radius:14px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .stat-num{font-size:18px;font-weight:800;color:#1E3A38}
+  .stat-txt{font-size:11px;color:#78909C;font-weight:500}
+
+  /* Section Lencana */
+  .sec-wrap{margin:18px 20px 0}
+  .sec-heading{font-size:15px;font-weight:700;color:#1E3A38;margin-bottom:10px}
+
+  .badges-grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:8px}
+  .badge-item{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+  .badge-circle{width:56px;height:56px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.04);transition:transform .15s}
+  .badge-circle:hover{transform:scale(1.05)}
+  .badge-circle svg{width:26px;height:26px}
+  
+  .badge-circle.teal{border:2px solid #00917C}
+  .badge-circle.teal svg{fill:#00917C;stroke:#00917C}
+  .badge-circle.orange{border:2px solid #F28C28}
+  .badge-circle.orange svg{fill:#F28C28;stroke:#F28C28}
+  .badge-circle.indigo{border:2px solid #5C6BC0}
+  .badge-circle.indigo svg{fill:#5C6BC0;stroke:#5C6BC0}
+  .badge-circle.green{border:2px solid #43A047}
+  .badge-circle.green svg{fill:#43A047;stroke:#43A047}
+
+  .badge-label{font-size:11px;font-weight:600;color:#1E3A38;line-height:1.2}
+
+  /* Aktivitas Terbaru */
+  .activity-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .act-item{background:#fff;border:1px solid #EAEFEF;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px}
+  .act-dot-wrap{width:28px;height:28px;border-radius:50%;background:#DDF1EC;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .act-dot{width:8px;height:8px;border-radius:50%;background:#00917C}
+  
+  .act-info{flex:1;display:flex;flex-direction:column;gap:2px}
+  .act-title{font-size:13px;font-weight:700;color:#1E3A38}
+  .act-time{font-size:11px;color:#78909C}
+  .act-pts{font-size:14px;font-weight:800;color:#00917C}
+
+  /* Bottom Navigation */
+  .nav{height:72px;background:#fff;border-top:1px solid #E8ECEB;padding-top:8px;display:flex;justify-content:space-around;align-items:flex-start;flex-shrink:0;z-index:20}
+  .nav .item{display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;cursor:pointer;text-decoration:none}
+  .nav .item .box{width:64px;height:34px;display:flex;align-items:center;justify-content:center}
+  .nav .item .pill{width:64px;height:34px;border-radius:17px;background:#DDF1EC;display:flex;align-items:center;justify-content:center}
+  .nav .item svg{width:22px;height:22px;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;fill:none;stroke:#7A8583}
+  .nav .item.active svg{stroke:#00917C}
+  .nav .item .lbl{font-size:11px;color:#7A8583}
+  .nav .item.active .lbl{font-weight:700;color:#00917C}
+  .nav .center .circle{width:48px;height:48px;border-radius:50%;background:#F28C28;display:flex;align-items:center;justify-content:center;margin-top:-4px;box-shadow:0 3px 10px rgba(242,140,40,0.35);transition:transform .15s}
+  .nav .center .circle:active{transform:scale(0.92)}
+  .nav .center .circle svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+  .homeind{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:130px;height:4px;background:#1E3A38;border-radius:999px;z-index:35}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="profile-scroll">
+    <!-- Header -->
+    <div class="profile-header">
+      <div class="status">
+        <span>09:41</span>
+        <div class="icons">
+          <svg viewBox="0 0 24 24"><path d="M2 17h3v4H2v-4zm5-4h3v8H7v-8zm5-4h3v12h-3V9zm5-4h3v16h-3V5z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/></svg>
+          <svg viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
+        </div>
+      </div>
+
+      <div class="header-title-row">
+        <h1 class="header-title">Profil</h1>
+        <button class="logout-btn" id="logoutBtn" title="Keluar">
+          <span>Keluar</span>
+          <svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/></svg>
+        </button>
+      </div>
+
+      <div class="user-info-row">
+        <div class="avatar-circle">
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="user-texts">
+          <div class="user-name" id="userName">Rina Maharani</div>
+          <div class="user-dept" id="userDept">Teknik Informatika · Angkatan 2023</div>
+          <div class="badge-ktm" id="badgeKtm">
+            <svg viewBox="0 0 24 24" style="width:10px;height:10px;stroke:#fff;fill:none;stroke-width:2.5"><path d="m5 12 4 4L19 6"/></svg>
+            <span>KTM Terverifikasi</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Green Points Card -->
+    <div class="green-card">
+      <div class="green-top">
+        <div>
+          <div class="green-lbl">Green Points</div>
+          <div class="green-points-wrap">
+            <span class="green-val" id="greenPointsVal">1.250</span>
+            <span class="green-unit">poin</span>
+          </div>
+        </div>
+        <div class="leaf-badge">
+          <svg viewBox="0 0 24 24"><path d="M20 4c-8 0-14 4-14 10a6 6 0 0 0 6 6c6 0 8-6 8-16Z"/><path d="M4 21c2-5 6-8 12-10"/></svg>
+        </div>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-labels">
+          <span class="level-curr" id="levelName">Circle Helper</span>
+          <span class="level-next" id="levelNext">250 poin lagi ke Campus Hero</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 Metrics Grid -->
+    <div class="stats-row">
+      <div class="stat-box">
+        <span class="stat-num" id="statDipinjamkan">12</span>
+        <span class="stat-txt">Dipinjamkan</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num" id="statDisewakan">8</span>
+        <span class="stat-txt">Disewakan</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num" id="statDipakaiUlang">5</span>
+        <span class="stat-txt">Dipakai ulang</span>
+      </div>
+    </div>
+
+    <!-- Section Lencana -->
+    <div class="sec-wrap">
+      <div class="sec-heading">Lencana</div>
+      <div class="badges-grid">
+        <div class="badge-item">
+          <div class="badge-circle teal">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <span class="badge-label">Pemula Hijau</span>
+        </div>
+
+        <div class="badge-item">
+          <div class="badge-circle orange">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <span class="badge-label">Dermawan</span>
+        </div>
+
+        <div class="badge-item">
+          <div class="badge-circle indigo">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <span class="badge-label">Pinjam 10x</span>
+        </div>
+
+        <div class="badge-item">
+          <div class="badge-circle green">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <span class="badge-label">Terpercaya</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section Aktivitas Terbaru -->
+    <div class="sec-wrap">
+      <div class="sec-heading">Aktivitas Terbaru</div>
+      <div class="activity-list" id="activityList">
+        <div class="act-item">
+          <div class="act-dot-wrap"><div class="act-dot"></div></div>
+          <div class="act-info">
+            <div class="act-title">Meminjamkan Modul Fisika</div>
+            <div class="act-time">Kemarin</div>
+          </div>
+          <div class="act-pts">+20</div>
+        </div>
+
+        <div class="act-item">
+          <div class="act-dot-wrap"><div class="act-dot"></div></div>
+          <div class="act-info">
+            <div class="act-title">Menyewakan Kalkulator</div>
+            <div class="act-time">3 hari lalu</div>
+          </div>
+          <div class="act-pts">+30</div>
+        </div>
+
+        <div class="act-item">
+          <div class="act-dot-wrap"><div class="act-dot"></div></div>
+          <div class="act-info">
+            <div class="act-title">Membeli Lampu Belajar bekas</div>
+            <div class="act-time">1 minggu lalu</div>
+          </div>
+          <div class="act-pts">+10</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="nav">
+    <a href="/beranda.html" class="item">
+      <div class="box">
+        <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/></svg>
+      </div>
+      <span class="lbl">Beranda</span>
+    </a>
+    <a href="/cari.html" class="item">
+      <div class="box">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      </div>
+      <span class="lbl">Cari</span>
+    </a>
+    <a href="/unggah.html" class="item center" aria-label="Unggah Barang">
+      <div class="circle">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+    </a>
+    <a href="/chat.html" class="item">
+      <div class="box">
+        <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-4-.9L3 21l1.7-4.4A8.4 8.4 0 1 1 21 11.5Z"/></svg>
+      </div>
+      <span class="lbl">Chat</span>
+    </a>
+    <a href="/profil.html" class="item active">
+      <div class="pill">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+      </div>
+      <span class="lbl">Profil</span>
+    </a>
+  </nav>
+
+  <div class="homeind"></div>
+</div>
+
+<script src="/js/profil.js"></script>
+</body>
+</html>
