@@ -12,7 +12,7 @@ router.get('/kos', (_req, res) => {
   const q = typeof _req.query.q === 'string' && _req.query.q.trim() !== '' ? `%${_req.query.q.trim()}%` : null;
   res.json(db.prepare(
     `SELECT k.*, m.nama AS nama_pemilik
-     FROM kos k JOIN mahasiswa m USING (id_mahasiswa)
+     FROM kos k JOIN mahasiswa m ON k.id_pemilik = m.id_mahasiswa
      WHERE (? IS NULL OR k.nama_kos LIKE ? OR k.alamat LIKE ?)
      ORDER BY k.id_kos DESC`
   ).all(q, q, q));
@@ -23,7 +23,7 @@ router.get('/kos/:id', (req, res) => {
   const id = posInt(Number(req.params.id), 'id_kos');
   const k = db.prepare(
     `SELECT k.*, m.nama AS nama_pemilik, m.email AS email_pemilik, m.no_hp AS no_hp_pemilik
-     FROM kos k JOIN mahasiswa m USING (id_mahasiswa)
+     FROM kos k JOIN mahasiswa m ON k.id_pemilik = m.id_mahasiswa
      WHERE k.id_kos=?`
   ).get(id);
   if (!k) throw err(404, 'kos tidak ada');
@@ -53,7 +53,7 @@ router.post('/kos', user, pemilikKost, (req, res) => {
 router.get('/kos/miliku', user, pemilikKost, (_req, res) => {
   res.json(db.prepare(
     `SELECT k.*, m.nama AS nama_pemilik
-     FROM kos k JOIN mahasiswa m USING (id_mahasiswa)
+     FROM kos k JOIN mahasiswa m ON k.id_pemilik = m.id_mahasiswa
      WHERE k.id_pemilik=?
      ORDER BY k.id_kos DESC`
   ).all(_req.uid));
