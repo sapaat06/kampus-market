@@ -5,138 +5,84 @@
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KampusCircle — Masuk</title>
-<style>
-  :root {
-    --primary: #007A68;
-    --primary-active: #006354;
-    --text-dark: #1E3A38;
-    --text-muted: #5F6B69;
-    --placeholder: #8A9492;
-    --card-bg: #F4F7F6;
-    --mint-bg: #DDF1EC;
-    --mint-text: #0B6B5B;
-    --error: #D64545;
-  }
-  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
-  *{box-sizing:border-box;margin:0;padding:0}
-  .phone{width:100%;max-width:440px;min-height:100vh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow-y:auto;padding:16px 20px 24px;font-family:inherit;box-shadow:0 0 24px rgba(0,0,0,0.08)}
-  .header{height:44px;display:flex;align-items:center;position:relative}
-  .back{width:44px;height:44px;min-width:44px;min-height:44px;border-radius:12px;background:var(--card-bg);display:flex;align-items:center;justify-content:center;border:none;outline:none;cursor:pointer}
-  .back:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
-  .back svg{width:20px;height:20px;stroke:var(--text-dark);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .logo{position:absolute;left:50%;transform:translateX(-50%);font-size:22px;font-weight:700}
-  .logo .k{color:var(--primary)} .logo .c{color:#F28C28}
-  .pill{margin-top:18px;display:inline-flex;align-items:center;gap:6px;background:var(--mint-bg);border-radius:999px;padding:6px 14px;align-self:flex-start}
-  .pill svg{width:14px;height:14px;stroke:var(--primary);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .pill span{font-size:12px;font-weight:700;color:var(--mint-text)}
-  .title{margin-top:12px;font-size:26px;font-weight:700;color:var(--text-dark);line-height:1.2;letter-spacing:-0.3px}
-  .sub{margin-top:8px;font-size:13px;color:var(--text-muted);line-height:1.45}
-  .field{margin-top:16px}
-  .label{font-size:13px;font-weight:700;color:var(--text-dark);margin-bottom:6px;display:block}
-  .inputbox{width:100%;height:48px;background:var(--card-bg);border:1.5px solid transparent;border-radius:14px;padding:0 12px 0 14px;display:flex;align-items:center;gap:10px}
-  .inputbox svg{width:20px;height:20px;stroke:var(--text-muted);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
-  .inputbox input{flex:1;border:none;outline:none;background:transparent;font-size:14px;color:var(--text-dark);font-family:inherit}
-  .inputbox input::placeholder{color:var(--placeholder);font-size:13px}
-  .inputbox:focus-within{border-color:var(--primary);background:#fff}
-  .inputbox.error{border-color:var(--error)}
-  .toggle{min-width:44px;min-height:44px;cursor:pointer;background:none;border:none;outline:none;padding:0;display:inline-flex;align-items:center;justify-content:center}
-  .toggle svg{width:20px;height:20px;stroke:var(--text-muted);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .toggle:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:8px}
-  .err{margin-top:6px;font-size:12px;color:var(--error);display:none}
-  .row{margin-top:12px;display:flex;justify-content:space-between;align-items:center}
-  .checkbox{display:inline-flex;align-items:center;gap:10px;min-height:44px;cursor:pointer;user-select:none}
-  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-  .box{width:20px;height:20px;border-radius:6px;border:1.5px solid #BAC4C2;background:#fff;display:flex;align-items:center;justify-content:center}
-  .checkbox input:checked + .box{background:var(--primary);border-color:var(--primary)}
-  .checkbox input:focus-visible + .box{outline:2px solid var(--primary);outline-offset:2px}
-  .box svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;display:none}
-  .checkbox input:checked + .box svg{display:block}
-  .remember{font-size:13px;color:var(--text-muted)}
-  .btn{margin-top:18px;width:100%;height:50px;background:var(--primary);border:none;outline:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-family:inherit}
-  .btn:active{background:var(--primary-active)}
-  .btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
-  .info{margin-top:18px;background:var(--mint-bg);border-radius:16px;padding:12px 14px;display:flex;gap:12px;align-items:center}
-  .info .iconbox{width:38px;height:38px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  .info .iconbox svg{width:20px;height:20px;stroke:var(--primary);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .info .t1{font-size:12px;font-weight:700;color:var(--mint-text)}
-  .info .t2{margin-top:2px;font-size:11px;color:var(--text-muted);line-height:1.4}
-  .sec{margin-top:16px;display:flex;align-items:center;justify-content:center;gap:6px}
-  .sec svg{width:14px;height:14px;stroke:var(--text-muted);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .sec span{font-size:12px;color:var(--text-muted)}
-  .bottom{margin-top:auto}
-  .sep{height:1px;background:#E8ECEB;width:100%;margin:16px 0 0}
-  .bottomrow{padding:10px 0 4px;text-align:center;font-size:13px;color:var(--text-muted)}
-  .bottomrow a{color:var(--primary);font-weight:700;text-decoration:none;cursor:pointer;display:inline-block;padding:8px 4px}
-  .bottomrow a:hover{text-decoration:underline}
-</style>
+<link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <div class="phone">
-  <div class="header">
-    <button class="back" id="backBtn" type="button" aria-label="Kembali"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
-    <div class="logo"><span class="k">Kampus</span><span class="c">Circle</span></div>
-  </div>
-
-  <div class="pill">
-    <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-    <span>Kembali ke lingkaranmu</span>
-  </div>
-
-  <div class="title">Senang kamu kembali!</div>
-  <div class="sub">Masuk untuk cari kebutuhan kuliah dan berbagi<br>dengan teman kampusmu.</div>
-
-  <form id="loginForm" novalidate>
-  <div class="field">
-    <label class="label" for="email">Email</label>
-    <div class="inputbox" id="emailBox">
-      <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
-      <input id="email" type="email" placeholder="Masukkan email kamu" autocomplete="email" aria-required="true" aria-invalid="false" aria-describedby="emailErr">
-    </div>
-    <div class="err" id="emailErr" role="alert">Masukkan email yang valid.</div>
-  </div>
-
-  <div class="field">
-    <label class="label" for="pass">Kata sandi</label>
-    <div class="inputbox" id="passBox">
-      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      <input id="pass" type="password" placeholder="Masukkan kata sandi" autocomplete="current-password" aria-required="true" aria-invalid="false" aria-describedby="passErr">
-      <button class="toggle" id="togglePass" type="button" aria-label="Tampilkan kata sandi"><svg id="eyeIcon" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
-    </div>
-    <div class="err" id="passErr" role="alert">Kata sandi minimal 8 karakter.</div>
-  </div>
-
-  <div class="row">
-    <label class="checkbox" id="rememberWrap" for="rememberBox">
-      <input type="checkbox" id="rememberBox" class="sr-only">
-      <span class="box" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span>
-      <span class="remember">Ingat saya</span>
-    </label>
-  </div>
-
-  <button class="btn" id="loginBtn" type="submit">
-    Masuk
-    <svg viewBox="0 0 24 24" width="18" height="18" stroke="#fff" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-  </button>
-  </form>
-
-  <div class="info">
-    <div class="iconbox">
-      <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 22l7.8-8.6 1-1a5.5 5.5 0 000-7.8z"/></svg>
-    </div>
-    <div>
-      <div class="t1">Kebutuhan kuliah, lebih hemat.</div>
-      <div class="t2">Beli, sewa, atau pinjam barang dari teman<br>satu kampus.</div>
+  <div class="status-bar">
+    <span>09.41</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.95 9.05 8.05 9.05 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
     </div>
   </div>
 
-  <div class="sec">
-    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-    <span>Akunmu aman, berbagi jadi nyaman.</span>
-  </div>
+  <div class="auth-wrap">
+    <div class="brand-top-bar">
+      <div class="brand-logo-text">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="#008F83" style="margin-right:2px">
+          <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm0 8.5L4.5 9 12 4.91 19.5 9 12 11.5z"/>
+        </svg>
+        <span class="brand-teal">Kampus</span><span class="brand-orange">Circle</span>
+      </div>
+      <button id="backBtn" type="button" aria-label="Kembali" style="border:none;background:transparent;cursor:pointer;color:var(--text-dark);display:flex;align-items:center">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </button>
+    </div>
 
-  <div class="bottom">
-    <div class="sep"></div>
-    <div class="bottomrow">Belum punya akun? <a id="daftarLink" href="/verifikasi.html">Daftar sekarang</a></div>
+    <div class="pill-badge">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      <span>Kembali ke lingkaranmu</span>
+    </div>
+
+    <h1 class="auth-title">Senang kamu kembali!</h1>
+    <p class="auth-sub">Masuk untuk cari kebutuhan kuliah dan berbagi dengan teman kampusmu.</p>
+
+    <form id="loginForm" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="email">Email</label>
+        <div class="form-input-box" id="emailBox">
+          <input id="email" type="email" placeholder="Masukkan email kamu" autocomplete="email" aria-required="true" aria-invalid="false">
+        </div>
+        <div class="err" id="emailErr" style="font-size:12px;color:#EF4444;display:none">Masukkan email yang valid.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="pass">Kata sandi</label>
+        <div class="form-input-box" id="passBox">
+          <input id="pass" type="password" placeholder="Masukkan kata sandi" autocomplete="current-password" aria-required="true" aria-invalid="false">
+          <button id="togglePass" type="button" aria-label="Tampilkan kata sandi" style="border:none;background:transparent;cursor:pointer;padding:0;display:flex;align-items:center;color:#64748B">
+            <svg id="eyeIcon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+        <div class="err" id="passErr" style="font-size:12px;color:#EF4444;display:none">Kata sandi minimal 8 karakter.</div>
+      </div>
+
+      <div class="form-row-between">
+        <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;color:#64748B">
+          <input type="checkbox" id="rememberBox" style="width:16px;height:16px;accent-color:#008F83">
+          <span>Ingat saya</span>
+        </label>
+        <a href="#" class="link-forgot" onclick="alert('Silakan hubungi admin kampus untuk reset password.');return false;">Lupa kata sandi?</a>
+      </div>
+
+      <button id="loginBtn" class="btn-primary" type="submit">Masuk</button>
+    </form>
+
+    <div class="info-banner-mint">
+      <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <div>
+        <div class="t1">Kebutuhan kuliah, lebih hemat.</div>
+        <div class="t2">Beli, sewa, atau pinjam barang dari teman satu kampus.</div>
+      </div>
+    </div>
+
+    <div class="auth-trust-note">Akunmu aman, berbagi jadi nyaman.</div>
+
+    <button id="daftarLink" class="btn-ghost" onclick="location.href='/verifikasi.html'" type="button">Belum punya akun? Daftar sekarang</button>
+
+    <div class="home-indicator-bar"></div>
   </div>
 </div>
 <script src="/js/masuk.js"></script>
