@@ -67,3 +67,10 @@ export const userOrAdmin = (req, res, next) => {
   }
   return user(req, res, next);
 };
+
+export const pemilikKost = (req, res, next) => {
+  if (!req.uid) return next(err(401, 'login dulu'));
+  const m = db.prepare('SELECT role FROM mahasiswa WHERE id_mahasiswa=?').get(req.uid);
+  if (!m || m.role !== 'pemilik_kost') return next(err(403, 'khusus pemilik kost'));
+  next();
+};

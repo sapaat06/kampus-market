@@ -65,7 +65,7 @@ assert.equal((await call('GET', '/api/nope')).s, 404);
 assert.equal((await call('POST', '/api/register', { nama: 'Budi', email: 'b@x.id', password: 'short' })).s, 400);
 assert.equal((await call('POST', '/api/register', { nama: 'Budi', email: 'b@x.id', password: 12345678 })).s, 400);
 assert.equal((await call('POST', '/api/register', { nama: 'Budi', email: 'bukan-email', password: 'rahasia123' })).s, 400);
-const daftar = await call('POST', '/api/register', { nama: 'Budi', email: 'b@x.id', password: 'rahasia123' });
+const daftar = await call('POST', '/api/register', { nama: 'Budi', email: 'b@x.id', password: 'rahasia123', kampus: 'Institut Teknologi Garut', ktm: 'data:image/jpeg;base64,AAAA' });
 assert.equal(daftar.s, 201);
 assert.match(daftar.cookies[0] ?? '', /HttpOnly/i);
 assert.match(daftar.cookies[0] ?? '', /SameSite=Strict/i);
@@ -77,13 +77,11 @@ assert.equal((await call('POST', '/api/login', { email: 'b@x.id', password: 1234
 const login = await call('POST', '/api/login', { email: 'B@X.ID', password: 'rahasia123' });
 assert.equal(login.s, 200);
 
-// test reset password
-assert.equal((await call('POST', '/api/reset-password', { email: 'tidakada@x.id', password_baru: 'passwordbaru123' })).s, 404);
-assert.equal((await call('POST', '/api/reset-password', { email: 'b@x.id', password_baru: 'pendek' })).s, 400);
-const rPass = await call('POST', '/api/reset-password', { email: 'b@x.id', password_baru: 'passwordbaru123' });
-assert.equal(rPass.s, 200);
-assert.equal((await call('POST', '/api/login', { email: 'b@x.id', password: 'rahasia123' })).s, 401); // password lama gugur
-const loginBaru = await call('POST', '/api/login', { email: 'b@x.id', password: 'passwordbaru123' });
+// P0: atur ulang kata sandi tanpa verifikasi dinonaktifkan.
+// Password lama harus tetap berlaku dan tidak ada yang bisa diganti dari luar.
+assert.equal((await call('POST', '/api/reset-password', { email: 'b@x.id', password_baru: 'passwordbaru123' })).s, 503);
+assert.equal((await call('POST', '/api/login', { email: 'b@x.id', password: 'rahasia123' })).s, 200);
+const loginBaru = await call('POST', '/api/login', { email: 'b@x.id', password: 'rahasia123' });
 assert.equal(loginBaru.s, 200);
 assert.match(login.cookies[0] ?? '', /HttpOnly/i);
 const { token } = login.j;
@@ -106,8 +104,8 @@ assert.equal(bad.status, 400);
 assert.deepEqual(await bad.json(), { error: 'JSON tidak valid' });
 
 // CSRF: origin lain ditolak, origin sendiri lolos
-assert.equal((await call('POST', '/api/login', { email: 'b@x.id', password: 'passwordbaru123' }, { origin: 'http://evil.com' })).s, 403);
-assert.equal((await call('POST', '/api/login', { email: 'b@x.id', password: 'passwordbaru123' }, { origin: base })).s, 200);
+assert.equal((await call('POST', '/api/login', { email: 'b@x.id', password: 'rahasia123' }, { origin: 'http://evil.com' })).s, 403);
+assert.equal((await call('POST', '/api/login', { email: 'b@x.id', password: 'rahasia123' }, { origin: base })).s, 200);
 
 // logout menghapus cookie
 const keluar = await call('POST', '/api/logout', null, C);
@@ -136,6 +134,8 @@ assert.equal((await call('PATCH', '/api/transaksi/1/selesai', null, A)).s, 409);
 assert.equal((await call('GET', '/api/barang')).j.length, 1);
 const me = (await call('GET', '/api/saya', null, U)).j;
 assert.equal(me.green_points, 1);
+assert.equal(me.kampus, 'Institut Teknologi Garut');
+assert.equal(me.ktm, 'data:image/jpeg;base64,AAAA');
 assert.equal(me.password_hash, undefined);
 
 // beli 100.000 = 10 poin, barang terjual permanen

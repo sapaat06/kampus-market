@@ -9,7 +9,7 @@ export const router = Router();
 // Smart Emulator. harga_acuan = harga barang baru di pasar.
 router.post('/estimasi', user, (req, res) => {
   const id_barang = posInt(req.body?.id_barang, 'id_barang');
-  const jenis = oneOf(req.body?.jenis_transaksi, 'jenis_transaksi', ['sewa', 'beli']);
+  const jenis = oneOf(req.body?.jenis_transaksi, 'jenis_transaksi', ['sewa', 'beli', 'pinjam']);
   const harga_acuan = posInt(req.body?.harga_acuan, 'harga_acuan', 1_000_000_000_000);
   const b = db.prepare('SELECT kondisi FROM barang WHERE id_barang=?').get(id_barang);
   if (!b) throw err(404, 'barang tidak ada');

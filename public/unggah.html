@@ -2,107 +2,144 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KampusCircle — Unggah Barang</title>
+<title>CampusCircle — Unggah Barang</title>
 <style>
-  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif}
+  @font-face {
+    font-family: 'Poppins';
+    src: url('/fonts/poppins-400.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Poppins';
+    src: url('/fonts/poppins-500.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Poppins';
+    src: url('/fonts/poppins-600.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Poppins';
+    src: url('/fonts/poppins-700.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  :root {
+    --primary: #007A68;
+    --primary-active: #006354;
+    --text-dark: #1E3A38;
+    --text-muted: #7A8583;
+    --placeholder: #8A9492;
+    --orange: #F28C28;
+    --mint-bg: #DDF1EC;
+    --peach-bg: #FFF0DB;
+    --border-light: #E3E8E7;
+    --card-bg: #F4F7F6;
+  }
+
+  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Poppins',system-ui,-apple-system,sans-serif}
   *{box-sizing:border-box;margin:0;padding:0}
-  .phone{width:100%;max-width:440px;height:100vh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08)}
+  .phone{width:100%;max-width:440px;height:100vh;height:100dvh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08)}
 
   /* Status Bar */
-  .status{height:24px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#1E3A38;flex-shrink:0}
+  .status{height:24px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;color:var(--text-dark);flex-shrink:0;margin-top:6px}
   .status .icons{display:flex;gap:6px;align-items:center}
-  .status svg{width:14px;height:14px;fill:#1E3A38}
+  .status svg{width:14px;height:14px;fill:var(--text-dark)}
 
   /* Header */
-  .header{height:54px;padding:0 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
-  .back-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center}
-  .back-btn svg{width:22px;height:22px;stroke:#1E3A38;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-  .header-title{font-size:17px;font-weight:700;color:#1E3A38}
+  .header{height:50px;padding:0 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+  .back-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+  .back-btn:hover{background:var(--card-bg)}
+  .back-btn svg{width:22px;height:22px;stroke:var(--text-dark);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .header-title{font-size:18px;font-weight:700;color:var(--text-dark)}
 
   /* Scrollable Form Content */
-  .form-scroll{flex:1;overflow-y:auto;padding:10px 20px 24px;display:flex;flex-direction:column;gap:16px;scrollbar-width:none}
+  .form-scroll{flex:1;overflow-y:auto;padding:8px 20px 24px;display:flex;flex-direction:column;gap:14px;scrollbar-width:none}
   .form-scroll::-webkit-scrollbar{display:none}
 
   /* Photo Upload Box */
-  .upload-box{background:#E8F5F3;border:1.5px solid #00917C;border-radius:20px;padding:22px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;transition:background .15s}
+  .upload-box{background:#E8F5F3;border:1.5px dashed var(--primary);border-radius:18px;padding:22px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;transition:background .15s}
   .upload-box:hover{background:#DDF1EC}
   .plus-circle{width:44px;height:44px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
-  .plus-circle svg{width:22px;height:22px;stroke:#00917C;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-  .upload-text{font-size:13px;font-weight:600;color:#00695C}
+  .plus-circle svg{width:22px;height:22px;stroke:var(--primary);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+  .upload-text{font-size:13px;font-weight:600;color:var(--primary)}
   .file-input{display:none}
 
   /* Photo Preview */
-  .photo-preview{display:none;width:100%;height:130px;border-radius:16px;overflow:hidden;position:relative;background:#F6F8FA;align-items:center;justify-content:center}
-  .photo-preview svg{width:64px;height:64px}
-  .remove-photo{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(30,58,56,0.65);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .photo-preview{display:none;width:100%;height:160px;border-radius:18px;overflow:hidden;position:relative;background:var(--card-bg);border:1.5px solid var(--border-light);align-items:center;justify-content:center}
+  .photo-preview img{width:100%;height:160px;object-fit:cover;display:block}
+  .remove-photo{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:rgba(30,58,56,0.75);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1}
 
   /* Form Controls */
   .form-group{display:flex;flex-direction:column;gap:6px}
-  .form-label{font-size:13px;font-weight:700;color:#1E3A38}
-  .form-input{height:46px;border-radius:12px;border:1px solid #E3E8E7;background:#F9FBFA;padding:0 14px;font-size:13px;color:#1E3A38;outline:none;font-family:inherit;transition:border-color .15s}
-  .form-input:focus{border-color:#00917C;background:#fff}
+  .form-label{font-size:13px;font-weight:700;color:var(--text-dark)}
+  .form-input{height:46px;border-radius:12px;border:1.5px solid var(--border-light);background:#fff;padding:0 14px;font-size:13px;color:var(--text-dark);outline:none;font-family:inherit;transition:border-color .15s}
+  .form-input:focus{border-color:var(--primary)}
 
   .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .form-select{height:46px;border-radius:12px;border:1px solid #E3E8E7;background:#F9FBFA;padding:0 12px;font-size:13px;color:#1E3A38;outline:none;font-family:inherit;cursor:pointer}
+  .form-select{height:46px;border-radius:12px;border:1.5px solid var(--border-light);background:#fff;padding:0 12px;font-size:13px;font-weight:600;color:var(--text-dark);outline:none;font-family:inherit;cursor:pointer}
 
   /* Transaction Mode Chips */
   .chips-row{display:flex;gap:8px}
-  .type-chip{flex:1;height:38px;border-radius:999px;border:1.5px solid #E3E8E7;background:#fff;font-size:13px;font-weight:700;color:#1E3A38;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
-  .type-chip.active{background:#F28C28;border-color:#F28C28;color:#fff;box-shadow:0 2px 6px rgba(242,140,40,0.25)}
+  .type-chip{flex:1;height:38px;border-radius:999px;border:1.5px solid var(--border-light);background:#fff;font-size:13px;font-weight:700;color:var(--text-dark);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-family:inherit}
+  .type-chip.active{background:var(--orange);border-color:var(--orange);color:#fff;box-shadow:0 2px 6px rgba(242,140,40,0.25)}
 
   /* Smart Price Estimator Card */
-  .smart-price-card{background:#00897B;border-radius:20px;padding:18px 20px;color:#fff;display:flex;flex-direction:column;gap:12px;box-shadow:0 4px 16px rgba(0,137,123,0.25);transition:opacity .2s}
+  .smart-price-card{background:var(--primary);border-radius:20px;padding:16px 18px;color:#fff;display:flex;flex-direction:column;gap:10px;box-shadow:0 4px 16px rgba(0,122,104,0.25);transition:opacity .2s}
   .smart-top{display:flex;align-items:center;gap:10px}
   .sparkle-badge{width:32px;height:32px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  .sparkle-badge svg{width:18px;height:18px;fill:#F28C28;stroke:#F28C28}
+  .sparkle-badge svg{width:18px;height:18px;fill:var(--orange);stroke:var(--orange)}
   .smart-title{font-size:14px;font-weight:700;color:#fff}
-  .smart-sub{font-size:11px;color:#D0EBE8}
+  .smart-sub{font-size:11px;color:rgba(255,255,255,0.85)}
 
   .smart-price-val{font-size:22px;font-weight:800;letter-spacing:-0.3px}
-  .smart-subline{font-size:12px;color:#E0F2F1;margin-top:-6px}
+  .smart-subline{font-size:12px;color:rgba(255,255,255,0.9);margin-top:-6px}
 
   /* Slider graphic */
   .slider-box{display:flex;flex-direction:column;gap:6px;margin-top:2px}
   .slider-bar-wrap{position:relative;height:8px;background:rgba(255,255,255,0.25);border-radius:999px;display:flex;align-items:center}
-  .slider-active-range{position:absolute;left:25%;right:25%;height:8px;background:#F28C28;border-radius:999px}
+  .slider-active-range{position:absolute;left:25%;right:25%;height:8px;background:var(--orange);border-radius:999px}
   .slider-thumb{position:absolute;left:50%;top:50%;transform:translate(-50%, -50%);width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
-  .slider-labels{display:flex;justify-content:space-between;font-size:11px;color:#D0EBE8;font-weight:600}
+  .slider-labels{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,0.8);font-weight:600}
 
   /* User Price Input */
-  .price-input-wrap{position:relative}
-  .price-input-custom{border:1.5px solid #00917C;background:#fff;font-weight:700;color:#1E3A38}
+  .price-input-custom{border:1.5px solid var(--primary);font-weight:700;color:var(--text-dark)}
 
   /* Submit Button */
-  .submit-btn{height:52px;border-radius:20px;background:#00917C;color:#fff;border:none;outline:none;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,145,124,0.3);margin-top:4px;transition:background .15s, transform .15s}
-  .submit-btn:active{transform:scale(0.98);background:#007A68}
+  .submit-btn{height:50px;border-radius:18px;background:var(--primary);color:#fff;border:none;outline:none;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,122,104,0.3);margin-top:6px;transition:background .15s, transform .15s;font-family:inherit}
+  .submit-btn:active{transform:scale(0.98);background:var(--primary-active)}
 
-  .homeind{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:130px;height:4px;background:#1E3A38;border-radius:999px;z-index:35}
-
-  /* Toast */
   .toast{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:rgba(30,58,56,0.92);color:#fff;padding:8px 18px;border-radius:999px;font-size:12px;font-weight:600;z-index:60;display:none;align-items:center;gap:6px}
 </style>
 </head>
 <body>
 
 <div class="phone">
-  <!-- Toast -->
   <div class="toast" id="toastMsg">
     <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.2"><path d="m5 12 4 4L19 6"/></svg>
     <span id="toastText">Barang berhasil ditayangkan!</span>
   </div>
 
-  <!-- Status Bar -->
   <div class="status">
     <span>09:41</span>
     <div class="icons">
-      <svg viewBox="0 0 24 24"><path d="M2 17h3v4H2v-4zm5-4h3v8H7v-8zm5-4h3v12h-3V9zm5-4h3v16h-3V5z"/></svg>
-      <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/></svg>
-      <svg viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.95 9.05 8.05 9.05 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
     </div>
   </div>
 
-  <!-- Header -->
   <div class="header">
     <button class="back-btn" id="backBtn" aria-label="Kembali">
       <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
@@ -110,56 +147,56 @@
     <h1 class="header-title">Unggah Barang</h1>
   </div>
 
-  <!-- Scrollable Form -->
   <div class="form-scroll">
     <!-- Photo Upload Box -->
     <div class="upload-box" id="uploadBox">
       <div class="plus-circle">
         <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
       </div>
-      <div class="upload-text">Tambah foto barang (maks. 5)</div>
-      <input type="file" id="fileInput" class="file-input" accept="image/*">
+      <div class="upload-text" id="uploadText">Tambah foto barang (1 – 3 foto, min. 1)</div>
     </div>
-
-    <!-- Photo Preview Area -->
-    <div class="photo-preview" id="photoPreview">
-      <svg viewBox="0 0 160 200" fill="none" style="width:70px;height:90px">
-        <rect x="25" y="15" width="110" height="170" rx="20" fill="#263238"/>
-        <rect x="40" y="30" width="80" height="42" rx="8" fill="#C2E2DD"/>
-        <circle cx="52" cy="95" r="9" fill="#ECEFF1"/>
-        <circle cx="80" cy="95" r="9" fill="#ECEFF1"/>
-        <circle cx="108" cy="95" r="9" fill="#ECEFF1"/>
-        <circle cx="52" cy="120" r="9" fill="#ECEFF1"/>
-        <circle cx="80" cy="120" r="9" fill="#ECEFF1"/>
-        <circle cx="108" cy="120" r="9" fill="#ECEFF1"/>
-        <circle cx="52" cy="145" r="9" fill="#ECEFF1"/>
-        <circle cx="80" cy="145" r="9" fill="#ECEFF1"/>
-        <circle cx="108" cy="145" r="9" fill="#F28C28"/>
-      </svg>
-      <button class="remove-photo" id="removePhotoBtn">&times;</button>
-    </div>
+    <input type="file" id="photoInput" accept="image/*" multiple hidden>
+    <div id="photoPreviewList" style="display:flex;flex-direction:row;gap:10px;flex-wrap:wrap"></div>
 
     <!-- Nama Barang -->
     <div class="form-group">
-      <label class="form-label">Nama Barang</label>
-      <input type="text" class="form-input" id="namaBarang" value="" placeholder="Misal: Kalkulator Scientific, Buku Kalkulus, Jas Lab">
+      <label class="form-label" for="namaBarang">Nama Barang</label>
+      <input type="text" class="form-input" id="namaBarang" placeholder="Misal: Kalkulator Scientific Casio, Modul Kalkulus, Jas Lab">
+    </div>
+
+    <!-- Lokasi Pemilik (Point 6: Untuk estimasi jarak) -->
+    <div class="form-group">
+      <label class="form-label" for="lokasiBarang">Lokasi Pemilik / Kampus</label>
+      <input type="text" class="form-input" id="lokasiBarang" placeholder="Misal: Fakultas Teknik, Gedung C, Kos Dekat ITG" value="Fakultas Teknik, ITG">
+    </div>
+
+    <!-- Koordinat Lokasi (Latitude & Longitude untuk estimasi jarak) -->
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="lokasiLat">Latitude</label>
+        <input type="number" class="form-input" id="lokasiLat" step="any" placeholder="-6.89" value="-6.8950">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="lokasiLng">Longitude</label>
+        <input type="number" class="form-input" id="lokasiLng" step="any" placeholder="107.61" value="107.6100">
+      </div>
     </div>
 
     <!-- Kategori & Kondisi -->
     <div class="grid-2">
       <div class="form-group">
-        <label class="form-label">Kategori</label>
+        <label class="form-label" for="kategoriSelect">Kategori</label>
         <select class="form-select" id="kategoriSelect">
           <option value="1">Elektronik</option>
           <option value="2">Buku & Modul</option>
           <option value="4">Alat Praktikum</option>
           <option value="5">Olahraga</option>
-          <option value="3">Kos & Kamar</option>
+          <option value="3">Perabot Kos</option>
         </select>
       </div>
 
       <div class="form-group">
-        <label class="form-label">Kondisi</label>
+        <label class="form-label" for="kondisiSelect">Kondisi</label>
         <select class="form-select" id="kondisiSelect">
           <option value="baru">Seperti baru</option>
           <option value="baik" selected>Baik</option>
@@ -189,7 +226,7 @@
           <div class="smart-title">Smart Price Estimator</div>
           <div class="smart-sub" id="smartPriceSub">Rekomendasi harga sewa</div>
         </div>
-        <button type="button" id="btnPakaiIdeal" style="background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;cursor:pointer">Pakai Ideal</button>
+        <button type="button" id="btnPakaiIdeal" style="background:rgba(255,255,255,0.22);border:none;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;cursor:pointer">Pakai Ideal</button>
       </div>
 
       <div class="smart-price-val" id="smartPriceRange">Rp4.000 – Rp6.000</div>
@@ -210,20 +247,17 @@
     <!-- Harga Input -->
     <div class="form-group" id="hargaGroup">
       <label class="form-label" id="hargaLabel">Harga Sewa Kamu (per hari)</label>
-      <input type="number" class="form-input price-input-custom" id="hargaInput" value="" placeholder="Masukkan harga sewa (misal: 5000)">
+      <input type="number" class="form-input price-input-custom" id="hargaInput" placeholder="Masukkan harga sewa (misal: 5000)">
     </div>
 
     <!-- Deskripsi Opsional -->
     <div class="form-group">
-      <label class="form-label">Deskripsi (Opsional)</label>
-      <input type="text" class="form-input" id="deskripsiInput" value="" placeholder="Jelaskan kondisi dan kelengkapan barang...">
+      <label class="form-label" for="deskripsiInput">Deskripsi (Opsional)</label>
+      <input type="text" class="form-input" id="deskripsiInput" placeholder="Jelaskan kondisi dan kelengkapan barang...">
     </div>
 
-    <!-- Submit CTA -->
     <button type="button" class="submit-btn" id="submitBtn">Tayangkan Barang</button>
   </div>
-
-  <div class="homeind"></div>
 </div>
 
 <script src="/js/unggah.js"></script>

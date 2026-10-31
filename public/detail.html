@@ -2,122 +2,184 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KampusCircle — Detail Barang</title>
+<title>CampusCircle — Detail Barang</title>
 <style>
-  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif}
+  @font-face {
+    font-family: 'Poppins';
+    src: url('/fonts/poppins-400.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Poppins';
+    src: url('/fonts/poppins-500.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Poppins';
+    src: url('/fonts/poppins-600.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Poppins';
+    src: url('/fonts/poppins-700.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  :root {
+    --primary: #007A68;
+    --primary-active: #006354;
+    --text-dark: #1E3A38;
+    --text-muted: #7A8583;
+    --placeholder: #8A9492;
+    --orange: #F28C28;
+    --mint-bg: #DDF1EC;
+    --mint-text: #0B6B5B;
+    --peach-bg: #FFF0DB;
+    --lav-bg: #EDEAF7;
+    --lav-text: #5C4BA5;
+    --border-light: #E3E8E7;
+    --card-bg: #F4F7F6;
+  }
+
+  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Poppins',system-ui,-apple-system,sans-serif}
   *{box-sizing:border-box;margin:0;padding:0}
-  .phone{width:100%;max-width:440px;height:100vh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08)}
+  .phone{width:100%;max-width:440px;height:100vh;height:100dvh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08)}
   
   /* Hero Carousel Section */
   .hero-area{position:relative;background:#EEF3F6;height:290px;flex-shrink:0;display:flex;flex-direction:column;justify-content:space-between;padding:12px 16px 14px}
   
-  .status{height:20px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#1E3A38}
+  .status{height:20px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;color:var(--text-dark)}
   .status .icons{display:flex;gap:6px;align-items:center}
-  .status svg{width:14px;height:14px;fill:#1E3A38}
+  .status svg{width:14px;height:14px;fill:var(--text-dark)}
 
   .nav-buttons{display:flex;justify-content:space-between;align-items:center;margin-top:6px;z-index:5}
   .icon-btn{width:40px;height:40px;border-radius:50%;background:#fff;border:none;outline:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06);transition:transform .15s}
   .icon-btn:active{transform:scale(0.92)}
-  .icon-btn svg{width:20px;height:20px;stroke:#1E3A38;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-  .icon-btn.heart svg{stroke:#F28C28;fill:none}
-  .icon-btn.heart.favorited svg{fill:#F28C28;stroke:#F28C28}
+  .icon-btn svg{width:20px;height:20px;stroke:var(--text-dark);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .icon-btn.heart svg{stroke:var(--orange);fill:none}
+  .icon-btn.heart.favorited svg{fill:var(--orange);stroke:var(--orange)}
 
-  .hero-img-wrap{flex:1;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer}
+  .hero-img-wrap{flex:1;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;overflow:hidden;border-radius:18px}
+  .hero-img-wrap img{width:100%;height:100%;object-fit:cover;border-radius:18px;transition:opacity .2s}
+  .carousel-arrow{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.85);border:none;color:var(--text-dark);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:6;box-shadow:0 2px 6px rgba(0,0,0,0.15);transition:background .15s}
+  .carousel-arrow:hover{background:#fff}
+  .carousel-arrow.prev{left:10px}
+  .carousel-arrow.next{right:10px}
+  .carousel-counter{position:absolute;bottom:10px;right:12px;background:rgba(30,58,56,0.78);color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;z-index:6}
   .carousel-dots{display:flex;gap:8px;justify-content:center;align-items:center;z-index:5}
   .dot{width:8px;height:8px;border-radius:50%;background:#CFD8DC;transition:background .2s, width .2s;cursor:pointer}
-  .dot.active{background:#00917C;width:18px;border-radius:999px}
+  .dot.active{background:var(--primary);width:18px;border-radius:999px}
+
+  .thumb-strip{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none}
+  .thumb-strip::-webkit-scrollbar{display:none}
+  .thumb-strip-item{width:56px;height:56px;border-radius:12px;overflow:hidden;border:2px solid transparent;cursor:pointer;flex-shrink:0;transition:border-color .15s, transform .15s}
+  .thumb-strip-item img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb-strip-item.active{border-color:var(--primary);transform:scale(1.05);box-shadow:0 2px 6px rgba(0,122,104,0.25)}
 
   /* Content Sheet */
-  .content{flex:1;background:#fff;border-top-left-radius:28px;border-top-right-radius:28px;margin-top:-20px;position:relative;z-index:10;padding:22px 20px 84px;overflow-y:auto;scrollbar-width:none}
+  .content{flex:1;background:#fff;border-top-left-radius:28px;border-top-right-radius:28px;margin-top:-20px;position:relative;z-index:10;padding:22px 20px 88px;overflow-y:auto;scrollbar-width:none}
   .content::-webkit-scrollbar{display:none}
 
-  .badges-row{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+  .badges-row{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
   .badge-chip{height:26px;padding:0 14px;border-radius:999px;font-size:12px;font-weight:700;display:inline-flex;align-items:center}
-  .badge-chip.sewa{background:#F28C28;color:#fff}
-  .badge-chip.beli{background:#00917C;color:#fff}
-  .badge-chip.pinjam{background:#5C6BC0;color:#fff}
-  .badge-chip.kondisi{background:#DDF1EC;color:#00917C}
+  .badge-chip.sewa{background:var(--orange);color:#fff}
+  .badge-chip.beli{background:var(--primary);color:#fff}
+  .badge-chip.pinjam{background:var(--lav-bg);color:var(--lav-text)}
+  .badge-chip.kondisi{background:var(--mint-bg);color:var(--primary)}
 
-  .item-title{font-size:19px;font-weight:800;color:#1E3A38;line-height:1.35;margin-bottom:12px}
+  .item-title{font-size:20px;font-weight:700;color:var(--text-dark);line-height:1.3;margin-bottom:10px}
   
   .price-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
   .price-box{display:flex;align-items:baseline;gap:5px}
-  .price-val{font-size:22px;font-weight:800;color:#F28C28}
-  .price-unit{font-size:13px;color:#7A8583;font-weight:500}
+  .price-val{font-size:22px;font-weight:800;color:var(--orange)}
+  .price-val.pinjam{color:var(--primary)}
+  .price-val.beli{color:var(--text-dark)}
+  .price-unit{font-size:13px;color:var(--text-muted);font-weight:600}
   
   .badge-fair{background:#E0F2F1;color:#00695C;font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:5px}
   .badge-fair svg{width:14px;height:14px;stroke:#00695C;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 
   /* 3 Stat Cards */
   .stats-grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;margin-bottom:20px}
-  .stat-card{background:#F6F8FA;border-radius:14px;padding:12px 10px;display:flex;flex-direction:column;gap:4px}
-  .stat-lbl{font-size:11px;color:#7A8583;font-weight:500}
-  .stat-val{font-size:13px;font-weight:700;color:#1E3A38;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stat-card{background:var(--card-bg);border-radius:14px;padding:12px 10px;display:flex;flex-direction:column;gap:4px}
+  .stat-lbl{font-size:11px;color:var(--text-muted);font-weight:500}
+  .stat-val{font-size:13px;font-weight:700;color:var(--text-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
   /* Description Section */
   .desc-sec{margin-bottom:22px}
-  .desc-title{font-size:14px;font-weight:700;color:#1E3A38;margin-bottom:6px}
+  .desc-title{font-size:14px;font-weight:700;color:var(--text-dark);margin-bottom:6px}
   .desc-body{font-size:13px;color:#5E6E6B;line-height:1.55}
 
   /* Owner Card */
-  .owner-card{border:1px solid #E3E8E7;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:16px;cursor:pointer;transition:background .15s}
+  .owner-card{border:1px solid var(--border-light);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:16px;cursor:pointer;transition:background .15s}
   .owner-card:hover{background:#F9FBFA}
-  .owner-avatar{width:46px;height:46px;border-radius:50%;background:#DDF1EC;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  .owner-avatar svg{width:26px;height:26px;stroke:#00917C;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .owner-avatar{width:46px;height:46px;border-radius:50%;background:var(--mint-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .owner-avatar svg{width:26px;height:26px;stroke:var(--primary);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .owner-info{flex:1;display:flex;flex-direction:column;gap:3px}
   .owner-name-row{display:flex;align-items:center;gap:6px}
-  .owner-name{font-size:14px;font-weight:700;color:#1E3A38}
-  .verified-badge{width:16px;height:16px;border-radius:50%;background:#00917C;display:inline-flex;align-items:center;justify-content:center}
+  .owner-name{font-size:14px;font-weight:700;color:var(--text-dark)}
+  .verified-badge{width:16px;height:16px;border-radius:50%;background:var(--primary);display:inline-flex;align-items:center;justify-content:center}
   .verified-badge svg{width:10px;height:10px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-  .owner-sub{font-size:12px;color:#7A8583;display:flex;align-items:center;gap:6px}
-  .rating{color:#1E3A38;font-weight:700;display:inline-flex;align-items:center;gap:2px}
-  .rating svg{width:12px;height:12px;fill:#F28C28;stroke:#F28C28}
+  .owner-sub{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px}
+  .rating{color:var(--text-dark);font-weight:700;display:inline-flex;align-items:center;gap:2px}
+  .rating svg{width:12px;height:12px;fill:var(--orange);stroke:var(--orange)}
 
   /* Bottom Fixed Action Bar */
-  .action-bar{position:absolute;bottom:0;left:0;right:0;height:76px;background:#fff;border-top:1px solid #E8ECEB;padding:12px 20px;display:flex;gap:12px;align-items:center;z-index:30}
-  .chat-btn{width:52px;height:52px;border-radius:16px;background:#DDF1EC;border:none;outline:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:transform .15s}
+  .action-bar{position:absolute;bottom:0;left:0;right:0;height:76px;background:#fff;border-top:1px solid #E8ECEB;padding:12px 16px;display:flex;gap:10px;align-items:center;z-index:30}
+  .chat-btn{width:50px;height:50px;border-radius:16px;background:var(--mint-bg);border:none;outline:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:transform .15s}
   .chat-btn:active{transform:scale(0.95)}
-  .chat-btn svg{width:24px;height:24px;stroke:#00917C;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .primary-btn{flex:1;height:52px;border-radius:20px;background:#00917C;color:#fff;border:none;outline:none;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(0,145,124,0.25);transition:background .15s, transform .15s}
-  .primary-btn:active{transform:scale(0.98);background:#007A68}
+  .chat-btn svg{width:24px;height:24px;stroke:var(--primary);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  
+  .btn-group-actions{flex:1;display:flex;gap:8px}
+  .primary-btn{flex:1;height:50px;border-radius:16px;background:var(--primary);color:#fff;border:none;outline:none;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 12px rgba(0,122,104,0.25);transition:background .15s, transform .15s;font-family:inherit}
+  .primary-btn:active{transform:scale(0.98);background:var(--primary-active)}
+  .primary-btn.orange{background:var(--orange);box-shadow:0 4px 12px rgba(242,140,40,0.25)}
 
-  .homeind{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:130px;height:4px;background:#1E3A38;border-radius:999px;z-index:35}
-
-  /* Toast Notification */
   .toast{position:absolute;top:70px;left:50%;transform:translateX(-50%);background:rgba(30,58,56,0.92);color:#fff;padding:8px 18px;border-radius:999px;font-size:12px;font-weight:600;z-index:60;display:none;align-items:center;gap:6px;animation:fadein .2s ease-out}
   @keyframes fadein{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translate(-50%,0)}}
 
-  /* Modal Sewa Bottom Sheet */
+  /* Modal Checkout Bottom Sheet */
   .modal-overlay{position:absolute;inset:0;background:rgba(30,58,56,0.5);z-index:50;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}
-  .modal-sheet{background:#fff;width:100%;border-top-left-radius:28px;border-top-right-radius:28px;padding:20px;max-height:85%;overflow-y:auto;display:flex;flex-direction:column;gap:14px;box-shadow:0 -10px 30px rgba(0,0,0,0.15)}
+  .modal-sheet{background:#fff;width:100%;border-top-left-radius:28px;border-top-right-radius:28px;padding:20px;max-height:88%;overflow-y:auto;display:flex;flex-direction:column;gap:14px;box-shadow:0 -10px 30px rgba(0,0,0,0.15)}
   .sheet-header{display:flex;justify-content:space-between;align-items:center}
-  .sheet-title{font-size:17px;font-weight:700;color:#1E3A38}
-  .sheet-close{width:32px;height:32px;border-radius:50%;border:none;background:#F4F6F6;cursor:pointer;font-size:18px;color:#7A8583;display:flex;align-items:center;justify-content:center}
-  .summary-card{background:#F6F8FA;border-radius:14px;padding:10px 12px;display:flex;gap:12px;align-items:center}
-  .summary-thumb{width:48px;height:48px;border-radius:10px;background:#DDF1EC;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  .summary-thumb svg{width:24px;height:24px;stroke:#00917C;fill:none;stroke-width:1.8}
+  .sheet-title{font-size:17px;font-weight:700;color:var(--text-dark)}
+  .sheet-close{width:32px;height:32px;border-radius:50%;border:none;background:var(--card-bg);cursor:pointer;font-size:18px;color:var(--text-muted);display:flex;align-items:center;justify-content:center}
+  
+  .summary-card{background:var(--card-bg);border-radius:14px;padding:10px 12px;display:flex;gap:12px;align-items:center}
+  .summary-thumb{width:48px;height:48px;border-radius:10px;background:var(--mint-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+  .summary-thumb img{width:100%;height:100%;object-fit:cover}
+  .summary-thumb svg{width:24px;height:24px;stroke:var(--primary);fill:none;stroke-width:1.8}
   .summary-info{display:flex;flex-direction:column;gap:2px}
-  .summary-name{font-size:13px;font-weight:700;color:#1E3A38}
-  .summary-price{font-size:12px;font-weight:700;color:#F28C28}
+  .summary-name{font-size:13px;font-weight:700;color:var(--text-dark)}
+  .summary-price{font-size:12px;font-weight:700;color:var(--orange)}
 
   .field-group{display:flex;flex-direction:column;gap:6px}
-  .field-label{font-size:12px;font-weight:700;color:#1E3A38}
-  .durasi-picker{display:flex;align-items:center;gap:14px;justify-content:space-between;background:#F6F8FA;border-radius:14px;padding:8px 14px}
-  .counter-btn{width:36px;height:36px;border-radius:50%;border:none;background:#fff;font-size:18px;font-weight:700;color:#00917C;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
-  .durasi-val{font-size:15px;font-weight:700;color:#1E3A38}
+  .field-label{font-size:12px;font-weight:700;color:var(--text-dark)}
+  .durasi-picker{display:flex;align-items:center;gap:14px;justify-content:space-between;background:var(--card-bg);border-radius:14px;padding:8px 14px}
+  .counter-btn{width:36px;height:36px;border-radius:50%;border:none;background:#fff;font-size:18px;font-weight:700;color:var(--primary);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+  .durasi-val{font-size:15px;font-weight:700;color:var(--text-dark)}
   
   .method-chips{display:flex;gap:8px}
-  .method-chip{flex:1;height:38px;border-radius:12px;border:1.5px solid #E3E8E7;background:#fff;font-size:12px;font-weight:700;color:#1E3A38;display:flex;align-items:center;justify-content:center;cursor:pointer}
-  .method-chip.active{border-color:#00917C;background:#DDF1EC;color:#00917C}
+  .method-chip{flex:1;height:38px;border-radius:12px;border:1.5px solid var(--border-light);background:#fff;font-size:12px;font-weight:700;color:var(--text-dark);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .method-chip.active{border-color:var(--primary);background:var(--mint-bg);color:var(--primary)}
 
-  .loc-input{height:42px;border-radius:12px;border:1px solid #E3E8E7;background:#F9FBFA;padding:0 12px;font-size:13px;color:#1E3A38;outline:none;font-family:inherit}
+  .loc-input{height:44px;border-radius:12px;border:1.5px solid var(--border-light);background:#fff;padding:0 12px;font-size:13px;color:var(--text-dark);outline:none;font-family:inherit}
 
-  .total-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0 4px;border-top:1px dashed #E3E8E7}
-  .total-lbl{font-size:13px;font-weight:600;color:#7A8583}
-  .total-val{font-size:18px;font-weight:800;color:#00917C}
+  .total-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0 4px;border-top:1px dashed var(--border-light)}
+  .total-lbl{font-size:13px;font-weight:600;color:var(--text-muted)}
+  .total-val{font-size:18px;font-weight:800;color:var(--primary)}
   
-  .submit-sewa-btn{height:48px;border-radius:18px;background:#00917C;color:#fff;border:none;outline:none;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,145,124,0.25)}
+  .submit-sewa-btn{height:48px;border-radius:16px;background:var(--primary);color:#fff;border:none;outline:none;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,122,104,0.25);font-family:inherit}
 </style>
 </head>
 <body>
@@ -134,9 +196,9 @@
     <div class="status">
       <span>09:41</span>
       <div class="icons">
-        <svg viewBox="0 0 24 24"><path d="M2 17h3v4H2v-4zm5-4h3v8H7v-8zm5-4h3v12h-3V9zm5-4h3v16h-3V5z"/></svg>
-        <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/></svg>
-        <svg viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.95 9.05 8.05 9.05 5 13z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
       </div>
     </div>
 
@@ -149,47 +211,38 @@
       </button>
     </div>
 
-    <!-- Product Visual Vector Illustration -->
+    <!-- Product Visual: Photo if available, or Vector Illustration -->
     <div class="hero-img-wrap" id="heroImgWrap">
-      <svg id="heroSvg" viewBox="0 0 160 200" width="130" height="165" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="25" y="15" width="110" height="170" rx="20" fill="#263238"/>
-        <rect x="40" y="30" width="80" height="42" rx="8" fill="#C2E2DD"/>
-        <!-- Calculator buttons row 1 -->
-        <circle cx="52" cy="95" r="9" fill="#ECEFF1"/>
-        <circle cx="80" cy="95" r="9" fill="#ECEFF1"/>
-        <circle cx="108" cy="95" r="9" fill="#ECEFF1"/>
-        <!-- Calculator buttons row 2 -->
-        <circle cx="52" cy="120" r="9" fill="#ECEFF1"/>
-        <circle cx="80" cy="120" r="9" fill="#ECEFF1"/>
-        <circle cx="108" cy="120" r="9" fill="#ECEFF1"/>
-        <!-- Calculator buttons row 3 -->
-        <circle cx="52" cy="145" r="9" fill="#ECEFF1"/>
-        <circle cx="80" cy="145" r="9" fill="#ECEFF1"/>
-        <circle cx="108" cy="145" r="9" fill="#F28C28"/>
-      </svg>
+      <img id="heroImg" src="" alt="Foto Produk" style="display:none">
+      <div id="heroSvgPlaceholder"></div>
+
+      <!-- Arrow Controls -->
+      <button class="carousel-arrow prev" id="heroPrevBtn" aria-label="Foto Sebelumnya" style="display:none">&#10094;</button>
+      <button class="carousel-arrow next" id="heroNextBtn" aria-label="Foto Berikutnya" style="display:none">&#10095;</button>
+
+      <!-- Counter Badge -->
+      <div class="carousel-counter" id="heroCounter" style="display:none">1/1</div>
     </div>
 
     <!-- Carousel Dots -->
-    <div class="carousel-dots" id="carouselDots">
-      <div class="dot active" data-index="0"></div>
-      <div class="dot" data-index="1"></div>
-      <div class="dot" data-index="2"></div>
-      <div class="dot" data-index="3"></div>
-    </div>
+    <div class="carousel-dots" id="carouselDots"></div>
   </div>
 
   <!-- Content Sheet -->
   <div class="content">
-    <div class="badges-row">
+    <!-- Thumbnail Strip for multiple photos -->
+    <div class="thumb-strip" id="thumbStrip" style="display:none"></div>
+
+    <div class="badges-row" id="badgesRow">
       <span class="badge-chip sewa" id="badgeMode">Sewa</span>
       <span class="badge-chip kondisi" id="badgeKondisi">Kondisi Baik</span>
     </div>
 
-    <h1 class="item-title" id="itemTitle">Kalkulator Scientific<br>Casio fx-991ID Plus</h1>
+    <h1 class="item-title" id="itemTitle">Memuat nama barang...</h1>
 
     <div class="price-row">
       <div class="price-box">
-        <span class="price-val" id="priceVal">Rp5.000</span>
+        <span class="price-val" id="priceVal">Rp0</span>
         <span class="price-unit" id="priceUnit">/ hari</span>
       </div>
       <div class="badge-fair" id="badgeFair">
@@ -210,7 +263,7 @@
       </div>
       <div class="stat-card">
         <span class="stat-lbl">Tersedia</span>
-        <span class="stat-val" id="statTersedia">3 hari lagi</span>
+        <span class="stat-val" id="statTersedia">Siap Dipakai</span>
       </div>
     </div>
 
@@ -218,7 +271,7 @@
     <div class="desc-sec">
       <div class="desc-title">Deskripsi</div>
       <p class="desc-body" id="descBody">
-        Layar bersih, tombol berfungsi normal, baterai baru diganti. Cocok untuk ujian dan praktikum.
+        Memuat deskripsi barang...
       </p>
     </div>
 
@@ -229,7 +282,7 @@
       </div>
       <div class="owner-info">
         <div class="owner-name-row">
-          <span class="owner-name" id="ownerName">Dimas A.</span>
+          <span class="owner-name" id="ownerName">Mahasiswa Kampus</span>
           <span class="verified-badge" title="Mahasiswa Terverifikasi">
             <svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
           </span>
@@ -245,46 +298,48 @@
     </div>
   </div>
 
-  <!-- Bottom Action Bar -->
+  <!-- Bottom Action Bar (Chat button + Dynamic CTA buttons) -->
   <div class="action-bar">
     <button class="chat-btn" id="chatBtn" aria-label="Kirim Pesan ke Pemilik">
       <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-4-.9L3 21l1.7-4.4A8.4 8.4 0 1 1 21 11.5Z"/></svg>
     </button>
-    <button class="primary-btn" id="actionCtaBtn">
-      <span>Ajukan Sewa</span>
-    </button>
+    <div class="btn-group-actions" id="actionBtnContainer"></div>
   </div>
 
-  <!-- Bottom Sheet Modal Ajukan Sewa -->
-  <div class="modal-overlay" id="sewaModal">
+  <!-- Bottom Sheet Modal Checkout / Pengajuan Transaksi -->
+  <div class="modal-overlay" id="checkoutModal">
     <div class="modal-sheet">
       <div class="sheet-header">
-        <div class="sheet-title">Ajukan Sewa Barang</div>
+        <div class="sheet-title" id="checkoutModalTitle">Pengajuan Transaksi</div>
         <button class="sheet-close" id="closeModalBtn">&times;</button>
       </div>
 
       <div class="summary-card">
-        <div class="summary-thumb">
+        <div class="summary-thumb" id="modalThumb">
           <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M8 6h8M8 11h2M12 11h2M16 11h.01M8 15h2M12 15h2M16 15h.01M8 19h2M12 19h2M16 19h.01"/></svg>
         </div>
         <div class="summary-info">
-          <div class="summary-name" id="modalItemName">Kalkulator Scientific Casio</div>
-          <div class="summary-price" id="modalItemPrice">Rp5.000 / hari</div>
+          <div class="summary-name" id="modalItemName">Nama Barang</div>
+          <div class="summary-price" id="modalItemPrice">Rp0</div>
+          <div id="modalPhotosCount" style="font-size:11px;color:var(--primary);font-weight:600"></div>
         </div>
       </div>
+      <!-- Mini Gallery in Checkout Modal -->
+      <div id="modalGalleryRow" style="display:none;gap:8px;margin:-4px 0 12px;padding:0 2px"></div>
 
-      <div class="field-group">
-        <label class="field-label">Durasi Sewa</label>
+      <!-- Durasi (hanya untuk Sewa & Pinjam) -->
+      <div class="field-group" id="durasiGroup">
+        <label class="field-label" id="durasiLabel">Durasi Sewa</label>
         <div class="durasi-picker">
-          <button class="counter-btn" id="durasiMinus">&minus;</button>
+          <button class="counter-btn" id="durasiMinus" type="button">&minus;</button>
           <span class="durasi-val" id="durasiText">2 Hari</span>
-          <button class="counter-btn" id="durasiPlus">&plus;</button>
+          <button class="counter-btn" id="durasiPlus" type="button">&plus;</button>
         </div>
       </div>
 
       <div class="field-group">
-        <label class="field-label">Lokasi Serah Terima</label>
-        <input class="loc-input" id="lokasiTemu" value="" placeholder="Masukkan lokasi temu (misal: Fakultas Teknik, Perpus)">
+        <label class="field-label" for="lokasiTemu">Lokasi Serah Terima / COD</label>
+        <input class="loc-input" id="lokasiTemu" value="" placeholder="Masukkan lokasi temu (misal: Fakultas Teknik, Perpus ITG)">
       </div>
 
       <div class="field-group">
@@ -296,17 +351,17 @@
       </div>
 
       <div class="total-row">
-        <span class="total-lbl">Total Biaya:</span>
-        <span class="total-val" id="modalTotal">Rp10.000</span>
+        <span class="total-lbl">Total Pembayaran:</span>
+        <span class="total-val" id="modalTotal">Rp0</span>
       </div>
 
-      <button class="submit-sewa-btn" id="submitSewaBtn">Kirim Pengajuan Sewa</button>
+      <div id="checkoutError" style="display:none;color:#D32F2F;background:#FFEBEE;border:1px solid #FFCDD2;padding:10px 14px;border-radius:12px;font-size:12px;font-weight:600;margin-top:4px;text-align:center"></div>
+
+      <button class="submit-sewa-btn" id="submitCheckoutBtn" type="button">Konfirmasi Transaksi</button>
     </div>
   </div>
-
-  <div class="homeind"></div>
 </div>
 
-<script src="/js/detail.js"></script>
+<script type="module" src="/js/detail.js"></script>
 </body>
 </html>

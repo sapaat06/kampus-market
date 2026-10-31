@@ -1,4 +1,4 @@
-import { api, nav, rp, esc, wajibLogin, pesan, logout } from '/js/api.js';
+const { api, nav, rp, esc, wajibLogin, pesan, logout } = window.KM;
 nav();
 
 async function muatProfil() {

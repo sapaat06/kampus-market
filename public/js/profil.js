@@ -16,78 +16,116 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Try fetching live user session data
   try {
-    const res = await fetch('/api/saya');
-    if (res.ok) {
-      const data = await res.json();
-      if (data.nama && userName) {
-        userName.textContent = data.nama;
-      }
-      if (data.email && userDept) {
-        userDept.textContent = `${data.email} · ${data.status_verifikasi || 'Belum Terverifikasi'}`;
-      }
-      if (greenPointsVal) {
-        const pts = Number(data.green_points || 0);
-        greenPointsVal.textContent = pts.toLocaleString('id-ID');
+    const data = await KM.get('/saya');
+    if (data.foto && document.querySelector('.avatar-circle')) {
+      document.querySelector('.avatar-circle').innerHTML = `<img src="${data.foto}" alt="foto" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    }
+    if (data.email && userDept) {
+      userDept.textContent = `${data.email} · ${data.status_verifikasi || 'Belum Terverifikasi'}`;
+    }
+    if (greenPointsVal) {
+      const pts = Number(data.green_points || 0);
+      greenPointsVal.textContent = pts.toLocaleString('id-ID');
 
-        // Calculate level dynamically based on real points
-        if (pts >= 1500) {
-          levelName.textContent = 'Campus Hero';
-          levelNext.textContent = 'Level Maksimal Tercapai!';
-          progressFill.style.width = '100%';
-        } else if (pts >= 500) {
-          const sisa = 1500 - pts;
-          levelName.textContent = 'Circle Helper';
-          levelNext.textContent = `${sisa} poin lagi ke Campus Hero`;
-          const pct = Math.min(Math.round((pts / 1500) * 100), 95);
-          progressFill.style.width = `${pct}%`;
-        } else {
-          const sisa = 500 - pts;
-          levelName.textContent = 'Pendatang Baru';
-          levelNext.textContent = `${sisa} poin lagi ke Circle Helper`;
-          const pct = Math.max(Math.min(Math.round((pts / 500) * 100), 95), 5);
-          progressFill.style.width = `${pct}%`;
+      // Calculate level dynamically based on real points
+      if (pts >= 1500) {
+        levelName.textContent = 'Campus Hero';
+        levelNext.textContent = 'Level Maksimal Tercapai!';
+        progressFill.style.width = '100%';
+      } else if (pts >= 500) {
+        const sisa = 1500 - pts;
+        levelName.textContent = 'Circle Helper';
+        levelNext.textContent = `${sisa} poin lagi ke Campus Hero`;
+        const pct = Math.min(Math.round((pts / 1500) * 100), 95);
+        progressFill.style.width = `${pct}%`;
+      } else {
+        const sisa = 500 - pts;
+        levelName.textContent = 'Pendatang Baru';
+        levelNext.textContent = `${sisa} poin lagi ke Circle Helper`;
+        const pct = Math.max(Math.min(Math.round((pts / 500) * 100), 95), 5);
+        progressFill.style.width = `${pct}%`;
+      }
+    }
+
+    if (data.transaksi && Array.isArray(data.transaksi)) {
+      const sewaCount = data.transaksi.filter(t => t.jenis_transaksi === 'sewa').length;
+      const beliCount = data.transaksi.filter(t => t.jenis_transaksi === 'beli').length;
+      const pinjamCount = data.transaksi.filter(t => t.jenis_transaksi === 'pinjam').length;
+      if (statDisewakan) statDisewakan.textContent = sewaCount;
+      if (statDipakaiUlang) statDipakaiUlang.textContent = beliCount;
+      if (statDipinjamkan) statDipinjamkan.textContent = pinjamCount;
+
+      // Show owner dashboard link for pemilik_kost
+      if (data.role === 'pemilik_kost') {
+        const navProfil = document.querySelector('.nav .item.active');
+        if (navProfil) {
+          const ownerLink = document.createElement('a');
+          ownerLink.href = '/kos-owner.html';
+          ownerLink.className = 'item';
+          ownerLink.innerHTML = `
+            <div class="box">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#00917C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <path d="M3 9l18-6-18 6z"/>
+              </svg>
+            </div>
+            <span class="lbl">Kelola Kost</span>
+          `;
+          navProfil.parentNode.insertBefore(ownerLink, navProfil.nextSibling);
         }
       }
 
-      if (data.transaksi && Array.isArray(data.transaksi)) {
-        const sewaCount = data.transaksi.filter(t => t.jenis_transaksi === 'sewa').length;
-        const beliCount = data.transaksi.filter(t => t.jenis_transaksi === 'beli').length;
-        if (statDisewakan) statDisewakan.textContent = sewaCount;
-        if (statDipakaiUlang) statDipakaiUlang.textContent = beliCount;
-        if (statDipinjamkan) statDipinjamkan.textContent = '0';
+      // Render real activities list with proper routing
+      const activityList = document.getElementById('activityList');
+      if (activityList && data.transaksi.length > 0) {
+        activityList.innerHTML = data.transaksi.slice(0, 5).map(t => {
+          let targetUrl = `/status-pinjam.html?id_transaksi=${t.id_transaksi}`;
+          if (t.jenis_transaksi === 'sewa') {
+            targetUrl = `/status-sewa.html?id_transaksi=${t.id_transaksi}`;
+          } else if (t.jenis_transaksi === 'beli') {
+            targetUrl = `/status-beli.html?id_transaksi=${t.id_transaksi}`;
+          }
+          const jenisBadge = t.jenis_transaksi.toUpperCase();
+          const hargaLabel = t.total_harga > 0 ? `Rp${Number(t.total_harga).toLocaleString('id-ID')}` : 'Gratis';
 
-        // Render real activities list
-        const activityList = document.getElementById('activityList');
-        if (activityList && data.transaksi.length > 0) {
-          activityList.innerHTML = data.transaksi.slice(0, 5).map(t => `
-            <a href="/status-pinjam.html?id_transaksi=${t.id_transaksi}" class="act-item" style="text-decoration:none;cursor:pointer">
+          return `
+            <a href="${targetUrl}" class="act-item" style="text-decoration:none;cursor:pointer">
               <div class="act-dot-wrap"><div class="act-dot"></div></div>
               <div class="act-info">
-                <div class="act-title">${t.nama_barang}</div>
-                <div class="act-time">${t.jenis_transaksi.toUpperCase()} · Status: ${t.status}</div>
+                <div class="act-title">${t.nama_barang || 'Barang Kampus'}</div>
+                <div class="act-time">${jenisBadge} · Status: ${t.status}</div>
               </div>
               <div class="act-pts" style="font-size:12px;color:${t.status==='selesai'?'#00917C':'#F28C28'}">
-                Rp${Number(t.total_harga).toLocaleString('id-ID')}
+                ${hargaLabel}
               </div>
             </a>
-          `).join('');
-        }
+          `;
+        }).join('');
       }
     }
   } catch (_e) {
     // Preserve default fallback values
   }
 
-  // Logout handler
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-      try {
-        await fetch('/api/logout', { method: 'POST' });
-      } catch (_e) {}
-      localStorage.removeItem('km_token');
-      localStorage.removeItem('km_sesi');
-      window.location.href = '/masuk.html';
+  const avatarCircle = document.getElementById('avatarCircle');
+  const fotoInput = document.getElementById('fotoInput');
+  if (avatarCircle && fotoInput) {
+    avatarCircle.addEventListener('click', () => fotoInput.click());
+    fotoInput.addEventListener('change', async () => {
+      const file = fotoInput.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const resp = await KM.patch('/profil/foto', { foto: reader.result });
+          if (resp?.foto) avatarCircle.innerHTML = `<img src="${resp.foto}" alt="foto" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+        } catch (e) { console.warn(e); }
+      };
+      reader.readAsDataURL(file);
     });
+  }
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', KM.logout);
   }
 
   // Badge interactive feedback

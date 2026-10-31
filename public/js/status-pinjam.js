@@ -1,7 +1,7 @@
 // public/js/status-pinjam.js
-// Handles tracking borrow lifecycle stepper, syncing with actual transactions, and status updates
+// Handles tracking borrow lifecycle stepper, syncing with actual transactions, and awarding Green Points
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initPinjam() {
   const backBtn = document.getElementById('backBtn');
   const returnBtn = document.getElementById('returnBtn');
   const dot4 = document.getElementById('dot4');
@@ -13,47 +13,106 @@ document.addEventListener('DOMContentLoaded', async () => {
   const modalProfileBtn = document.getElementById('modalProfileBtn');
   const modalHomeBtn = document.getElementById('modalHomeBtn');
 
+  const itemIcon = document.getElementById('itemIcon');
   const itemTitle = document.getElementById('itemTitle');
   const itemSub = document.getElementById('itemSub');
+  const date1 = document.getElementById('date1');
+  const date2 = document.getElementById('date2');
+  const date3 = document.getElementById('date3');
+  const badgeTempo = document.getElementById('badgeTempo');
+
+  function formatTgl(strDate, withTime = false) {
+    if (!strDate) return '';
+    const d = new Date(strDate);
+    if (Number.isNaN(d.getTime())) return strDate;
+    const opt = { day: 'numeric', month: 'short' };
+    let res = d.toLocaleDateString('id-ID', opt);
+    if (withTime) {
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      res += ` · ${hh}.${mm}`;
+    }
+    return res;
+  }
 
   const urlParams = new URLSearchParams(window.location.search);
   const txId = urlParams.get('id_transaksi');
 
+  let activeTx = null;
+
   // Load real transaction details if logged in
   try {
-    const res = await fetch('/api/saya');
-    if (res.ok) {
-      const me = await res.json();
-      if (me.transaksi && me.transaksi.length > 0) {
-        let tx = null;
-        if (txId) {
-          tx = me.transaksi.find(t => String(t.id_transaksi) === String(txId));
+    const me = await KM.get('/saya');
+    if (me.transaksi && me.transaksi.length > 0) {
+      const found = me.transaksi.find(t => String(t.id_transaksi) === String(txId));
+      if (found) {
+        if (found.jenis_transaksi !== 'pinjam') throw Object.assign(new Error('Bukan transaksi pinjam'), { status: 404 });
+        activeTx = found;
+      } else {
+        activeTx = me.transaksi.find(t => t.jenis_transaksi === 'pinjam');
+      }
+
+      if (activeTx) {
+        if (itemTitle && activeTx.nama_barang) itemTitle.textContent = activeTx.nama_barang;
+        if (itemSub) {
+          const biayaFmt = activeTx.total_harga > 0 ? `Biaya: Rp${Number(activeTx.total_harga).toLocaleString('id-ID')}` : 'Gratis';
+          itemSub.textContent = `Transaksi #${activeTx.id_transaksi} · ${biayaFmt}`;
         }
-        if (!tx) {
-          tx = me.transaksi[0]; // Ambil transaksi terbaru
+        if (activeTx.tanggal_transaksi) {
+          if (date1) date1.textContent = formatTgl(activeTx.tanggal_transaksi, true);
+          if (date2) date2.textContent = formatTgl(activeTx.tanggal_transaksi, true);
+        }
+        if (activeTx.tanggal_mulai && date3) {
+          date3.textContent = formatTgl(activeTx.tanggal_mulai);
+        }
+        if (activeTx.tanggal_selesai && date4) {
+          date4.textContent = `Hingga ${formatTgl(activeTx.tanggal_selesai)}`;
+        }
+        if (badgeTempo && activeTx.durasi_sewa) {
+          badgeTempo.textContent = `Durasi ${activeTx.durasi_sewa} hari`;
         }
 
-        if (tx) {
-          if (itemTitle && tx.nama_barang) itemTitle.textContent = tx.nama_barang;
-          if (itemSub) itemSub.textContent = `Transaksi #${tx.id_transaksi} · ${tx.jenis_transaksi.toUpperCase()} (Rp${Number(tx.total_harga).toLocaleString('id-ID')})`;
+        // Cek foto barang
+        if (activeTx.id_barang) {
+          try {
+            const b = await KM.get('/barang/' + activeTx.id_barang);
+            const fotos = typeof KM !== 'undefined' && KM.getFotos ? KM.getFotos(b?.foto) : (b?.foto ? [b.foto] : []);
+            if (fotos.length > 0) {
+              if (itemIcon) {
+                itemIcon.innerHTML = `<img src="${fotos[0]}" alt="${b.nama_barang || ''}" style="width:100%;height:100%;object-fit:cover;border-radius:12px">`;
+              }
+              const galleryCard = document.getElementById('galleryCard');
+              const galleryCount = document.getElementById('galleryCount');
+              const galleryList = document.getElementById('galleryList');
+              if (galleryCard && galleryList) {
+                if (galleryCount) galleryCount.textContent = `${fotos.length} Foto`;
+                galleryList.innerHTML = fotos.map((f, idx) => `
+                  <div style="width:80px;height:80px;border-radius:14px;overflow:hidden;border:1.5px solid var(--border-light);flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+                    <img src="${f}" alt="Foto ${idx + 1}" style="width:100%;height:100%;object-fit:cover">
+                  </div>`).join('');
+                galleryCard.style.display = 'flex';
+              }
+            }
+          } catch (_err) {}
+        }
 
-          // Jika transaksi sudah berstatus selesai di database
-          if (tx.status === 'selesai') {
-            if (dot4) {
-              dot4.className = 'step-dot done';
-              dot4.innerHTML = '<svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>';
-            }
-            if (dot5) {
-              dot5.className = 'step-dot done';
-              dot5.innerHTML = '<svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>';
-            }
-            if (title5) title5.textContent = 'Sudah dikembalikan & Selesai';
-            if (date5) date5.textContent = 'Transaksi Selesai · Green Points Diberikan';
-            if (returnBtn) {
-              returnBtn.textContent = '✓ Transaksi Selesai';
-              returnBtn.classList.add('completed');
-              returnBtn.disabled = true;
-            }
+        // Jika transaksi sudah berstatus selesai di database
+        if (activeTx.status === 'selesai') {
+          if (dot4) {
+            dot4.className = 'step-dot done';
+            dot4.innerHTML = '<svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>';
+          }
+          if (line4) line4.className = 'step-line';
+          if (dot5) {
+            dot5.className = 'step-dot done';
+            dot5.innerHTML = '<svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>';
+          }
+          if (title5) title5.textContent = 'Sudah dikembalikan & Selesai';
+          if (date5) date5.textContent = 'Transaksi Selesai · Green Points Diberikan';
+          if (returnBtn) {
+            returnBtn.textContent = '✓ Transaksi Selesai';
+            returnBtn.classList.add('completed');
+            returnBtn.disabled = true;
           }
         }
       }
@@ -72,8 +131,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Handle return action (Konfirmasi pengembalian oleh mahasiswa)
-  if (returnBtn && !returnBtn.disabled) {
-    returnBtn.addEventListener('click', () => {
+  let ptsEarned = 20;
+  if (returnBtn) {
+    returnBtn.addEventListener('click', async () => {
+      returnBtn.disabled = true;
+      returnBtn.textContent = 'Memproses...';
+
+      // Panggil backend agar status transaksi menjadi 'selesai' dan green_points bertambah di database!
+      if (activeTx && activeTx.id_transaksi) {
+        try {
+          const resp = await KM.patch('/transaksi/' + activeTx.id_transaksi + '/selesai');
+          if (resp && resp.poin_didapat) ptsEarned = resp.poin_didapat;
+        } catch (err) {
+          console.warn('Gagal memproses penyelesaian transaksi di server:', err);
+        }
+      }
+
       // Step 4 becomes completed
       if (dot4) {
         dot4.className = 'step-dot done';
@@ -90,22 +163,23 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       if (title5) {
         title5.className = 'step-title';
-        title5.textContent = 'Menunggu verifikasi admin';
+        title5.textContent = 'Barang telah dikembalikan & Selesai';
       }
       if (date5) {
         date5.className = 'step-date active-text';
-        date5.textContent = 'Barang telah dikembalikan';
+        date5.textContent = 'Hari ini · Selesai';
       }
 
-      returnBtn.textContent = '✓ Pengembalian Diajukan';
+      returnBtn.textContent = '✓ Pengembalian Selesai';
       returnBtn.classList.add('completed');
-      returnBtn.disabled = true;
 
       // Open celebration modal
       if (rewardModal) {
         setTimeout(() => {
+          const mp = rewardModal.querySelector('.modal-points');
+          if (mp) mp.textContent = `+${ptsEarned} Green Points`;
           rewardModal.style.display = 'flex';
-        }, 350);
+        }, 300);
       }
     });
   }
@@ -121,4 +195,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.location.href = '/beranda.html';
     });
   }
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initPinjam);
+} else {
+  initPinjam();
+}

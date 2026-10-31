@@ -1,4 +1,4 @@
-import { api, nav, rp, esc, wajibLogin, pesan } from '/js/api.js';
+const { api, nav, rp, esc, wajibLogin, pesan } = window.KM;
 nav();
 if (wajibLogin()) {
   const msg = document.getElementById('msg'), hasil = document.getElementById('hasil'), form = document.getElementById('form');

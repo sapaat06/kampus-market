@@ -6,17 +6,14 @@
 
   // Sync actual account verification status from database
   try {
-    const res = await fetch('/api/saya');
-    if (res.ok) {
-      const me = await res.json();
-      if (me.nama) document.getElementById('stName').textContent = me.nama;
-      if (me.status_verifikasi === 'terverifikasi') {
-        const pill = document.querySelector('.pill span');
-        if (pill) {
-          pill.textContent = '✓ Akun Terverifikasi';
-          pill.parentElement.style.background = '#DDF1EC';
-          pill.parentElement.style.color = '#00917C';
-        }
+    const me = await KM.get('/saya');
+    if (me.nama) document.getElementById('stName').textContent = me.nama;
+    if (me.status_verifikasi === 'terverifikasi') {
+      const pill = document.querySelector('.pill span');
+      if (pill) {
+        pill.textContent = '✓ Akun Terverifikasi';
+        pill.parentElement.style.background = '#DDF1EC';
+        pill.parentElement.style.color = '#00917C';
       }
     }
   } catch (_e) {}

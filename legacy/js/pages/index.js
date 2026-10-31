@@ -1,4 +1,4 @@
-import { api, nav, esc, rp, thumb, pesan } from '/js/api.js';
+const { api, nav, esc, rp, thumb, pesan } = window.KM;
 nav();
 const grid = document.getElementById('grid'), msg = document.getElementById('msg');
 let kategori = null, items = [];

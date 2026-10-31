@@ -6,6 +6,7 @@ import { router as auth } from './routes/auth.js';
 import { router as barang } from './routes/barang.js';
 import { router as transaksi } from './routes/transaksi.js';
 import { router as estimasi } from './routes/estimasi.js';
+import { router as kos } from './routes/kos.js';
 
 export const app = express();
 app.disable('x-powered-by');
@@ -38,7 +39,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: '32kb' }));
+app.use(express.json({ limit: '5mb' })); // KTM dan foto barang dikirim sebagai data URL
 
 app.use('/api', (_req, res, next) => { res.set('cache-control', 'no-store'); next(); });
 
@@ -61,7 +62,7 @@ app.use('/api', limit({ name: 'api', max: 300, windowMs: 60e3 }));
 const adminLimit = limit({ name: 'admin', max: 120, windowMs: 900e3 });
 app.use('/api', (req, res, next) => req.get('x-admin-key') !== undefined ? adminLimit(req, res, next) : next());
 
-app.use('/api', auth, barang, transaksi, estimasi);
+app.use('/api', auth, barang, transaksi, estimasi, kos);
 app.use('/api', (_req, _res, next) => next(err(404, 'endpoint tidak ada')));
 app.use(express.static(join(import.meta.dirname, '..', 'public')));
 

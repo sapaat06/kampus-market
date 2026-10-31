@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KampusCircle — Status Peminjaman</title>
 <style>
@@ -111,7 +112,7 @@
   <div class="scroll-body">
     <!-- Item Card -->
     <div class="item-card" id="itemCard">
-      <div class="item-icon">
+      <div class="item-icon" id="itemIcon">
         <svg viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10M6 14h6"/></svg>
       </div>
       <div class="item-info">
@@ -119,9 +120,18 @@
         <div class="item-sub" id="itemSub">Dipinjam dari Salsa P.</div>
         <div class="chips-row">
           <span class="badge-chip pinjam">Pinjam</span>
-          <span class="badge-chip tempo">Jatuh tempo 3 hari</span>
+          <span class="badge-chip tempo" id="badgeTempo">Jatuh tempo 3 hari</span>
         </div>
       </div>
+    </div>
+
+    <!-- Gallery Foto Barang (1-3 Foto) -->
+    <div class="gallery-card" id="galleryCard" style="display:none;background:#fff;border:1px solid #E3E8E7;border-radius:18px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.03);flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;font-weight:700;color:#1E3A38">Foto Barang</span>
+        <span id="galleryCount" style="font-size:11px;font-weight:600;color:#007A68;background:#DDF1EC;padding:3px 10px;border-radius:999px">3 Foto</span>
+      </div>
+      <div id="galleryList" style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none"></div>
     </div>
 
     <!-- Stepper Section -->
@@ -138,7 +148,7 @@
         </div>
         <div class="step-content">
           <div class="step-title">Pengajuan dikirim</div>
-          <div class="step-date">20 Okt · 09.15</div>
+          <div class="step-date" id="date1">20 Okt · 09.15</div>
         </div>
       </div>
 
@@ -152,7 +162,7 @@
         </div>
         <div class="step-content">
           <div class="step-title">Disetujui pemilik</div>
-          <div class="step-date">20 Okt · 10.02</div>
+          <div class="step-date" id="date2">20 Okt · 10.02</div>
         </div>
       </div>
 
@@ -166,7 +176,7 @@
         </div>
         <div class="step-content">
           <div class="step-title">Barang diserahkan</div>
-          <div class="step-date">21 Okt · 10.00</div>
+          <div class="step-date" id="date3">21 Okt · 10.00</div>
         </div>
       </div>
 
@@ -223,6 +233,6 @@
   <div class="homeind"></div>
 </div>
 
-<script src="/js/status-pinjam.js"></script>
+<script type="module" src="/js/status-pinjam.js"></script>
 </body>
 </html>

@@ -25,6 +25,7 @@ const barang = [
   [1, 2, 'Power Bank 20.000 mAh', 'Dua port USB, termasuk kabel.', 4000, 120000, 'baik'],
   [1, 1, 'Proyektor Mini', 'Cocok untuk presentasi kelompok.', 35000, null, 'cukup'],
   [2, 2, 'Diktat Kalkulus 1', 'Ada coretan rumus, lengkap sampai bab 8.', 3000, 45000, 'cukup'],
+  [2, 2, 'Modul Kalkulus 2', '[Mode Pinjam Komunitas] Bebas dipinjam untuk persiapan kuis & UAS.', 1000, null, 'baik'],
   [2, 2, 'Buku Algoritma dan Struktur Data', 'Edisi terbaru, masih rapi.', 4000, 85000, 'baik'],
   [3, 3, 'Kipas Angin Meja', 'Tiga kecepatan, hemat listrik.', 6000, 90000, 'baik'],
   [3, 3, 'Rak Buku Lipat', 'Baru, belum pernah dirakit.', null, 75000, 'baru'],

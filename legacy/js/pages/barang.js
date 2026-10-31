@@ -1,4 +1,4 @@
-import { api, nav, esc, rp, thumb, pesan } from '/js/api.js';
+const { api, nav, esc, rp, thumb, pesan } = window.KM;
 nav();
 const id = new URLSearchParams(location.search).get('id');
 try {

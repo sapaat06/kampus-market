@@ -33,10 +33,12 @@ router.post('/register', limit({ name: 'register', max: 10, windowMs: 3600e3 }),
   const email = emailOf(req.body?.email);
   const password = passwordOf(req.body?.password);
   const no_hp = optStr(req.body?.no_hp, 'no_hp', 30);
-  const ktm = optStr(req.body?.ktm, 'ktm', 30);
+  const ktm = optStr(req.body?.ktm, 'ktm', 800_000); // data URL hasil kompresi di browser
+  const kampus = optStr(req.body?.kampus, 'kampus', 120);
+  const role = oneOf(req.body?.role ?? 'pelanggan', 'role', ['pelanggan', 'pemilik_kost']);
   const r = db.prepare(
-    'INSERT INTO mahasiswa (nama,email,no_hp,password_hash,ktm) VALUES (?,?,?,?,?)'
-  ).run(nama, email, no_hp, hash(password), ktm);
+    'INSERT INTO mahasiswa (nama,email,no_hp,password_hash,ktm,kampus,role) VALUES (?,?,?,?,?,?,?)'
+  ).run(nama, email, no_hp, hash(password), ktm, kampus, role);
   const id = Number(r.lastInsertRowid);
   res.status(201).json({ id_mahasiswa: id, token: mulaiSesi(res, id) });
 });
@@ -50,14 +52,11 @@ router.post('/login', limit({ name: 'login', max: 10, windowMs: 900e3 }), (req, 
   res.json({ token: mulaiSesi(res, m.id_mahasiswa) });
 });
 
-router.post('/reset-password', limit({ name: 'reset-pw', max: 5, windowMs: 900e3 }), (req, res) => {
-  const email = emailOf(req.body?.email);
-  const password_baru = passwordOf(req.body?.password_baru);
-  const m = db.prepare('SELECT id_mahasiswa FROM mahasiswa WHERE email=?').get(email);
-  if (!m) throw err(404, 'email tidak terdaftar di sistem');
-
-  db.prepare('UPDATE mahasiswa SET password_hash=? WHERE id_mahasiswa=?').run(hash(password_baru), m.id_mahasiswa);
-  res.json({ ok: true, message: 'Kata sandi berhasil diperbarui' });
+// P0: alur "lupa kata sandi" lama mengubah kata sandi siapa pun yang tahu
+// emailnya. Dinonaktifkan sampai ada verifikasi identitas (OTP/email).
+// Endpoint tetap ada supaya klien lama mendapat pesan jelas, bukan 404.
+router.post('/reset-password', limit({ name: 'reset-pw', max: 5, windowMs: 900e3 }), (_req, _res) => {
+  throw err(503, 'atur ulang kata sandi belum tersedia; hubungi admin kampus');
 });
 
 router.post('/logout', (_req, res) => {
@@ -67,7 +66,7 @@ router.post('/logout', (_req, res) => {
 
 router.get('/saya', user, (req, res) => {
   const m = db.prepare(
-    'SELECT id_mahasiswa,nama,email,no_hp,ktm,status_verifikasi FROM mahasiswa WHERE id_mahasiswa=?'
+    'SELECT id_mahasiswa,nama,email,no_hp,ktm,kampus,status_verifikasi,foto FROM mahasiswa WHERE id_mahasiswa=?'
   ).get(req.uid);
   if (!m) throw err(404, 'akun tidak ada');
   m.green_points = db.prepare('SELECT COALESCE(SUM(jumlah_poin),0) s FROM poin WHERE id_mahasiswa=?').get(req.uid).s;
@@ -79,7 +78,17 @@ router.get('/saya', user, (req, res) => {
   res.json(m);
 });
 
-// Mahasiswa: ajukan atau perbarui data KTM untuk verifikasi
+// Mahasiswa: unggah/hapus foto profil
+router.patch('/profil/foto', user, (req, res) => {
+  const foto = optStr(req.body?.foto, 'foto', 800_000);
+  if (!foto) db.prepare('UPDATE mahasiswa SET foto=NULL WHERE id_mahasiswa=?').run(req.uid);
+  else db.prepare('UPDATE mahasiswa SET foto=? WHERE id_mahasiswa=?').run(foto, req.uid);
+  res.json({ ok: true, foto: foto || null });
+});
+router.delete('/profil/foto', user, (req, res) => {
+  db.prepare('UPDATE mahasiswa SET foto=NULL WHERE id_mahasiswa=?').run(req.uid);
+  res.json({ ok: true, foto: null });
+});
 router.post('/verifikasi', user, (req, res) => {
   const ktm = str(req.body?.ktm, 'ktm', 500);
   db.prepare("UPDATE mahasiswa SET ktm=?, status_verifikasi='pending' WHERE id_mahasiswa=?").run(ktm, req.uid);
@@ -89,7 +98,7 @@ router.post('/verifikasi', user, (req, res) => {
 // Admin: daftar semua mahasiswa beserta status verifikasi
 router.get('/mahasiswa', admin, (_req, res) => {
   res.json(db.prepare(
-    'SELECT id_mahasiswa, nama, email, no_hp, ktm, status_verifikasi, created_at FROM mahasiswa ORDER BY id_mahasiswa DESC'
+    'SELECT id_mahasiswa, nama, email, no_hp, ktm, kampus, status_verifikasi, created_at FROM mahasiswa ORDER BY id_mahasiswa DESC'
   ).all());
 });
 
@@ -99,6 +108,6 @@ router.patch('/mahasiswa/:id/verifikasi', admin, (req, res) => {
   const status = oneOf(req.body?.status_verifikasi ?? req.body?.status, 'status_verifikasi', ['pending', 'terverifikasi', 'ditolak']);
   const r = db.prepare('UPDATE mahasiswa SET status_verifikasi=? WHERE id_mahasiswa=?').run(status, id);
   if (r.changes === 0) throw err(404, 'mahasiswa tidak ada');
-  const m = db.prepare('SELECT id_mahasiswa, nama, email, no_hp, ktm, status_verifikasi FROM mahasiswa WHERE id_mahasiswa=?').get(id);
+  const m = db.prepare('SELECT id_mahasiswa, nama, email, no_hp, ktm, kampus, status_verifikasi FROM mahasiswa WHERE id_mahasiswa=?').get(id);
   res.json(m);
 });

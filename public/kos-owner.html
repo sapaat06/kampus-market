@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<script src="/js/api.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CampusCircle — Dashboard Pemilik Kos</title>
+<style>
+  @font-face {
+    font-family: 'Poppins';
+    src: url('/fonts/poppins-400.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Poppins';
+    src: url('/fonts/poppins-500.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Poppins';
+    src: url('/fonts/poppins-600.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Poppins';
+    src: url('/fonts/poppins-700.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  :root {
+    --primary: #007A68;
+    --primary-active: #006354;
+    --text-dark: #1E3A38;
+    --text-muted: #7A8583;
+    --orange: #F28C28;
+    --mint-bg: #DDF1EC;
+    --peach-bg: #FFF0DB;
+    --border-light: #E3E8E7;
+    --card-bg: #F4F7F6;
+    --danger: #D64545;
+  }
+
+  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Poppins',system-ui,-apple-system,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .phone{width:100%;max-width:440px;height:100vh;height:100dvh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08)}
+
+  .status{height:24px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;color:var(--text-dark);flex-shrink:0;margin-top:6px}
+  .status .icons{display:flex;gap:6px;align-items:center}
+  .status svg{width:14px;height:14px;fill:var(--text-dark)}
+
+  .header{height:50px;padding:0 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+  .back-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+  .back-btn:hover{background:var(--card-bg)}
+  .back-btn svg{width:22px;height:22px;stroke:var(--text-dark);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .header-title{font-size:18px;font-weight:700;color:var(--text-dark)}
+
+  .scroll-body{flex:1;overflow-y:auto;padding:8px 20px 24px;display:flex;flex-direction:column;gap:16px;scrollbar-width:none}
+  .scroll-body::-webkit-scrollbar{display:none}
+
+  .sec-title{font-size:15px;font-weight:700;color:var(--text-dark);display:flex;justify-content:space-between;align-items:center}
+
+  .btn-add{height:40px;border-radius:10px;background:var(--primary);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0 16px;font-family:inherit}
+  .btn-add:hover{background:var(--primary-active)}
+
+  .kos-card{background:#fff;border:1px solid var(--border-light);border-radius:18px;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.03)}
+  .kos-thumb{width:56px;height:56px;border-radius:12px;background:var(--mint-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+  .kos-thumb img{width:100%;height:100%;object-fit:cover}
+  .kos-thumb svg{width:24px;height:24px;stroke:var(--primary);fill:none;stroke-width:2}
+  .kos-info{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+  .kos-name{font-size:14px;font-weight:700;color:var(--text-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .kos-addr{font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis}
+  .kos-price{font-size:13px;font-weight:800;color:var(--primary)}
+  .kos-status{font-size:11px;font-weight:700;padding:2px 10px;border-radius:999px;display:inline-flex;align-items:center}
+  .kos-status.tersedia{background:var(--mint-bg);color:#00695C}
+  .kos-status.tidak_tersedia{background:#FDE8E8;color:var(--danger)}
+
+  .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;flex:1}
+  .empty-icon{width:64px;height:64px;border-radius:50%;background:var(--card-bg);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+  .empty-icon svg{width:32px;height:32px;stroke:var(--text-muted);fill:none;stroke-width:1.8}
+  .empty-title{font-size:16px;font-weight:700;color:var(--text-dark);margin-bottom:6px}
+  .empty-desc{font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.4}
+
+  .action-group{display:flex;gap:8px;margin-top:8px}
+  .action-btn{flex:1;height:34px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
+  .action-btn.edit{background:var(--mint-bg);color:#00695C}
+  .action-btn.edit:hover{background:#c3e6db}
+  .action-btn.status{background:var(--card-bg);color:var(--text-dark)}
+  .action-btn.status:hover{background:#e9ecef}
+  .action-btn.delete{background:#FDE8E8;color:var(--danger)}
+  .action-btn.delete:hover{background:#f8caca}
+
+  .toast{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:rgba(30,58,56,0.92);color:#fff;padding:8px 18px;border-radius:999px;font-size:12px;font-weight:600;z-index:60;display:none;align-items:center;gap:6px}
+
+  /* Modal Form */
+  .modal-overlay{position:absolute;inset:0;background:rgba(30,58,56,0.6);z-index:50;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
+  .modal-box{background:#fff;border-radius:24px;padding:24px 20px;width:100%;max-width:340px;display:flex;flex-direction:column;gap:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2)}
+  .modal-header{display:flex;justify-content:space-between;align-items:center}
+  .modal-title{font-size:17px;font-weight:800;color:var(--text-dark)}
+  .modal-close{width:32px;height:32px;border-radius:50%;border:none;background:var(--card-bg);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-muted)}
+  .form-group{display:flex;flex-direction:column;gap:6px}
+  .form-label{font-size:13px;font-weight:700;color:var(--text-dark)}
+  .form-input{height:44px;border-radius:12px;border:1.5px solid var(--border-light);background:#fff;padding:0 14px;font-size:13px;color:var(--text-dark);outline:none;font-family:inherit}
+  .form-input:focus{border-color:var(--primary)}
+  .form-select{height:44px;border-radius:12px;border:1.5px solid var(--border-light);background:#fff;padding:0 12px;font-size:13px;font-weight:600;color:var(--text-dark);outline:none;font-family:inherit;cursor:pointer}
+  .chips-row{display:flex;gap:8px}
+  .type-chip{flex:1;height:36px;border-radius:999px;border:1.5px solid var(--border-light);background:#fff;font-size:12px;font-weight:700;color:var(--text-dark);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-family:inherit}
+  .type-chip.active{background:var(--orange);border-color:var(--orange);color:#fff}
+  .submit-btn{height:50px;border-radius:18px;background:var(--primary);color:#fff;border:none;outline:none;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
+  .submit-btn:active{background:var(--primary-active)}
+  .submit-btn:disabled{background:#CBD5E1;cursor:not-allowed}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="status">
+    <span>09:41</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.95 9.05 8.05 9.05 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+
+  <div class="header">
+    <button class="back-btn" id="backBtn" aria-label="Kembali">
+      <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <h1 class="header-title">Dashboard Pemilik Kos</h1>
+  </div>
+
+  <div class="scroll-body" id="scrollBody">
+    <div class="empty-state" id="emptyState" style="display:none">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M8 6h8M8 11h2M12 11h2M16 11h.01M8 15h2M12 15h2M16 15h.01"/></svg>
+      </div>
+      <div class="empty-title">Belum ada kos</div>
+      <div class="empty-desc">Kamu belum memiliki kost yang terdaftar. Tambahkan data kos pertama untuk mulai mengelola.</div>
+      <button class="btn-add" id="btnAddKos">+ Tambah Kost</button>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="sec-title">Daftar Kost Milikmu</div>
+      <button class="btn-add" id="btnAddKos2">+ Tambah Kost</button>
+    </div>
+    <div class="kos-list" id="kosList"></div>
+  </div>
+
+  <div class="toast" id="toastMsg">
+    <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.2"><path d="m5 12 4 4L19 6"/></svg>
+    <span id="toastText">Tersimpan</span>
+  </div>
+
+  <!-- Modal Form Tambah/Edit Kost -->
+  <div class="modal-overlay" id="modalKos">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title" id="modalKosTitle">Tambah Kost</div>
+        <button class="modal-close" id="modalKosClose">&times;</button>
+      </div>
+      <form id="formKos" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="kosNama">Nama Kost</label>
+          <input type="text" class="form-input" id="kosNama" placeholder="Misal: Kos Damar Asri" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="kosAlamat">Alamat</label>
+          <input type="text" class="form-input" id="kosAlamat" placeholder="Misal: Jalan Cihideung No. 10" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="kosHarga">Harga per Bulan</label>
+          <input type="number" class="form-input" id="kosHarga" placeholder="Misal: 850000" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="kosFasilitas">Fasilitas</label>
+          <input type="text" class="form-input" id="kosFasilitas" placeholder="Wi-Fi, KM dalam, Furnitur, dll">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="kosJenis">Jenis Kelamin</label>
+          <div class="chips-row" id="jenisChips">
+            <button type="button" class="type-chip active" data-val="putra">Putra</button>
+            <button type="button" class="type-chip" data-val="putri">Putri</button>
+            <button type="button" class="type-chip" data-val="campur">Campur</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="kosKamar">Kamar Tersedia</label>
+          <input type="number" class="form-input" id="kosKamar" placeholder="0" value="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="kosStatus">Status Ketersediaan</label>
+          <select class="form-select" id="kosStatus">
+            <option value="tersedia">Tersedia</option>
+            <option value="tidak_tersedia">Tidak Tersedia</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="kosDeskripsi">Deskripsi</label>
+          <input type="text" class="form-input" id="kosDeskripsi" placeholder="Ceritakan tentang kost kamu...">
+        </div>
+        <button type="submit" class="submit-btn" id="btnSimpanKos">Simpan Kost</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toastError" style="background:rgba(214,69,69,0.92)">
+    <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.2"><circle cx="12" cy="12" r="10"/><path d="m9 12l2 2 4-4"/></svg>
+    <span id="toastErrorText">Error</span>
+  </div>
+</div>
+
+<script type="module" src="/js/kos-owner.js"></script>
+</body>
+</html>

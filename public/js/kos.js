@@ -139,16 +139,25 @@ function openDetailKos(k) {
       <div style="font-size:12px;color:#7A8583;line-height:1.5">${k.desc}</div>
     </div>
 
-    <button id="btnHubungiPemilik" class="modal-btn" style="background:#00917C">
-      Hubungi Pemilik Kos (WhatsApp)
+    <button id="btnChatPemilik" class="modal-btn" style="background:#00917C;display:flex;align-items:center;justify-content:center;gap:8px">
+      <svg viewBox="0 0 24 24" width="18" height="18" stroke="#fff" fill="none" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Chat Pemilik di Aplikasi
+    </button>
+    <button id="btnHubungiPemilik" class="modal-btn" style="background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px">
+      Hubungi via WhatsApp (+${k.wa})
     </button>
     <button id="btnSurveiKos" class="modal-btn orange">
       Jadwalkan Survei / Booking Demo
     </button>
   `;
 
+  document.getElementById('btnChatPemilik')?.addEventListener('click', () => {
+    const chatUrl = `/chat.html?seller=kos_${k.id}&nama=${encodeURIComponent('Pemilik ' + k.name)}&title=${encodeURIComponent(k.name)}&sub=${encodeURIComponent(k.priceText + '/bln')}`;
+    window.location.href = chatUrl;
+  });
+
   document.getElementById('btnHubungiPemilik')?.addEventListener('click', () => {
-    alert(`Membuka kontak pemilik ${k.name} (+${k.wa})...\nPesan siap dikirim: "Halo, saya tertarik dengan kamar di ${k.name} dari KampusCircle."`);
+    alert(`Membuka kontak WhatsApp pemilik ${k.name} (+${k.wa})...\nPesan siap dikirim: "Halo, saya tertarik dengan kamar di ${k.name} dari KampusCircle."`);
   });
 
   document.getElementById('btnSurveiKos')?.addEventListener('click', () => {

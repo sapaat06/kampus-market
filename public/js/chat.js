@@ -179,13 +179,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Try fetching live item name if from backend
     if (itemId) {
-      fetch(`/api/barang/${itemId}`)
-        .then(r => r.ok ? r.json() : null)
+      KM.get(`/barang/${itemId}`)
         .then(data => {
-          if (data) {
-            if (data.nama_barang && pinnedTitle) pinnedTitle.textContent = data.nama_barang;
-            if (data.harga_sewa && pinnedPrice) pinnedPrice.textContent = `Rp${data.harga_sewa.toLocaleString('id-ID')} / hari · Sewa`;
-          }
+          if (data.nama_barang && pinnedTitle) pinnedTitle.textContent = data.nama_barang;
+          if (data.harga_sewa && pinnedPrice) pinnedPrice.textContent = `Rp${data.harga_sewa.toLocaleString('id-ID')} / hari · Sewa`;
         })
         .catch(() => {});
     }
@@ -200,6 +197,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const paramSeller = urlParams.get('seller');
   const paramItem = urlParams.get('item');
+  const paramName = urlParams.get('nama');
+  const paramTitle = urlParams.get('title');
+  const paramSub = urlParams.get('sub');
+
+  if (paramSeller) {
+    if (!profiles[paramSeller]) {
+      profiles[paramSeller] = {
+        name: paramName || 'Pemilik Kos',
+        status: 'Online · Terverifikasi',
+        itemId: paramItem || '',
+        itemTitle: paramTitle || 'Kamar Kos',
+        itemPrice: paramSub || 'Sewa Bulanan'
+      };
+    } else {
+      if (paramName) profiles[paramSeller].name = paramName;
+      if (paramTitle) profiles[paramSeller].itemTitle = paramTitle;
+      if (paramSub) profiles[paramSeller].itemPrice = paramSub;
+    }
+  }
 
   if (paramSeller || paramItem) {
     isDirectFromDetail = true;

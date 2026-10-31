@@ -1,7 +1,11 @@
-import { api, nav, rp, esc, pesan } from '/js/api.js';
+const { api, nav, rp, esc, pesan } = window.KM;
 nav();
 const msg = document.getElementById('msg'), tabel = document.getElementById('tabel');
 const H = () => ({ 'x-admin-key': sessionStorage.getItem('km_admin') ?? '' });
+// KTM dikirim sebagai data URL; tampilkan thumbnail, bukan base64 mentah.
+const ktmSel = (k) => k && k.startsWith('data:image/')
+  ? `<img src="${esc(k)}" alt="Foto KTM" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #E3E8E7">`
+  : esc(k || '-');
 
 async function muat() {
   try {
@@ -20,13 +24,13 @@ async function muat() {
           <button class="btn sm ghost" data-batal="${t.id_transaksi}">Batal</button>` : '-'}</td></tr>`).join('') || '<tr><td colspan="7">Belum ada transaksi.</td></tr>'}</tbody></table>
 
       <h2 style="margin-top:2rem">Verifikasi Mahasiswa</h2>
-      <table><thead><tr><th>#</th><th>Nama</th><th>Email</th><th>No HP</th><th>KTM</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${mhs.map((m) => `
-        <tr><td>${m.id_mahasiswa}</td><td>${esc(m.nama)}</td><td>${esc(m.email)}</td><td>${esc(m.no_hp || '-')}</td><td>${esc(m.ktm || '-')}</td>
+      <table><thead><tr><th>#</th><th>Nama</th><th>Email</th><th>Kampus</th><th>No HP</th><th>KTM</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${mhs.map((m) => `
+        <tr><td>${m.id_mahasiswa}</td><td>${esc(m.nama)}</td><td>${esc(m.email)}</td><td>${esc(m.kampus || '-')}</td><td>${esc(m.no_hp || '-')}</td><td>${ktmSel(m.ktm)}</td>
         <td><span class="badge ${esc(m.status_verifikasi)}">${esc(m.status_verifikasi)}</span></td>
         <td style="display:flex;gap:4px">
           ${m.status_verifikasi !== 'terverifikasi' ? `<button class="btn sm" data-verif="${m.id_mahasiswa}" data-status="terverifikasi">Verifikasi</button>` : ''}
           ${m.status_verifikasi !== 'ditolak' ? `<button class="btn sm ghost" data-verif="${m.id_mahasiswa}" data-status="ditolak">Tolak</button>` : ''}
-        </td></tr>`).join('') || '<tr><td colspan="7">Belum ada data mahasiswa.</td></tr>'}</tbody></table>`;
+        </td></tr>`).join('') || '<tr><td colspan="8">Belum ada data mahasiswa.</td></tr>'}</tbody></table>`;
     msg.textContent = '';
   } catch (e) { tabel.hidden = true; pesan(msg, e.message); }
 }

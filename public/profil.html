@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KampusCircle — Profil & Green Points</title>
 <style>
@@ -132,8 +133,9 @@
       </div>
 
       <div class="user-info-row">
-        <div class="avatar-circle">
+        <div class="avatar-circle" id="avatarCircle" style="cursor:pointer" title="Klik untuk ubah foto">
           <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input type="file" id="fotoInput" accept="image/*" style="display:none">
         </div>
         <div class="user-texts">
           <div class="user-name" id="userName">Rina Maharani</div>

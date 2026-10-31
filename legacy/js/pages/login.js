@@ -1,4 +1,4 @@
-import { api, nav, simpanSesi, adaSesi, pesan } from '/js/api.js';
+const { api, nav, simpanSesi, adaSesi, pesan } = window.KM;
 nav();
 const msg = document.getElementById('msg');
 const next = new URLSearchParams(location.search).get('next');
