@@ -120,17 +120,18 @@ Pengujian dilakukan terhadap 20 halaman HTML, 18 skrip client-side JS, 6 file ru
 - **Saran Perbaikan**: Hapus kondisi `&& false` agar blok rendering riwayat transaksi aktif.
 - **Hasil Verifikasi Ulang**: Kondisi `&& false` telah dihapus dan fungsi rendering disempurnakan dengan `color: inherit` serta sanitasi nama barang via `esc()`. Riwayat transaksi ter-render dengan rapi.
 
-#### [BUG-07] Transaksi di Bawah Rp10.000 Menghasilkan 0 Green Points
+#### [BUG-07] [PERLU KEPUTUSAN] Transaksi di Bawah Rp10.000 Menghasilkan 0 Green Points & Aturan Poin Database
+- **Status**: DITELAAH - PERLU KEPUTUSAN (lihat Bagian 9)
 - **Role**: Mahasiswa
 - **Halaman / Endpoint**: `PATCH /api/transaksi/:id/selesai`
-- **File & Baris**: [src/routes/transaksi.js](file:///c:/Project/kampus-market/src/routes/transaksi.js#L101-L110)
+- **File & Baris**: [src/routes/transaksi.js](file:///c:/Project/kampus-market/src/routes/transaksi.js#L101-L110), [src/db.js](file:///c:/Project/kampus-market/src/db.js#L50-L56), [src/config.js](file:///c:/Project/kampus-market/src/config.js#L9)
 - **Langkah Reproduksi**:
   1. Mahasiswa menyewa barang dengan total biaya Rp5.000 (1 hari sewa kalkulator).
   2. Transaksi diselesaikan melalui endpoint `/api/transaksi/:id/selesai`.
-- **Diharapkan**: Mahasiswa mendapatkan minimal 1 Green Point atau poin dasar partisipasi.
-- **Kenyataan**: Perhitungan `Math.floor(5000 / 10000)` menghasilkan 0 poin. Akibatnya klausa `if (poin > 0)` tidak terpenuhi dan riwayat poin tidak dicatat sama sekali di database.
-- **Bukti**: Hasil verifikasi pada `src/routes/transaksi.js:102`: `poin = Math.floor(t.total_harga / POIN_PER_RP);`.
-- **Saran Perbaikan**: Berikan nilai default minimum 1 poin untuk transaksi sewa yang berhasil (`Math.max(1, Math.floor(t.total_harga / POIN_PER_RP))`).
+- **Diharapkan**: Mahasiswa mendapatkan minimal 1 Green Point atau poin dasar partisipasi, serta aturan poin dapat dikonfigurasi secara dinamis oleh admin.
+- **Kenyataan**: Perhitungan `Math.floor(5000 / 10000)` menghasilkan 0 poin. Akibatnya klausa `if (poin > 0)` tidak terpenuhi dan riwayat poin tidak dicatat sama sekali di database. Selain itu, database `src/db.js` belum memiliki tabel konfigurasi aturan poin (layar admin hanya menjalankan toast statis).
+- **Bukti**: Hasil verifikasi pada `src/routes/transaksi.js:102`: `poin = Math.floor(t.total_harga / POIN_PER_RP);`. Tabel `poin` hanya menyimpan riwayat perolehan, bukan definisi aturan aksi.
+- **Saran Perbaikan**: Lihat Bagian 9 untuk rekomendasi keputusan arsitektur. Sesuai batasan, tidak dibuat tabel baru tanpa persetujuan.
 
 ---
 
@@ -342,3 +343,21 @@ Ditemukan **31 tombol/elemen klik mati** yang tidak memiliki event listener, id,
 ### Keputusan Rilis
 **Keputusan: REJECT (TIDAK AMAN UNTUK MERGE KE MAIN)**  
 Aplikasi memiliki bug fungsional kritis yang memblokir fitur pemilik kos dan menyajikan alur transaksi kos serta obrolan palsu tanpa basis data backend. Perbaikan prioritas 1 sampai 4 wajib diselesaikan sebelum rilis produksi.
+
+---
+
+## 9. Perlu Keputusan
+
+### Konfigurasi Aturan Green Point (Database vs Kode)
+Berdasarkan pemeriksaan mendalam terhadap `src/db.js`, `src/config.js`, `src/routes/transaksi.js`, dan antarmuka admin (`public/admin.html` & `public/js/pages/admin.js`):
+1. **Kondisi Saat Ini**:
+   - Skema database di `src/db.js` hanya memiliki tabel `poin` untuk mencatat riwayat transaksi poin individual (`id_poin`, `id_mahasiswa`, `id_transaksi`, `jumlah_poin`, `kategori`, `keterangan`).
+   - Tidak ada tabel yang menyimpan metadata atau konfigurasi aturan poin (seperti poin per aksi sewa, pinjam, atau verifikasi).
+   - Di `src/routes/transaksi.js`, perhitungan poin dilakukan menggunakan pengali statis `POIN_PER_RP = 10000` dari `src/config.js` serta nilai tetap 20 poin untuk pinjam.
+   - Di antarmuka admin, form `#form-rules-gp` hanya melakukan `e.preventDefault()` dan memunculkan toast simulasi tanpa ada endpoint API backend penampung.
+2. **Batasan & Keputusan yang Dibutuhkan**:
+   - Sesuai instruksi audit ("JANGAN membuat tabel baru"), tidak dilakukan modifikasi skema DDL SQLite untuk menambahkan tabel aturan baru saat ini.
+   - **Pilihan Solusi untuk Tim**:
+     - *Opsi A (Tabel Database Dinamis)*: Tambahkan tabel `aturan_poin (kunci TEXT PRIMARY KEY, nilai INTEGER)` di `src/db.js` dan buat endpoint `GET /api/admin/aturan-poin` serta `PATCH /api/admin/aturan-poin` agar form di admin dashboard berfungsi persisten.
+     - *Opsi B (Konfigurasi Terpusat di Kode)*: Pertahankan konfigurasi di `src/config.js` dan sesuaikan form admin agar bersifat informatif (read-only) atau disembunyikan jika tidak dapat diubah saat runtime.
+     - *Penyesuaian Rumus Transaksi Kecil*: Disarankan menambahkan batas minimum `Math.max(1, Math.floor(t.total_harga / POIN_PER_RP))` pada transaksi sewa/beli bernilai < Rp10.000 agar mahasiswa tetap mendapatkan apresiasi Green Points partisipasi.
