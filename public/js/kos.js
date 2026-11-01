@@ -1,3 +1,6 @@
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 const kosData = [
   {
     id: 1,
@@ -90,17 +93,17 @@ function renderKos() {
   listKos.innerHTML = items.map(k => `
     <div class="card-kos" data-id="${k.id}">
       <div class="thumb">
-        <img src="${k.img}" alt="${k.name}">
+        <img src="${esc(k.img)}" alt="${esc(k.name)}">
       </div>
       <div class="info">
-        <div class="name">${k.name}</div>
-        <div class="price">${k.priceText}<span class="per">/bulan</span></div>
+        <div class="name">${esc(k.name)}</div>
+        <div class="price">${esc(k.priceText)}<span class="per">/bulan</span></div>
         <div class="dist">
           <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          ${k.distText}
+          ${esc(k.distText)}
         </div>
-        <div class="fac">${k.fac}</div>
-        <div class="avail">${k.avail}</div>
+        <div class="fac">${esc(k.fac)}</div>
+        <div class="avail">${esc(k.avail)}</div>
       </div>
     </div>
   `).join('');
@@ -119,25 +122,25 @@ function openDetailKos(k) {
   mKosNama.textContent = k.name;
   mKosContent.innerHTML = `
     <div style="border-radius:14px;overflow:hidden;height:140px;background:#EDEAF7">
-      <img src="${k.img}" alt="${k.name}" style="width:100%;height:100%;object-fit:cover;">
+      <img src="${esc(k.img)}" alt="${esc(k.name)}" style="width:100%;height:100%;object-fit:cover;">
     </div>
     <div style="background:#F8FAFC;border-radius:14px;padding:12px;border:1px solid #E2E8F0">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="background:#FFF1DE;color:#9A3412;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px">Kos ${k.gender} • Terverifikasi</span>
-        <span style="font-size:12px;color:#64748B">📍 ${k.distText}</span>
+        <span style="background:#FFF1DE;color:#9A3412;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px">Kos ${esc(k.gender)} • Terverifikasi</span>
+        <span style="font-size:12px;color:#64748B">📍 ${esc(k.distText)}</span>
       </div>
-      <div style="font-size:20px;font-weight:800;color:#008F83;margin-top:8px">${k.priceText} <span style="font-size:12px;color:#64748B;font-weight:400">/bulan</span></div>
-      <div style="font-size:12px;color:#008F83;font-weight:700;margin-top:4px">✓ ${k.avail}</div>
+      <div style="font-size:20px;font-weight:800;color:#008F83;margin-top:8px">${esc(k.priceText)} <span style="font-size:12px;color:#64748B;font-weight:400">/bulan</span></div>
+      <div style="font-size:12px;color:#008F83;font-weight:700;margin-top:4px">✓ ${esc(k.avail)}</div>
     </div>
 
     <div>
       <div style="font-size:13px;font-weight:700;color:#0F172A;margin-bottom:4px">Fasilitas Kamar:</div>
-      <div style="font-size:12px;color:#64748B;line-height:1.5">${k.fac}</div>
+      <div style="font-size:12px;color:#64748B;line-height:1.5">${esc(k.fac)}</div>
     </div>
 
     <div>
       <div style="font-size:13px;font-weight:700;color:#0F172A;margin-bottom:4px">Deskripsi Kos:</div>
-      <div style="font-size:12px;color:#64748B;line-height:1.5">${k.desc}</div>
+      <div style="font-size:12px;color:#64748B;line-height:1.5">${esc(k.desc)}</div>
     </div>
 
     <div style="display:flex;gap:10px;margin-top:6px">
@@ -167,11 +170,11 @@ function openAjukanSewa(k) {
   mKosNama.textContent = 'Ajukan Sewa Kost';
   mKosContent.innerHTML = `
     <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:12px;display:flex;gap:12px;align-items:center">
-      <img src="${k.img}" alt="${k.name}" style="width:64px;height:64px;border-radius:10px;object-fit:cover;">
+      <img src="${esc(k.img)}" alt="${esc(k.name)}" style="width:64px;height:64px;border-radius:10px;object-fit:cover;">
       <div style="flex:1">
-        <div style="font-size:14px;font-weight:700;color:#0F172A">${k.name}</div>
-        <div style="font-size:14px;font-weight:700;color:#008F83;margin-top:2px">${k.priceText} <span style="font-size:11px;color:#64748B;font-weight:400">/bulan</span></div>
-        <div style="font-size:11px;color:#64748B">📍 ${k.distText}</div>
+        <div style="font-size:14px;font-weight:700;color:#0F172A">${esc(k.name)}</div>
+        <div style="font-size:14px;font-weight:700;color:#008F83;margin-top:2px">${esc(k.priceText)} <span style="font-size:11px;color:#64748B;font-weight:400">/bulan</span></div>
+        <div style="font-size:11px;color:#64748B">📍 ${esc(k.distText)}</div>
       </div>
     </div>
 
@@ -198,7 +201,7 @@ function openAjukanSewa(k) {
     <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:12px">
       <div style="font-size:13px;font-weight:700;color:#0F172A;margin-bottom:4px">Ringkasan biaya</div>
       <div style="display:flex;justify-content:space-between;font-size:12px;color:#64748B">
-        <span>${k.priceText} × 3 bulan</span>
+        <span>${esc(k.priceText)} × 3 bulan</span>
         <span style="font-weight:700;color:#0F172A">Rp${(k.price * 3).toLocaleString('id-ID')}</span>
       </div>
     </div>
@@ -226,11 +229,11 @@ function openStatusPengajuan(k) {
     </div>
 
     <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:12px;display:flex;gap:12px;align-items:center">
-      <img src="${k.img}" alt="${k.name}" style="width:64px;height:64px;border-radius:10px;object-fit:cover;">
+      <img src="${esc(k.img)}" alt="${esc(k.name)}" style="width:64px;height:64px;border-radius:10px;object-fit:cover;">
       <div style="flex:1">
-        <div style="font-size:14px;font-weight:700;color:#0F172A">${k.name}</div>
-        <div style="font-size:14px;font-weight:700;color:#008F83;margin-top:2px">${k.priceText} <span style="font-size:11px;color:#64748B;font-weight:400">/bulan</span></div>
-        <div style="font-size:11px;color:#64748B">📍 ${k.distText}</div>
+        <div style="font-size:14px;font-weight:700;color:#0F172A">${esc(k.name)}</div>
+        <div style="font-size:14px;font-weight:700;color:#008F83;margin-top:2px">${esc(k.priceText)} <span style="font-size:11px;color:#64748B;font-weight:400">/bulan</span></div>
+        <div style="font-size:11px;color:#64748B">📍 ${esc(k.distText)}</div>
       </div>
     </div>
 

@@ -136,10 +136,11 @@ Pengujian dilakukan terhadap 20 halaman HTML, 18 skrip client-side JS, 6 file ru
 
 ### C. TINGKAT SEDANG (MEDIUM)
 
-#### [BUG-08] Potensi Injeksi innerHTML Tanpa Sanitasi di Frontend
+#### [BUG-08] [SELESAI] Potensi Injeksi innerHTML Tanpa Sanitasi di Frontend
+- **Status**: SELESAI DIPERBAIKI (commit fix: BUG-08)
 - **Role**: Semua Pengguna
 - **Halaman / Endpoint**: `public/js/*.js`
-- **File & Baris**: [public/js/detail.js](file:///c:/Project/kampus-market/public/js/detail.js#L210), [public/js/kos.js](file:///c:/Project/kampus-market/public/js/kos.js#L110), dll.
+- **File & Baris**: [public/js/detail.js](file:///c:/Project/kampus-market/public/js/detail.js#L196), [public/js/kos.js](file:///c:/Project/kampus-market/public/js/kos.js#L93-L235), [public/js/status-pinjam.js](file:///c:/Project/kampus-market/public/js/status-pinjam.js#L82)
 - **Langkah Reproduksi**:
   1. Unggah barang dengan nama berisi tag HTML seperti `<img src=x onerror=alert(1)>`.
   2. Buka halaman detail atau katalog.
@@ -147,6 +148,7 @@ Pengujian dilakukan terhadap 20 halaman HTML, 18 skrip client-side JS, 6 file ru
 - **Kenyataan**: Ditemukan 43 baris interpolasi template literal yang di-assign langsung ke `.innerHTML` tanpa pembungkus fungsi escape seperti `esc()` atau `escHtml()`.
 - **Bukti**: Audit statis Bagian 4 mencatat 43 interpolasi innerHTML tanpa sanitasi di `detail.js`, `kos.js`, dan `api.js`.
 - **Saran Perbaikan**: Bungkus semua variabel dinamis pengguna dengan fungsi `esc()` sebelum dimasukkan ke dalam template `innerHTML`.
+- **Hasil Verifikasi Ulang**: Seluruh titik interpolasi input pengguna (nama, judul, deskripsi, fasilitas, foto, chat) telah dibungkus dengan `esc()`. Payload `<img src=x onerror=alert(1)>` di-escape menjadi entitas teks HTML yang aman dan tidak tereksekusi.
 
 #### [BUG-09] [SELESAI] Parameter ID Barang Negatif / Bukan Angka Mengembalikan 404 Bukan 400
 - **Status**: SELESAI DIPERBAIKI (commit fix: BUG-09)

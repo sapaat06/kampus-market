@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (heroImg) heroImg.src = photoSrc;
 
   if (modalThumb) {
-    modalThumb.innerHTML = `<img src="${photoSrc}" alt="${escHtml(currentItem.nama_barang)}">`;
+    modalThumb.innerHTML = `<img src="${escHtml(photoSrc)}" alt="${escHtml(currentItem.nama_barang)}">`;
   }
 
   // Populate title & meta

@@ -21,6 +21,11 @@ async function initPinjam() {
   const date3 = document.getElementById('date3');
   const badgeTempo = document.getElementById('badgeTempo');
 
+  function escHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
   function formatTgl(strDate, withTime = false) {
     if (!strDate) return '';
     const d = new Date(strDate);
@@ -79,7 +84,7 @@ async function initPinjam() {
             const fotos = typeof KM !== 'undefined' && KM.getFotos ? KM.getFotos(b?.foto) : (b?.foto ? [b.foto] : []);
             if (fotos.length > 0) {
               if (itemIcon) {
-                itemIcon.innerHTML = `<img src="${fotos[0]}" alt="${b.nama_barang || ''}" style="width:100%;height:100%;object-fit:cover;border-radius:12px">`;
+                itemIcon.innerHTML = `<img src="${escHtml(fotos[0])}" alt="${escHtml(b.nama_barang || '')}" style="width:100%;height:100%;object-fit:cover;border-radius:12px">`;
               }
               const galleryCard = document.getElementById('galleryCard');
               const galleryCount = document.getElementById('galleryCount');
@@ -88,7 +93,7 @@ async function initPinjam() {
                 if (galleryCount) galleryCount.textContent = `${fotos.length} Foto`;
                 galleryList.innerHTML = fotos.map((f, idx) => `
                   <div style="width:80px;height:80px;border-radius:14px;overflow:hidden;border:1.5px solid var(--border-light);flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
-                    <img src="${f}" alt="Foto ${idx + 1}" style="width:100%;height:100%;object-fit:cover">
+                    <img src="${escHtml(f)}" alt="Foto ${idx + 1}" style="width:100%;height:100%;object-fit:cover">
                   </div>`).join('');
                 galleryCard.style.display = 'flex';
               }
