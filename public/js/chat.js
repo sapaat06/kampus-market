@@ -25,18 +25,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   const chipAjukanSewa = document.getElementById('chipAjukanSewa');
   const quickChips = document.querySelectorAll('.quick-chip[data-msg]');
 
-  let activeUser = 'dimas';
-  let activeItemId = '1';
+  let activeUser = 'rani';
+  let activeItemId = 'kos1';
   let isDirectFromDetail = false;
 
   // Conversations Directory Mock Data
   const profiles = {
+    rani: {
+      name: 'Bu Rani',
+      status: 'Online · Pemilik Kost',
+      itemId: 'kos1',
+      itemTitle: 'Kos Ananda Dago',
+      itemPrice: 'Rp850.000 / bulan · Sewa Kost'
+    },
     dimas: {
       name: 'Dimas A.',
       status: 'Online · Terverifikasi',
       itemId: '1',
       itemTitle: 'Kalkulator Scientific Casio',
       itemPrice: 'Rp5.000 / hari · Sewa'
+    },
+    sarah: {
+      name: 'Sarah W.',
+      status: 'Online · Terverifikasi',
+      itemId: '3',
+      itemTitle: 'Tenda Dome Camping 4P',
+      itemPrice: 'Rp25.000 / hari · Sewa'
     },
     salsa: {
       name: 'Salsa P.',
@@ -68,7 +82,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (raw) return JSON.parse(raw);
     } catch (_e) {}
     return {
+      rani: [],
       dimas: [],
+      sarah: [],
       salsa: [],
       koperasi: [],
       budi: []
