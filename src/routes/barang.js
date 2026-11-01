@@ -87,14 +87,51 @@ router.get('/barang', (req, res) => {
   const k = raw == null || raw === '' ? null : posInt(Number(raw), 'kategori');
   const q = typeof req.query.q === 'string' && req.query.q.trim() !== '' ? `%${req.query.q.trim()}%` : null;
 
-  res.json(db.prepare(
-    `SELECT b.*, k.nama_kategori, p.nama AS nama_penjual
+  let tipe = null;
+  if (req.query.tipe != null && req.query.tipe !== '') {
+    tipe = oneOf(req.query.tipe, 'tipe', ['sewa', 'beli', 'jual', 'pinjam']);
+  }
+
+  const URUT = {
+    termurah: 'COALESCE(b.harga_sewa, b.harga_jual) ASC',
+    termahal: 'COALESCE(b.harga_jual, b.harga_sewa) DESC',
+    terbaru: 'b.id_barang DESC'
+  };
+
+  let orderBy = 'b.id_barang DESC';
+  if (req.query.urut != null && req.query.urut !== '') {
+    if (!URUT[req.query.urut]) throw err(400, 'urut tidak valid');
+    orderBy = URUT[req.query.urut];
+  }
+
+  const where = ["b.status='tersedia'"];
+  const params = [];
+
+  if (k !== null) {
+    where.push('b.id_kategori = ?');
+    params.push(k);
+  }
+
+  if (q !== null) {
+    where.push('(b.nama_barang LIKE ? OR b.deskripsi LIKE ?)');
+    params.push(q, q);
+  }
+
+  if (tipe === 'sewa') {
+    where.push('(b.harga_sewa IS NOT NULL AND b.harga_sewa > 0)');
+  } else if (tipe === 'beli' || tipe === 'jual') {
+    where.push('(b.harga_jual IS NOT NULL AND b.harga_jual > 0)');
+  } else if (tipe === 'pinjam') {
+    where.push('(b.harga_sewa = 0 OR b.deskripsi LIKE ? OR b.nama_barang LIKE ?)');
+    params.push('%pinjam%', '%pinjam%');
+  }
+
+  const sql = `SELECT b.*, k.nama_kategori, p.nama AS nama_penjual
      FROM barang b JOIN kategori k USING (id_kategori) JOIN penjual p USING (id_penjual)
-     WHERE b.status='tersedia'
-       AND (? IS NULL OR b.id_kategori=?)
-       AND (? IS NULL OR (b.nama_barang LIKE ? OR b.deskripsi LIKE ?))
-     ORDER BY b.id_barang DESC`
-  ).all(k, k, q, q, q));
+     WHERE ${where.join(' AND ')}
+     ORDER BY ${orderBy}`;
+
+  res.json(db.prepare(sql).all(...params));
 });
 
 router.get('/barang/:id', (req, res) => {

@@ -78,7 +78,8 @@ Pengujian dilakukan terhadap 20 halaman HTML, 18 skrip client-side JS, 6 file ru
 
 ### B. TINGKAT TINGGI (HIGH)
 
-#### [BUG-04] Parameter Filter `tipe` dan `urut` pada `GET /api/barang` Diabaikan Diam-diam
+#### [BUG-04] [SELESAI] Parameter Filter `tipe` dan `urut` pada `GET /api/barang` Diabaikan Diam-diam
+- **Status**: SELESAI DIPERBAIKI (commit fix: BUG-04)
 - **Role**: Publik / Mahasiswa
 - **Halaman / Endpoint**: `GET /api/barang`
 - **File & Baris**: [src/routes/barang.js](file:///c:/Project/kampus-market/src/routes/barang.js#L85-L98)
@@ -88,6 +89,7 @@ Pengujian dilakukan terhadap 20 halaman HTML, 18 skrip client-side JS, 6 file ru
 - **Kenyataan**: Server mengembalikan seluruh barang tanpa filter tipe dan tanpa pengurutan termurah (status 200 tapi mengabaikan parameter). Bahkan parameter tidak valid seperti `tipe=ngawur` tetap menghasilkan 200.
 - **Bukti**: Query SQL pada `src/routes/barang.js:90-97` hanya membaca parameter `kategori` dan `q`. Parameter `req.query.tipe` dan `req.query.urut` tidak diproses sama sekali.
 - **Saran Perbaikan**: Tambahkan klausa `WHERE (? IS NULL OR b.tipe=?)` dan logika pengurutan `ORDER BY` dinamis pada query `GET /api/barang`.
+- **Hasil Verifikasi Ulang**: Dukungan parameter `tipe` dan `urut` berhasil ditambahkan dengan parameterized query dan whitelist validasi. Filter `tipe=ngawur` dan `urut=terbang` ditolak dengan status 400. Filter valid berhasil memfilter/mengurutkan data.
 
 #### [BUG-05] [SELESAI] Mismatch DOM Selector Modal Filter Pencarian pada Halaman Cari
 - **Status**: SELESAI DIPERBAIKI (commit fix: BUG-05)
@@ -240,8 +242,8 @@ Pengujian dijalankan langsung terhadap instance Express in-memory dengan databas
 | `GET /api/barang` | Akses katalog publik | 200 | **OK** | Mengembalikan array barang |
 | `GET /api/barang?kategori=1` | Filter kategori integer | 200 | **OK** | Barang sesuai kategori |
 | `GET /api/barang?kategori=abc` | Filter kategori bukan integer | 400 | **OK** | `{"error":"kategori harus integer positif"}` |
-| `GET /api/barang?tipe=ngawur` | Filter tipe tidak valid | 200 | **BUG** | Parameter diabaikan diam-diam |
-| `GET /api/barang?urut=ngawur` | Filter urutan tidak valid | 200 | **BUG** | Parameter diabaikan diam-diam |
+| `GET /api/barang?tipe=ngawur` | Filter tipe tidak valid | 400 | **OK** | Ditolak dengan 400 Bad Request via whitelist |
+| `GET /api/barang?urut=ngawur` | Filter urutan tidak valid | 400 | **OK** | Ditolak dengan 400 Bad Request via whitelist |
 | `GET /api/barang/:id` | ID barang tidak ada (99999) | 404 | **OK** | `{"error":"barang tidak ada"}` |
 | `GET /api/barang/:id` | ID barang negatif (-5) | 404 | **BUG** | Merespons 404 bukan 400 |
 | `POST /api/barang` | Tanpa login | 401 | **OK** | `{"error":"login dulu"}` |
