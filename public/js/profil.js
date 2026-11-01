@@ -50,6 +50,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
+    // Direct link to Dompet Green Point
+    const greenCard = document.querySelector('.green-card');
+    if (greenCard) {
+      greenCard.style.cursor = 'pointer';
+      greenCard.addEventListener('click', () => {
+        window.location.href = '/green-point.html';
+      });
+    }
+
     if (data.transaksi && Array.isArray(data.transaksi)) {
       const sewaCount = data.transaksi.filter(t => t.jenis_transaksi === 'sewa').length;
       const beliCount = data.transaksi.filter(t => t.jenis_transaksi === 'beli').length;
@@ -78,9 +87,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
 
-      // Render real activities list with proper routing if needed
+      // Render real activities list with proper routing
       const activityList = document.getElementById('activityList');
-      if (activityList && data.transaksi.length > 0 && false) {
+      if (activityList && data.transaksi && data.transaksi.length > 0) {
+        const esc = KM.esc || ((s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])));
         activityList.innerHTML = data.transaksi.slice(0, 5).map(t => {
           let targetUrl = `/status-pinjam.html?id_transaksi=${t.id_transaksi}`;
           if (t.jenis_transaksi === 'sewa') {
@@ -88,18 +98,29 @@ document.addEventListener('DOMContentLoaded', async () => {
           } else if (t.jenis_transaksi === 'beli') {
             targetUrl = `/status-beli.html?id_transaksi=${t.id_transaksi}`;
           }
-          const jenisBadge = t.jenis_transaksi.toUpperCase();
-          const hargaLabel = t.total_harga > 0 ? `Rp${Number(t.total_harga).toLocaleString('id-ID')}` : 'Gratis';
+          const jenisBadge = t.jenis_transaksi === 'pinjam' ? 'Pinjam' : (t.jenis_transaksi === 'sewa' ? 'Sewa' : 'Beli');
+          const statusText = t.status === 'selesai' ? 'Selesai' : (t.status === 'batal' ? 'Dibatalkan' : 'Berjalan');
+
+          // Tampilkan poin atau nominal harga
+          const pt = (data.riwayat_poin || []).find(p => p.id_transaksi === t.id_transaksi);
+          let ptsLabel = '';
+          if (pt && pt.jumlah_poin > 0) {
+            ptsLabel = `+${pt.jumlah_poin} Poin`;
+          } else if (t.status === 'selesai') {
+            ptsLabel = `+20 Poin`;
+          } else {
+            ptsLabel = t.total_harga > 0 ? `Rp${Number(t.total_harga).toLocaleString('id-ID')}` : 'Gratis';
+          }
 
           return `
-            <a href="${targetUrl}" class="act-item" style="text-decoration:none;cursor:pointer">
+            <a href="${targetUrl}" class="act-item" style="text-decoration:none;color:inherit;cursor:pointer">
               <div class="act-dot-wrap"><div class="act-dot"></div></div>
               <div class="act-info">
-                <div class="act-title">${t.nama_barang || 'Barang Kampus'}</div>
-                <div class="act-time">${jenisBadge} · Status: ${t.status}</div>
+                <div class="act-title">${esc(t.nama_barang || 'Barang Kampus')}</div>
+                <div class="act-time">${jenisBadge} · Status: ${statusText}</div>
               </div>
-              <div class="act-pts" style="font-size:12px;color:${t.status==='selesai'?'#00917C':'#F28C28'}">
-                ${hargaLabel}
+              <div class="act-pts" style="font-size:12px;color:${t.status==='selesai'?'#008F83':'#F28C28'}">
+                ${ptsLabel}
               </div>
             </a>
           `;

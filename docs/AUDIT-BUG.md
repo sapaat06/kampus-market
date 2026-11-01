@@ -102,7 +102,8 @@ Pengujian dilakukan terhadap 20 halaman HTML, 18 skrip client-side JS, 6 file ru
 - **Bukti**: `public/js/cari.js` mencari `#filterPriceSlider`, `#filterDistSlider`, `#filterCampusSelect`, sedangkan di `public/cari.html` elemennya berupa input teks `#filterMinPrice`, `#filterMaxPrice`, `#filterDistChips`.
 - **Saran Perbaikan**: Selaraskan ID elemen HTML di `cari.html` agar sesuai dengan variabel target di `cari.js`.
 
-#### [BUG-06] Rendering Riwayat Transaksi Profil Dinonaktifkan Manual (`&& false`)
+#### [BUG-06] [SELESAI] Rendering Riwayat Transaksi Profil Dinonaktifkan Manual (`&& false`)
+- **Status**: SELESAI DIPERBAIKI (commit fix: BUG-06)
 - **Role**: Mahasiswa
 - **Halaman / Endpoint**: `public/profil.html`
 - **File & Baris**: [public/js/profil.js](file:///c:/Project/kampus-market/public/js/profil.js#L92)
@@ -113,6 +114,7 @@ Pengujian dilakukan terhadap 20 halaman HTML, 18 skrip client-side JS, 6 file ru
 - **Kenyataan**: Bagian aktivitas tetap kosong atau menampilkan kartu placeholder statis.
 - **Bukti**: Baris 92 `public/js/profil.js`: `if (activityList && data.transaksi.length > 0 && false)` mengandung kondisi hardcode `&& false`.
 - **Saran Perbaikan**: Hapus kondisi `&& false` agar blok rendering riwayat transaksi aktif.
+- **Hasil Verifikasi Ulang**: Kondisi `&& false` telah dihapus dan fungsi rendering disempurnakan dengan `color: inherit` serta sanitasi nama barang via `esc()`. Riwayat transaksi ter-render dengan rapi.
 
 #### [BUG-07] Transaksi di Bawah Rp10.000 Menghasilkan 0 Green Points
 - **Role**: Mahasiswa
