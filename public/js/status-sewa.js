@@ -111,26 +111,16 @@ async function initSewa() {
   const rawList = (userData && Array.isArray(userData.transaksi)) ? userData.transaksi : [];
   const sewaTransaksi = rawList.filter(t => t.jenis_transaksi === 'sewa');
 
-  const defaultMock = [{
-    id_transaksi: 'KC-261027',
-    nama_barang: 'Kalkulator Casio fx-991ID Plus',
-    harga_sewa: 5000,
-    total_harga: 15000,
-    deposit: 50000,
-    tanggal_transaksi: '26 Okt 2026 · 16.05',
-    periode_sewa: '27–30 Okt 2026',
-    batas_pengembalian: '30 Okt · 10.00 WIB',
-    lokasi: '350 m · Fakultas Teknik',
-    titik_bertemu: 'Lobi Fakultas Teknik',
-    status: 'berjalan',
-    foto: '/img/kalkulator-casio.png'
-  }];
+  if (sewaTransaksi.length === 0) {
+    if (emptyState) emptyState.style.display = 'flex';
+    if (transactionList) transactionList.innerHTML = '';
+    return;
+  }
 
-  const displayList = sewaTransaksi.length > 0 ? sewaTransaksi : defaultMock;
-
+  if (emptyState) emptyState.style.display = 'none';
   transactionList.innerHTML = '';
 
-  for (const tx of displayList) {
+  for (const tx of sewaTransaksi) {
     let product = null;
     if (tx.id_barang) {
       try {

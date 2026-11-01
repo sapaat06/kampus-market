@@ -159,7 +159,8 @@ Pengujian dilakukan terhadap 20 halaman HTML, 18 skrip client-side JS, 6 file ru
 - **Bukti**: `if (!Number.isInteger(id) || id <= 0) throw err(404, 'barang tidak ada');`.
 - **Saran Perbaikan**: Gunakan fungsi pembantu standar `posInt(Number(req.params.id), 'id_barang')` yang secara konsisten melempar status 400.
 
-#### [BUG-10] Tampilan Mockup Statis Transaksi `KC-261027` pada Pengguna Baru
+#### [BUG-10] [SELESAI] Tampilan Mockup Statis Transaksi `KC-261027` pada Pengguna Baru
+- **Status**: SELESAI DIPERBAIKI (commit fix: BUG-10)
 - **Role**: Mahasiswa
 - **Halaman / Endpoint**: `public/status-sewa.html`
 - **File & Baris**: [public/js/status-sewa.js](file:///c:/Project/kampus-market/public/js/status-sewa.js#L115-L129)
@@ -170,6 +171,7 @@ Pengujian dilakukan terhadap 20 halaman HTML, 18 skrip client-side JS, 6 file ru
 - **Kenyataan**: Halaman menampilkan transaksi palsu hardcode ID `KC-261027` tertanggal 26 Okt 2026.
 - **Bukti**: Baris 129: `const displayList = sewaTransaksi.length > 0 ? sewaTransaksi : defaultMock;`.
 - **Saran Perbaikan**: Tampilkan elemen empty state saat `sewaTransaksi.length === 0` alih-alih merender `defaultMock`.
+- **Hasil Verifikasi Ulang**: Data tiruan `KC-261027` telah dihapus. Jika pengguna belum memiliki riwayat sewa, elemen `#emptyState` langsung ditampilkan dengan tautan navigasi ke katalog.
 
 #### [BUG-11] Nama Pemilik Kos & Gambar Di-hardcode Menjadi 'Bu Rani'
 - **Role**: Pemilik Kos
