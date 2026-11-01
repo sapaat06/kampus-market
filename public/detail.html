@@ -4,364 +4,644 @@
 <meta charset="utf-8">
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CampusCircle — Detail Barang</title>
+<title>KampusCircle — Detail Barang</title>
+<link rel="stylesheet" href="/css/style.css">
 <style>
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-400.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #F1F5F9;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
   }
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-500.woff2') format('woff2');
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  .phone-frame {
+    width: 100%;
+    max-width: 360px;
+    height: 800px;
+    background: #F8FAFC;
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
   }
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-600.woff2') format('woff2');
-    font-weight: 600;
-    font-style: normal;
-    font-display: swap;
+  .scroll-body {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: none;
+    padding: 0 16px 84px;
+    display: flex;
+    flex-direction: column;
   }
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-700.woff2') format('woff2');
+  .scroll-body::-webkit-scrollbar { display: none; }
+
+  /* Top Status Bar */
+  .status-bar {
+    height: 26px;
+    background: #F8FAFC;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2px;
+    font-size: 11px;
     font-weight: 700;
-    font-style: normal;
-    font-display: swap;
+    color: #0F172A;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .status-icons {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .status-icons svg {
+    width: 13px;
+    height: 13px;
+    fill: #0F172A;
   }
 
-  :root {
-    --primary: #007A68;
-    --primary-active: #006354;
-    --text-dark: #1E3A38;
-    --text-muted: #7A8583;
-    --placeholder: #8A9492;
-    --orange: #F28C28;
-    --mint-bg: #DDF1EC;
-    --mint-text: #0B6B5B;
-    --peach-bg: #FFF0DB;
-    --lav-bg: #EDEAF7;
-    --lav-text: #5C4BA5;
-    --border-light: #E3E8E7;
-    --card-bg: #F4F7F6;
+  /* Nav Header */
+  .detail-header {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+  }
+  .detail-header .back-btn {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    color: #0F172A;
+    padding: 0;
+  }
+  .detail-header .back-btn svg {
+    width: 22px;
+    height: 22px;
+    stroke: #0F172A;
+    fill: none;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .detail-header .title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .detail-header .menu-btn {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    color: #0F172A;
+    padding: 0;
+  }
+  .detail-header .menu-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: #0F172A;
   }
 
-  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Poppins',system-ui,-apple-system,sans-serif}
-  *{box-sizing:border-box;margin:0;padding:0}
-  .phone{width:100%;max-width:440px;height:100vh;height:100dvh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08)}
-  
-  /* Hero Carousel Section */
-  .hero-area{position:relative;background:#EEF3F6;height:290px;flex-shrink:0;display:flex;flex-direction:column;justify-content:space-between;padding:12px 16px 14px}
-  
-  .status{height:20px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;color:var(--text-dark)}
-  .status .icons{display:flex;gap:6px;align-items:center}
-  .status svg{width:14px;height:14px;fill:var(--text-dark)}
+  /* Photo Frame */
+  .photo-frame {
+    width: 100%;
+    height: 232px;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #E2E8F0;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .photo-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .carousel-dots {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+    margin: 14px 0 18px;
+  }
+  .carousel-dots .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #CBD5E1;
+    transition: all 0.2s;
+  }
+  .carousel-dots .dot.active {
+    width: 18px;
+    border-radius: 999px;
+    background: #008F83;
+  }
 
-  .nav-buttons{display:flex;justify-content:space-between;align-items:center;margin-top:6px;z-index:5}
-  .icon-btn{width:40px;height:40px;border-radius:50%;background:#fff;border:none;outline:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06);transition:transform .15s}
-  .icon-btn:active{transform:scale(0.92)}
-  .icon-btn svg{width:20px;height:20px;stroke:var(--text-dark);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-  .icon-btn.heart svg{stroke:var(--orange);fill:none}
-  .icon-btn.heart.favorited svg{fill:var(--orange);stroke:var(--orange)}
+  /* Badges Row */
+  .badges-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .badge-chip {
+    height: 32px;
+    padding: 0 16px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .badge-chip.orange {
+    background: #F7942D;
+    color: #FFFFFF;
+  }
+  .badge-chip.outline {
+    background: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    color: #475569;
+  }
 
-  .hero-img-wrap{flex:1;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;overflow:hidden;border-radius:18px}
-  .hero-img-wrap img{width:100%;height:100%;object-fit:cover;border-radius:18px;transition:opacity .2s}
-  .carousel-arrow{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.85);border:none;color:var(--text-dark);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:6;box-shadow:0 2px 6px rgba(0,0,0,0.15);transition:background .15s}
-  .carousel-arrow:hover{background:#fff}
-  .carousel-arrow.prev{left:10px}
-  .carousel-arrow.next{right:10px}
-  .carousel-counter{position:absolute;bottom:10px;right:12px;background:rgba(30,58,56,0.78);color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;z-index:6}
-  .carousel-dots{display:flex;gap:8px;justify-content:center;align-items:center;z-index:5}
-  .dot{width:8px;height:8px;border-radius:50%;background:#CFD8DC;transition:background .2s, width .2s;cursor:pointer}
-  .dot.active{background:var(--primary);width:18px;border-radius:999px}
+  /* Item Title */
+  .item-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0F172A;
+    line-height: 1.25;
+    margin-bottom: 16px;
+  }
 
-  .thumb-strip{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none}
-  .thumb-strip::-webkit-scrollbar{display:none}
-  .thumb-strip-item{width:56px;height:56px;border-radius:12px;overflow:hidden;border:2px solid transparent;cursor:pointer;flex-shrink:0;transition:border-color .15s, transform .15s}
-  .thumb-strip-item img{width:100%;height:100%;object-fit:cover;display:block}
-  .thumb-strip-item.active{border-color:var(--primary);transform:scale(1.05);box-shadow:0 2px 6px rgba(0,122,104,0.25)}
+  /* Price */
+  .price-val {
+    font-size: 24px;
+    font-weight: 800;
+    color: #008F83;
+    margin-bottom: 18px;
+    line-height: 1;
+  }
 
-  /* Content Sheet */
-  .content{flex:1;background:#fff;border-top-left-radius:28px;border-top-right-radius:28px;margin-top:-20px;position:relative;z-index:10;padding:22px 20px 88px;overflow-y:auto;scrollbar-width:none}
-  .content::-webkit-scrollbar{display:none}
+  /* Notice Highlight Card */
+  .notice-card {
+    background: #DCFCE7;
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+  }
+  .notice-card svg {
+    width: 20px;
+    height: 20px;
+    stroke: #166534;
+    fill: none;
+    stroke-width: 2.2;
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+  .notice-card .notice-content {
+    flex: 1;
+  }
+  .notice-card .notice-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #166534;
+    margin-bottom: 2px;
+  }
+  .notice-card .notice-sub {
+    font-size: 11.5px;
+    color: #166534;
+    line-height: 1.4;
+  }
 
-  .badges-row{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
-  .badge-chip{height:26px;padding:0 14px;border-radius:999px;font-size:12px;font-weight:700;display:inline-flex;align-items:center}
-  .badge-chip.sewa{background:var(--orange);color:#fff}
-  .badge-chip.beli{background:var(--primary);color:#fff}
-  .badge-chip.pinjam{background:var(--lav-bg);color:var(--lav-text)}
-  .badge-chip.kondisi{background:var(--mint-bg);color:var(--primary)}
+  /* Meta Info Card */
+  .meta-card {
+    background: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+  .meta-card .meta-lbl {
+    font-size: 11px;
+    color: #64748B;
+  }
+  .meta-card .meta-val {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-top: 2px;
+  }
 
-  .item-title{font-size:20px;font-weight:700;color:var(--text-dark);line-height:1.3;margin-bottom:10px}
-  
-  .price-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-  .price-box{display:flex;align-items:baseline;gap:5px}
-  .price-val{font-size:22px;font-weight:800;color:var(--orange)}
-  .price-val.pinjam{color:var(--primary)}
-  .price-val.beli{color:var(--text-dark)}
-  .price-unit{font-size:13px;color:var(--text-muted);font-weight:600}
-  
-  .badge-fair{background:#E0F2F1;color:#00695C;font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:5px}
-  .badge-fair svg{width:14px;height:14px;stroke:#00695C;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  /* Bottom Action Bar */
+  .action-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 76px;
+    background: #FFFFFF;
+    border-top: 1px solid #E2E8F0;
+    padding: 12px 16px 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    z-index: 50;
+  }
+  .btn-chat {
+    width: 125px;
+    height: 46px;
+    border-radius: 14px;
+    background: #FFFFFF;
+    border: 1.5px solid #008F83;
+    color: #008F83;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-action-main {
+    flex: 1;
+    height: 46px;
+    border-radius: 14px;
+    background: #008F83;
+    border: none;
+    color: #FFFFFF;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .home-indicator {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 130px;
+    height: 4px;
+    background: #0F172A;
+    border-radius: 2px;
+    pointer-events: none;
+  }
 
-  /* 3 Stat Cards */
-  .stats-grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;margin-bottom:20px}
-  .stat-card{background:var(--card-bg);border-radius:14px;padding:12px 10px;display:flex;flex-direction:column;gap:4px}
-  .stat-lbl{font-size:11px;color:var(--text-muted);font-weight:500}
-  .stat-val{font-size:13px;font-weight:700;color:var(--text-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* Bottom Sheet Modal Checkout / Pengajuan */
+  .modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 100;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-sheet {
+    background: #FFFFFF;
+    width: 100%;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    padding: 14px 18px 24px;
+    max-height: 90%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scrollbar-width: none;
+  }
+  .modal-sheet::-webkit-scrollbar { display: none; }
+  .sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: #CBD5E1;
+    border-radius: 2px;
+    margin: 0 auto 2px;
+  }
+  .sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .sheet-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .sheet-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: #64748B;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+  }
 
-  /* Description Section */
-  .desc-sec{margin-bottom:22px}
-  .desc-title{font-size:14px;font-weight:700;color:var(--text-dark);margin-bottom:6px}
-  .desc-body{font-size:13px;color:#5E6E6B;line-height:1.55}
+  .summary-card {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 14px;
+    padding: 10px 12px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .summary-thumb {
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #E2E8F0;
+  }
+  .summary-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .summary-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .summary-badge {
+    align-self: flex-start;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: #DCFCE7;
+    color: #166534;
+  }
+  .summary-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .summary-price {
+    font-size: 13px;
+    font-weight: 700;
+    color: #008F83;
+  }
+  .summary-loc {
+    font-size: 11px;
+    color: #64748B;
+  }
 
-  /* Owner Card */
-  .owner-card{border:1px solid var(--border-light);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:16px;cursor:pointer;transition:background .15s}
-  .owner-card:hover{background:#F9FBFA}
-  .owner-avatar{width:46px;height:46px;border-radius:50%;background:var(--mint-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  .owner-avatar svg{width:26px;height:26px;stroke:var(--primary);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .owner-info{flex:1;display:flex;flex-direction:column;gap:3px}
-  .owner-name-row{display:flex;align-items:center;gap:6px}
-  .owner-name{font-size:14px;font-weight:700;color:var(--text-dark)}
-  .verified-badge{width:16px;height:16px;border-radius:50%;background:var(--primary);display:inline-flex;align-items:center;justify-content:center}
-  .verified-badge svg{width:10px;height:10px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-  .owner-sub{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px}
-  .rating{color:var(--text-dark);font-weight:700;display:inline-flex;align-items:center;gap:2px}
-  .rating svg{width:12px;height:12px;fill:var(--orange);stroke:var(--orange)}
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .form-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .form-input-box {
+    border: 1.5px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0F172A;
+    background: #FFFFFF;
+    outline: none;
+    font-family: inherit;
+  }
 
-  /* Bottom Fixed Action Bar */
-  .action-bar{position:absolute;bottom:0;left:0;right:0;height:76px;background:#fff;border-top:1px solid #E8ECEB;padding:12px 16px;display:flex;gap:10px;align-items:center;z-index:30}
-  .chat-btn{width:50px;height:50px;border-radius:16px;background:var(--mint-bg);border:none;outline:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:transform .15s}
-  .chat-btn:active{transform:scale(0.95)}
-  .chat-btn svg{width:24px;height:24px;stroke:var(--primary);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-  
-  .btn-group-actions{flex:1;display:flex;gap:8px}
-  .primary-btn{flex:1;height:50px;border-radius:16px;background:var(--primary);color:#fff;border:none;outline:none;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 12px rgba(0,122,104,0.25);transition:background .15s, transform .15s;font-family:inherit}
-  .primary-btn:active{transform:scale(0.98);background:var(--primary-active)}
-  .primary-btn.orange{background:var(--orange);box-shadow:0 4px 12px rgba(242,140,40,0.25)}
+  .durasi-picker-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: space-between;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 8px 14px;
+  }
+  .counter-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: #FFFFFF;
+    font-size: 16px;
+    font-weight: 700;
+    color: #008F83;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-  .toast{position:absolute;top:70px;left:50%;transform:translateX(-50%);background:rgba(30,58,56,0.92);color:#fff;padding:8px 18px;border-radius:999px;font-size:12px;font-weight:600;z-index:60;display:none;align-items:center;gap:6px;animation:fadein .2s ease-out}
-  @keyframes fadein{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translate(-50%,0)}}
+  .bill-card {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .bill-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .bill-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #64748B;
+  }
+  .bill-row.bold {
+    font-weight: 700;
+    color: #0F172A;
+  }
 
-  /* Modal Checkout Bottom Sheet */
-  .modal-overlay{position:absolute;inset:0;background:rgba(30,58,56,0.5);z-index:50;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}
-  .modal-sheet{background:#fff;width:100%;border-top-left-radius:28px;border-top-right-radius:28px;padding:20px;max-height:88%;overflow-y:auto;display:flex;flex-direction:column;gap:14px;box-shadow:0 -10px 30px rgba(0,0,0,0.15)}
-  .sheet-header{display:flex;justify-content:space-between;align-items:center}
-  .sheet-title{font-size:17px;font-weight:700;color:var(--text-dark)}
-  .sheet-close{width:32px;height:32px;border-radius:50%;border:none;background:var(--card-bg);cursor:pointer;font-size:18px;color:var(--text-muted);display:flex;align-items:center;justify-content:center}
-  
-  .summary-card{background:var(--card-bg);border-radius:14px;padding:10px 12px;display:flex;gap:12px;align-items:center}
-  .summary-thumb{width:48px;height:48px;border-radius:10px;background:var(--mint-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
-  .summary-thumb img{width:100%;height:100%;object-fit:cover}
-  .summary-thumb svg{width:24px;height:24px;stroke:var(--primary);fill:none;stroke-width:1.8}
-  .summary-info{display:flex;flex-direction:column;gap:2px}
-  .summary-name{font-size:13px;font-weight:700;color:var(--text-dark)}
-  .summary-price{font-size:12px;font-weight:700;color:var(--orange)}
-
-  .field-group{display:flex;flex-direction:column;gap:6px}
-  .field-label{font-size:12px;font-weight:700;color:var(--text-dark)}
-  .durasi-picker{display:flex;align-items:center;gap:14px;justify-content:space-between;background:var(--card-bg);border-radius:14px;padding:8px 14px}
-  .counter-btn{width:36px;height:36px;border-radius:50%;border:none;background:#fff;font-size:18px;font-weight:700;color:var(--primary);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
-  .durasi-val{font-size:15px;font-weight:700;color:var(--text-dark)}
-  
-  .method-chips{display:flex;gap:8px}
-  .method-chip{flex:1;height:38px;border-radius:12px;border:1.5px solid var(--border-light);background:#fff;font-size:12px;font-weight:700;color:var(--text-dark);display:flex;align-items:center;justify-content:center;cursor:pointer}
-  .method-chip.active{border-color:var(--primary);background:var(--mint-bg);color:var(--primary)}
-
-  .loc-input{height:44px;border-radius:12px;border:1.5px solid var(--border-light);background:#fff;padding:0 12px;font-size:13px;color:var(--text-dark);outline:none;font-family:inherit}
-
-  .total-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0 4px;border-top:1px dashed var(--border-light)}
-  .total-lbl{font-size:13px;font-weight:600;color:var(--text-muted)}
-  .total-val{font-size:18px;font-weight:800;color:var(--primary)}
-  
-  .submit-sewa-btn{height:48px;border-radius:16px;background:var(--primary);color:#fff;border:none;outline:none;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,122,104,0.25);font-family:inherit}
+  .submit-modal-btn {
+    width: 100%;
+    height: 46px;
+    background: #008F83;
+    border: none;
+    border-radius: 14px;
+    color: #FFFFFF;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    margin-top: 4px;
+  }
 </style>
 </head>
 <body>
-
-<div class="phone">
-  <!-- Toast -->
-  <div class="toast" id="toastMsg">
-    <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.2"><path d="m5 12 4 4L19 6"/></svg>
-    <span id="toastText">Tersimpan ke favorit</span>
+<div class="phone-frame">
+  <!-- Top Status Bar -->
+  <div class="status-bar" style="padding: 0 16px;">
+    <span>09.41</span>
+    <div class="status-icons">
+      <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.95 9.05 8.05 9.05 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
   </div>
 
-  <!-- Hero Carousel -->
-  <div class="hero-area">
-    <div class="status">
-      <span>09:41</span>
-      <div class="icons">
-        <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
-        <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.95 9.05 8.05 9.05 5 13z"/></svg>
-        <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
-      </div>
-    </div>
-
-    <div class="nav-buttons">
-      <button class="icon-btn" id="backBtn" aria-label="Kembali">
+  <div class="scroll-body">
+    <!-- Header -->
+    <div class="detail-header">
+      <button class="back-btn" id="backBtn" type="button" aria-label="Kembali">
         <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
       </button>
-      <button class="icon-btn heart" id="favBtn" aria-label="Simpan favorit">
-        <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>
+      <span class="title" id="pageTitle">Detail barang</span>
+      <button class="menu-btn" type="button" aria-label="Menu Opsi">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>
       </button>
     </div>
 
-    <!-- Product Visual: Photo if available, or Vector Illustration -->
-    <div class="hero-img-wrap" id="heroImgWrap">
-      <img id="heroImg" src="" alt="Foto Produk" style="display:none">
-      <div id="heroSvgPlaceholder"></div>
-
-      <!-- Arrow Controls -->
-      <button class="carousel-arrow prev" id="heroPrevBtn" aria-label="Foto Sebelumnya" style="display:none">&#10094;</button>
-      <button class="carousel-arrow next" id="heroNextBtn" aria-label="Foto Berikutnya" style="display:none">&#10095;</button>
-
-      <!-- Counter Badge -->
-      <div class="carousel-counter" id="heroCounter" style="display:none">1/1</div>
+    <!-- Photo Container -->
+    <div class="photo-frame" id="heroImgWrap">
+      <img id="heroImg" src="/img/kalkulator-casio.png" alt="Foto Produk">
+      <div id="heroSvgPlaceholder" style="display:none"></div>
+    </div>
+    <div class="carousel-dots" id="carouselDots">
+      <div class="dot active"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
     </div>
 
-    <!-- Carousel Dots -->
-    <div class="carousel-dots" id="carouselDots"></div>
-  </div>
-
-  <!-- Content Sheet -->
-  <div class="content">
-    <!-- Thumbnail Strip for multiple photos -->
-    <div class="thumb-strip" id="thumbStrip" style="display:none"></div>
-
+    <!-- Badges Row -->
     <div class="badges-row" id="badgesRow">
-      <span class="badge-chip sewa" id="badgeMode">Sewa</span>
-      <span class="badge-chip kondisi" id="badgeKondisi">Kondisi Baik</span>
+      <span class="badge-chip orange" id="badgeMode">Sewa</span>
+      <span class="badge-chip outline" id="badgeKondisi">Kondisi Baik</span>
+      <span class="badge-chip outline" id="badgeTersedia">Tersedia</span>
     </div>
 
-    <h1 class="item-title" id="itemTitle">Memuat nama barang...</h1>
+    <!-- Title & Price -->
+    <h1 class="item-title" id="itemTitle">Kalkulator Casio fx-991ID Plus</h1>
+    <div class="price-val" id="priceVal">Rp5.000/hari</div>
 
-    <div class="price-row">
-      <div class="price-box">
-        <span class="price-val" id="priceVal">Rp0</span>
-        <span class="price-unit" id="priceUnit">/ hari</span>
-      </div>
-      <div class="badge-fair" id="badgeFair">
-        <svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
-        <span>Harga wajar</span>
-      </div>
-    </div>
-
-    <!-- 3 Stat Cards -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <span class="stat-lbl">Jarak</span>
-        <span class="stat-val" id="statJarak">350 m</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-lbl">Lokasi</span>
-        <span class="stat-val" id="statLokasi">Fak. Teknik</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-lbl">Tersedia</span>
-        <span class="stat-val" id="statTersedia">Siap Dipakai</span>
+    <!-- Notice Card -->
+    <div class="notice-card" id="noticeCard">
+      <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <div class="notice-content">
+        <div class="notice-title" id="noticeTitle">Deposit Rp50.000</div>
+        <div class="notice-sub" id="noticeSub">Dikembalikan setelah kondisi barang dikonfirmasi.</div>
       </div>
     </div>
 
-    <!-- Deskripsi -->
-    <div class="desc-sec">
-      <div class="desc-title">Deskripsi</div>
-      <p class="desc-body" id="descBody">
-        Memuat deskripsi barang...
-      </p>
-    </div>
-
-    <!-- Profil Pemilik -->
-    <div class="owner-card" id="ownerCard">
-      <div class="owner-avatar">
-        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      </div>
-      <div class="owner-info">
-        <div class="owner-name-row">
-          <span class="owner-name" id="ownerName">Mahasiswa Kampus</span>
-          <span class="verified-badge" title="Mahasiswa Terverifikasi">
-            <svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
-          </span>
-        </div>
-        <div class="owner-sub">
-          <span>Mahasiswa terverifikasi</span>
-          <span class="rating">
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <span id="ownerRating">4,9</span>
-          </span>
-        </div>
+    <!-- Meta Info Card -->
+    <div class="meta-card">
+      <div>
+        <div class="meta-lbl">Jarak & lokasi</div>
+        <div class="meta-val" id="statLokasi">350 m · Fakultas Teknik</div>
       </div>
     </div>
   </div>
 
-  <!-- Bottom Action Bar (Chat button + Dynamic CTA buttons) -->
+  <!-- Bottom Action Bar -->
   <div class="action-bar">
-    <button class="chat-btn" id="chatBtn" aria-label="Kirim Pesan ke Pemilik">
-      <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-4-.9L3 21l1.7-4.4A8.4 8.4 0 1 1 21 11.5Z"/></svg>
-    </button>
-    <div class="btn-group-actions" id="actionBtnContainer"></div>
+    <button class="btn-chat" id="chatBtn" type="button">Chat</button>
+    <div id="actionBtnContainer" style="flex:1;display:flex">
+      <button class="btn-action-main" id="btnActionMain" type="button">Ajukan Sewa</button>
+    </div>
   </div>
 
-  <!-- Bottom Sheet Modal Checkout / Pengajuan Transaksi -->
+  <div class="home-indicator"></div>
+
+  <!-- Bottom Sheet Modal Checkout / Pengajuan -->
   <div class="modal-overlay" id="checkoutModal">
     <div class="modal-sheet">
+      <div class="sheet-handle"></div>
       <div class="sheet-header">
-        <div class="sheet-title" id="checkoutModalTitle">Pengajuan Transaksi</div>
-        <button class="sheet-close" id="closeModalBtn">&times;</button>
+        <span class="sheet-title" id="checkoutModalTitle">Pengajuan Barang</span>
+        <button class="sheet-close" id="closeModalBtn" type="button">&times;</button>
       </div>
 
       <div class="summary-card">
         <div class="summary-thumb" id="modalThumb">
-          <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M8 6h8M8 11h2M12 11h2M16 11h.01M8 15h2M12 15h2M16 15h.01M8 19h2M12 19h2M16 19h.01"/></svg>
+          <img src="/img/kalkulator-casio.png" alt="Barang">
         </div>
         <div class="summary-info">
-          <div class="summary-name" id="modalItemName">Nama Barang</div>
-          <div class="summary-price" id="modalItemPrice">Rp0</div>
-          <div id="modalPhotosCount" style="font-size:11px;color:var(--primary);font-weight:600"></div>
-        </div>
-      </div>
-      <!-- Mini Gallery in Checkout Modal -->
-      <div id="modalGalleryRow" style="display:none;gap:8px;margin:-4px 0 12px;padding:0 2px"></div>
-
-      <!-- Durasi (hanya untuk Sewa & Pinjam) -->
-      <div class="field-group" id="durasiGroup">
-        <label class="field-label" id="durasiLabel">Durasi Sewa</label>
-        <div class="durasi-picker">
-          <button class="counter-btn" id="durasiMinus" type="button">&minus;</button>
-          <span class="durasi-val" id="durasiText">2 Hari</span>
-          <button class="counter-btn" id="durasiPlus" type="button">&plus;</button>
+          <span class="summary-badge" id="modalBadge">Sewa</span>
+          <div class="summary-name" id="modalItemName">Kalkulator Casio fx-991ID Plus</div>
+          <div class="summary-price" id="modalItemPrice">Rp5.000/hari</div>
+          <div class="summary-loc" id="modalItemLoc">350 m · Fakultas Teknik</div>
         </div>
       </div>
 
-      <div class="field-group">
-        <label class="field-label" for="lokasiTemu">Lokasi Serah Terima / COD</label>
-        <input class="loc-input" id="lokasiTemu" value="" placeholder="Masukkan lokasi temu (misal: Fakultas Teknik, Perpus ITG)">
-      </div>
-
-      <div class="field-group">
-        <label class="field-label">Metode Pembayaran</label>
-        <div class="method-chips" id="methodGroup">
-          <div class="method-chip active" data-method="qris">QRIS Kampus</div>
-          <div class="method-chip" data-method="tunai">Tunai saat temu</div>
+      <!-- Durasi Sewa -->
+      <div class="form-field" id="durasiGroup">
+        <label class="form-label" id="durasiLabel">Kapan kamu butuh?</label>
+        <div class="durasi-picker-row">
+          <span style="font-size:12px;color:#64748B">Durasi:</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <button class="counter-btn" id="durasiMinus" type="button">&minus;</button>
+            <span class="durasi-val" id="durasiText" style="font-size:13px;font-weight:700">3 Hari</span>
+            <button class="counter-btn" id="durasiPlus" type="button">&plus;</button>
+          </div>
         </div>
       </div>
 
-      <div class="total-row">
-        <span class="total-lbl">Total Pembayaran:</span>
-        <span class="total-val" id="modalTotal">Rp0</span>
+      <!-- Lokasi Serah Terima -->
+      <div class="form-field">
+        <label class="form-label" for="lokasiTemu">Titik serah terima di kampus</label>
+        <input class="form-input-box" id="lokasiTemu" value="Lobi Fakultas Teknik" placeholder="Masukkan lokasi temu">
       </div>
 
-      <div id="checkoutError" style="display:none;color:#D32F2F;background:#FFEBEE;border:1px solid #FFCDD2;padding:10px 14px;border-radius:12px;font-size:12px;font-weight:600;margin-top:4px;text-align:center"></div>
+      <!-- Ringkasan Biaya -->
+      <div class="bill-card" id="billCard">
+        <div class="bill-title">Ringkasan biaya</div>
+        <div class="bill-row" id="billRowPrice">
+          <span id="billPriceLabel">Rp5.000 × 3 hari</span>
+          <span id="billPriceVal" class="bold">Rp15.000</span>
+        </div>
+        <div class="bill-row" id="billRowDeposit">
+          <span>Deposit (dapat kembali)</span>
+          <span class="bold">Rp50.000</span>
+        </div>
+        <div class="bill-row bold" style="border-top:1px dashed #CBD5E1;padding-top:6px;margin-top:2px">
+          <span>Total</span>
+          <span id="modalTotal" style="color:#008F83">Rp65.000</span>
+        </div>
+      </div>
 
-      <button class="submit-sewa-btn" id="submitCheckoutBtn" type="button">Konfirmasi Transaksi</button>
+      <div id="checkoutError" style="display:none;color:#D32F2F;background:#FFEBEE;border:1px solid #FFCDD2;padding:10px 14px;border-radius:12px;font-size:12px;font-weight:600;text-align:center"></div>
+
+      <button class="submit-modal-btn" id="submitCheckoutBtn" type="button">Kirim Pengajuan</button>
     </div>
   </div>
 </div>
-
 <script type="module" src="/js/detail.js"></script>
 </body>
 </html>
