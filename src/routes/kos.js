@@ -18,6 +18,16 @@ router.get('/kos', (_req, res) => {
   ).all(q, q, q));
 });
 
+// Pemilik kost: daftar kos miliknya
+router.get('/kos/miliku', user, pemilikKost, (_req, res) => {
+  res.json(db.prepare(
+    `SELECT k.*, m.nama AS nama_pemilik
+     FROM kos k JOIN mahasiswa m ON k.id_pemilik = m.id_mahasiswa
+     WHERE k.id_pemilik=?
+     ORDER BY k.id_kos DESC`
+  ).all(_req.uid));
+});
+
 // Public: detail kos
 router.get('/kos/:id', (req, res) => {
   const id = posInt(Number(req.params.id), 'id_kos');
@@ -47,16 +57,6 @@ router.post('/kos', user, pemilikKost, (req, res) => {
      VALUES (?,?,?,?,?,?,?,?,?,?)`
   ).run(req.uid, nama_kos, deskripsi, alamat, harga_bulan, fasilitas, status_kos, jenis_kelamin, kamar_tersedia, foto);
   res.status(201).json({ id: Number(r.lastInsertRowid) });
-});
-
-// Pemilik kost: daftar kos miliknya
-router.get('/kos/miliku', user, pemilikKost, (_req, res) => {
-  res.json(db.prepare(
-    `SELECT k.*, m.nama AS nama_pemilik
-     FROM kos k JOIN mahasiswa m ON k.id_pemilik = m.id_mahasiswa
-     WHERE k.id_pemilik=?
-     ORDER BY k.id_kos DESC`
-  ).all(_req.uid));
 });
 
 // Pemilik kost: edit kos miliknya
