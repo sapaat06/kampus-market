@@ -135,8 +135,7 @@ router.get('/barang', (req, res) => {
 });
 
 router.get('/barang/:id', (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) throw err(404, 'barang tidak ada');
+  const id = posInt(Number(req.params.id), 'id_barang');
   const b = db.prepare(
     `SELECT b.*, k.nama_kategori, p.nama AS nama_penjual, p.no_hp AS no_hp_penjual
      FROM barang b JOIN kategori k USING (id_kategori) JOIN penjual p USING (id_penjual)

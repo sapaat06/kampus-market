@@ -148,16 +148,18 @@ Pengujian dilakukan terhadap 20 halaman HTML, 18 skrip client-side JS, 6 file ru
 - **Bukti**: Audit statis Bagian 4 mencatat 43 interpolasi innerHTML tanpa sanitasi di `detail.js`, `kos.js`, dan `api.js`.
 - **Saran Perbaikan**: Bungkus semua variabel dinamis pengguna dengan fungsi `esc()` sebelum dimasukkan ke dalam template `innerHTML`.
 
-#### [BUG-09] Parameter ID Barang Negatif / Bukan Angka Mengembalikan 404 Bukan 400
+#### [BUG-09] [SELESAI] Parameter ID Barang Negatif / Bukan Angka Mengembalikan 404 Bukan 400
+- **Status**: SELESAI DIPERBAIKI (commit fix: BUG-09)
 - **Role**: Publik
 - **Halaman / Endpoint**: `GET /api/barang/:id`
-- **File & Baris**: [src/routes/barang.js](file:///c:/Project/kampus-market/src/routes/barang.js#L101-L102)
+- **File & Baris**: [src/routes/barang.js](file:///c:/Project/kampus-market/src/routes/barang.js#L137-L147)
 - **Langkah Reproduksi**:
   1. Panggil `GET /api/barang/-5` atau `GET /api/barang/abc`.
 - **Diharapkan**: Mengembalikan HTTP 400 Bad Request karena tipe input tidak valid.
 - **Kenyataan**: Mengembalikan HTTP 404 Not Found.
 - **Bukti**: `if (!Number.isInteger(id) || id <= 0) throw err(404, 'barang tidak ada');`.
 - **Saran Perbaikan**: Gunakan fungsi pembantu standar `posInt(Number(req.params.id), 'id_barang')` yang secara konsisten melempar status 400.
+- **Hasil Verifikasi Ulang**: Menggunakan `posInt(Number(req.params.id), 'id_barang')`. ID negatif atau bukan angka sekarang secara konsisten mengembalikan HTTP 400 Bad Request.
 
 #### [BUG-10] [SELESAI] Tampilan Mockup Statis Transaksi `KC-261027` pada Pengguna Baru
 - **Status**: SELESAI DIPERBAIKI (commit fix: BUG-10)
@@ -247,7 +249,8 @@ Pengujian dijalankan langsung terhadap instance Express in-memory dengan databas
 | `GET /api/barang?tipe=ngawur` | Filter tipe tidak valid | 400 | **OK** | Ditolak dengan 400 Bad Request via whitelist |
 | `GET /api/barang?urut=ngawur` | Filter urutan tidak valid | 400 | **OK** | Ditolak dengan 400 Bad Request via whitelist |
 | `GET /api/barang/:id` | ID barang tidak ada (99999) | 404 | **OK** | `{"error":"barang tidak ada"}` |
-| `GET /api/barang/:id` | ID barang negatif (-5) | 404 | **BUG** | Merespons 404 bukan 400 |
+| `GET /api/barang/:id` | ID barang negatif (-5) | 400 | **OK** | Ditolak dengan 400 Bad Request |
+| `GET /api/barang/:id` | ID barang bukan angka (abc) | 400 | **OK** | Ditolak dengan 400 Bad Request |
 | `POST /api/barang` | Tanpa login | 401 | **OK** | `{"error":"login dulu"}` |
 | `POST /api/barang` | Input valid oleh mahasiswa | 201 | **OK** | Barang berhasil ditambahkan |
 | `POST /api/barang` | Harga sewa negatif | 400 | **OK** | `{"error":"harga_sewa harus integer positif"}` |
