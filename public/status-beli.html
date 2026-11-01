@@ -4,130 +4,336 @@
 <meta charset="utf-8">
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CampusCircle — Status Pembelian</title>
+<title>CampusCircle — Transaksi Pembelian</title>
+<link rel="stylesheet" href="/css/style.css">
 <style>
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-400.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
+  body {
+    margin: 0;
+    padding: 0;
+    background: #F8FAFC;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    color: #0F172A;
   }
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-600.woff2') format('woff2');
-    font-weight: 600;
-    font-style: normal;
-    font-display: swap;
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  .phone {
+    width: 100%;
+    max-width: 360px;
+    height: 100vh;
+    height: 100dvh;
+    background: #F8FAFC;
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-700.woff2') format('woff2');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-  }
-
-  :root {
-    --primary: #007A68;
-    --primary-active: #006354;
-    --text-dark: #1E3A38;
-    --text-muted: #7A8583;
-    --orange: #F28C28;
-    --mint-bg: #DDF1EC;
-    --peach-bg: #FFF0DB;
-    --border-light: #E3E8E7;
-    --card-bg: #F4F7F6;
-  }
-
-  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Poppins',system-ui,-apple-system,sans-serif}
-  *{box-sizing:border-box;margin:0;padding:0}
-  .phone{width:100%;max-width:440px;height:100vh;height:100dvh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08)}
 
   /* Status Bar */
-  .status{height:24px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;color:var(--text-dark);flex-shrink:0;margin-top:6px}
-  .status .icons{display:flex;gap:6px;align-items:center}
-  .status svg{width:14px;height:14px;fill:var(--text-dark)}
+  .status-bar {
+    height: 28px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+    color: #0F172A;
+    flex-shrink: 0;
+    background: #F8FAFC;
+    z-index: 10;
+  }
+  .status-bar .icons { display: flex; gap: 6px; align-items: center; }
+  .status-bar svg { width: 14px; height: 14px; fill: #0F172A; }
 
   /* Header */
-  .header{height:50px;padding:0 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
-  .back-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
-  .back-btn:hover{background:var(--card-bg)}
-  .back-btn svg{width:22px;height:22px;stroke:var(--text-dark);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-  .header-title{font-size:18px;font-weight:700;color:var(--text-dark)}
+  .header-bar {
+    height: 48px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    background: #F8FAFC;
+    z-index: 10;
+  }
+  .back-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0F172A;
+    padding: 0;
+  }
+  .back-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .header-title { font-size: 15px; font-weight: 700; color: #0F172A; }
+
+  /* Tabs Bar */
+  .tabs-row {
+    padding: 0 20px;
+    margin-top: 4px;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 8px;
+    background: #F8FAFC;
+    flex-shrink: 0;
+  }
+  .tab-pill {
+    height: 32px;
+    padding: 0 16px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .tab-pill.active {
+    background: #FE8F26;
+    color: #FFFFFF;
+    border: none;
+  }
+  .tab-pill.inactive {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    color: #64748B;
+  }
 
   /* Content Scroll */
-  .scroll-body{flex:1;overflow-y:auto;padding:8px 20px 24px;display:flex;flex-direction:column;gap:16px;scrollbar-width:none}
-  .scroll-body::-webkit-scrollbar{display:none}
+  .scroll-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 20px 84px;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: none;
+  }
+  .scroll-body::-webkit-scrollbar { display: none; }
 
   /* Item Card */
-  .item-card{background:#fff;border:1px solid var(--border-light);border-radius:18px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.03)}
-  .item-icon{width:50px;height:50px;border-radius:14px;background:var(--mint-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
-  .item-icon img{width:100%;height:100%;object-fit:cover}
-  .item-icon svg{width:24px;height:24px;stroke:var(--primary);fill:none;stroke-width:2}
-  .item-info{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
-  .item-title{font-size:14px;font-weight:700;color:var(--text-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .item-sub{font-size:12px;color:var(--text-muted);font-weight:500}
-  .chips-row{display:flex;gap:6px;margin-top:2px}
-  .badge-chip{height:22px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:700;display:inline-flex;align-items:center}
-  .badge-chip.beli{background:var(--primary);color:#fff}
-  .badge-chip.status{background:var(--card-bg);color:var(--text-dark)}
+  .item-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 116px;
+    box-sizing: border-box;
+  }
+  .item-thumb {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    background: #DCFCE7;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .item-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .item-tag {
+    background: #DCFCE7;
+    color: #166534;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    display: inline-block;
+    width: fit-content;
+  }
+  .item-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0F172A;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+  .item-price {
+    font-size: 13px;
+    font-weight: 700;
+    color: #008F83;
+  }
+  .item-loc {
+    font-size: 11px;
+    color: #64748B;
+  }
 
-  .sec-title{font-size:15px;font-weight:700;color:var(--text-dark)}
+  /* Status Badge Row */
+  .status-badge-row {
+    display: flex;
+    align-items: center;
+    margin-top: 14px;
+    margin-bottom: 14px;
+  }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 24px;
+    padding: 0 12px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    background: #DCFCE7;
+    color: #166534;
+  }
 
-  /* Stepper - Tanpa Pengembalian untuk Pembelian */
-  .stepper{display:flex;flex-direction:column;gap:0;padding-left:4px}
-  .step-item{display:flex;gap:14px;position:relative}
-  
-  .step-axis{display:flex;flex-direction:column;align-items:center;width:24px;flex-shrink:0}
-  .step-dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2}
-  .step-dot.done{background:var(--primary)}
-  .step-dot.done svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-  .step-dot.active{background:var(--orange);box-shadow:0 0 0 4px rgba(242,140,40,0.2)}
-  .step-dot.pending{background:#fff;border:2px solid #CBD5E1}
-  
-  .step-line{width:2px;flex:1;min-height:36px;background:var(--primary);margin:2px 0}
-  .step-line.gray{background:var(--border-light)}
+  /* Details Card */
+  .details-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    height: 252px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+    margin-bottom: 21px;
+  }
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    height: 40px;
+  }
+  .detail-label { color: #64748B; font-weight: 500; }
+  .detail-val { color: #0F172A; font-weight: 700; }
 
-  .step-content{flex:1;padding-bottom:20px}
-  .step-title{font-size:13px;font-weight:700;color:var(--text-dark)}
-  .step-date{font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:500}
-  .step-date.active-text{color:var(--orange);font-weight:600}
-  .step-title.pending-text{color:#94A3B8;font-weight:600}
-  .step-date.pending-text{color:#94A3B8}
+  /* Notice Banner (Sekarang milikmu) */
+  .notice-banner {
+    background: #DCFCE7;
+    border: 1px solid #86EFAC;
+    border-radius: 16px;
+    height: 76px;
+    padding: 14px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 18px;
+    box-sizing: border-box;
+  }
+  .notice-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #166534;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #FFFFFF;
+  }
+  .notice-icon svg { width: 13px; height: 13px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .notice-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .notice-title { font-size: 13px; font-weight: 700; color: #166534; }
+  .notice-desc { font-size: 11px; color: #166534; line-height: 1.4; opacity: 0.9; }
 
-  /* Info Beli Hak Milik */
-  .info-note{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:12px 14px;font-size:12px;color:var(--text-muted);display:flex;gap:10px;align-items:flex-start;line-height:1.4}
-  .info-note svg{width:18px;height:18px;stroke:var(--primary);flex-shrink:0;margin-top:1px;fill:none;stroke-width:2}
+  /* Action Buttons */
+  .btn-beli-lagi {
+    width: 100%;
+    height: 40px;
+    border-radius: 12px;
+    background: #008F83;
+    color: #FFFFFF;
+    border: none;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 4px 12px rgba(0,143,131,0.2);
+    transition: background .15s, transform .15s;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+  }
+  .btn-beli-lagi:active { transform: scale(0.98); background: #007A68; }
 
-  /* Reward Box */
-  .reward-box{background:var(--mint-bg);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:3px}
-  .reward-title{font-size:14px;font-weight:800;color:var(--primary)}
-  .reward-sub{font-size:11px;color:var(--text-muted);font-weight:500}
-
-  /* CTA Button */
-  .cta-btn{height:50px;border-radius:18px;background:var(--primary);color:#fff;border:none;outline:none;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,122,104,0.3);transition:background .15s, transform .15s;font-family:inherit}
-  .cta-btn:active{transform:scale(0.98);background:var(--primary-active)}
-  .cta-btn.completed{background:#5C6BC0;box-shadow:0 4px 14px rgba(92,107,192,0.3)}
-
-  /* Modal Celebration */
-  .modal-overlay{position:absolute;inset:0;background:rgba(30,58,56,0.6);z-index:50;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
-  .modal-box{background:#fff;border-radius:24px;padding:24px 20px;width:100%;max-width:320px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,0.2);animation:popin .25s ease-out}
-  @keyframes popin{from{transform:scale(0.85);opacity:0}to{transform:scale(1);opacity:1}}
-
-  .badge-icon-wrap{width:64px;height:64px;border-radius:50%;background:var(--mint-bg);display:flex;align-items:center;justify-content:center;margin-bottom:4px}
-  .badge-icon-wrap svg{width:36px;height:36px;stroke:var(--primary);fill:none;stroke-width:2}
-  .modal-title{font-size:17px;font-weight:800;color:var(--text-dark)}
-  .modal-points{font-size:24px;font-weight:800;color:var(--primary)}
-  .modal-desc{font-size:12px;color:var(--text-muted);line-height:1.5}
-  .modal-btn{width:100%;height:46px;border-radius:16px;background:var(--primary);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;margin-top:6px;font-family:inherit}
-  .modal-btn.secondary{background:var(--card-bg);color:var(--text-dark);margin-top:2px}
+  /* Bottom Navigation Bar */
+  .bottom-nav-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 68px;
+    background: #FFFFFF;
+    border-top: 1px solid #E2E8F0;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 8px;
+    z-index: 20;
+  }
+  .nav-tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #94A3B8;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px 10px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: inherit;
+    transition: color 0.15s ease;
+  }
+  .nav-icon-pill {
+    width: 44px;
+    height: 28px;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+  }
+  .nav-tab-item span { margin-top: 2px; }
+  .nav-tab-item svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .nav-tab-item.active { color: #008F83; }
+  .nav-tab-item.active .nav-icon-pill { background: #DCFCE7; }
+  .nav-tab-item.active svg { stroke: #008F83; }
+  .nav-tab-item.add-btn .nav-icon-pill {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #FE8F26;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(254, 143, 38, 0.35);
+  }
+  .nav-tab-item.add-btn svg { width: 22px; height: 22px; stroke: #FFFFFF; stroke-width: 2.5; }
 </style>
 </head>
 <body>
 
 <div class="phone">
-  <div class="status">
+  <!-- Status Bar -->
+  <div class="status-bar">
     <span>09:41</span>
     <div class="icons">
       <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
@@ -136,107 +342,112 @@
     </div>
   </div>
 
-  <div class="header">
+  <!-- Header Bar -->
+  <div class="header-bar">
     <button class="back-btn" id="backBtn" aria-label="Kembali">
       <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
     </button>
-    <h1 class="header-title">Status Pembelian Barang</h1>
+    <h1 class="header-title">Transaksi Pembelian</h1>
   </div>
 
-  <div class="scroll-body">
+  <!-- Tabs Row -->
+  <div class="tabs-row">
+    <a class="tab-pill inactive" href="/status-sewa.html">Sewa & Pinjam</a>
+    <a class="tab-pill active" href="/status-beli.html">Pembelian</a>
+  </div>
+
+  <!-- Scroll Body -->
+  <div class="scroll-body" id="scrollBody">
     <!-- Item Card -->
     <div class="item-card">
-      <div class="item-icon" id="itemIcon">
-        <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <div class="item-thumb" id="itemThumb">
+        <img src="/img/laptop-asus.png" alt="Barang Beli">
       </div>
       <div class="item-info">
-        <div class="item-title" id="itemTitle">Buku / Barang Beli</div>
-        <div class="item-sub" id="itemSub">Beli dari Mahasiswa</div>
-        <div class="chips-row">
-          <span class="badge-chip beli">Beli Permanen</span>
-          <span class="badge-chip status" id="badgeStatus">Menunggu Diterima</span>
-        </div>
+        <span class="item-tag">Beli</span>
+        <div class="item-title" id="itemTitle">Laptop Asus A416</div>
+        <div class="item-price" id="itemPrice">Rp3.200.000</div>
+        <div class="item-loc" id="itemLoc">1 km · Kampus</div>
       </div>
     </div>
 
-    <!-- Gallery Foto Barang (1-3 Foto) -->
-    <div class="gallery-card" id="galleryCard" style="display:none;background:#fff;border:1px solid var(--border-light);border-radius:18px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.03);flex-direction:column;gap:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:13px;font-weight:700;color:var(--text-dark)">Foto Barang</span>
-        <span id="galleryCount" style="font-size:11px;font-weight:600;color:var(--primary);background:var(--mint-bg);padding:3px 10px;border-radius:999px">3 Foto</span>
-      </div>
-      <div id="galleryList" style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none"></div>
+    <!-- Status Badge -->
+    <div class="status-badge-row">
+      <span class="status-pill" id="badgeStatus">Selesai / Hak Milik</span>
     </div>
 
-    <!-- Stepper Pembelian (Hanya 3 Tahap, TIDAK ada Pengembalian) -->
-    <div class="sec-title">Lacak Pengiriman & Serah Terima</div>
-    
-    <div class="stepper">
-      <!-- Step 1 -->
-      <div class="step-item">
-        <div class="step-axis">
-          <div class="step-dot done"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></div>
-          <div class="step-line"></div>
-        </div>
-        <div class="step-content">
-          <div class="step-title">Pesanan pembelian dikirim</div>
-          <div class="step-date" id="date1">Pesanan berhasil dibuat</div>
-        </div>
+    <!-- Details Card -->
+    <div class="details-card">
+      <div class="detail-row">
+        <span class="detail-label">ID pembelian</span>
+        <span class="detail-val" id="valTxId">KC-B1028</span>
       </div>
-
-      <!-- Step 2 -->
-      <div class="step-item">
-        <div class="step-axis">
-          <div class="step-dot done"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></div>
-          <div class="step-line" id="line2"></div>
-        </div>
-        <div class="step-content">
-          <div class="step-title">Disetujui Penjual & Janji Temu</div>
-          <div class="step-date" id="date2">Penjual menyetujui transaksi COD / ketemuan</div>
-        </div>
+      <div class="detail-row">
+        <span class="detail-label">Tanggal pembelian</span>
+        <span class="detail-val" id="valTgl">28 Okt 2026 · 13.00</span>
       </div>
-
-      <!-- Step 3 (Final: Diterima & Hak Milik Berpindah) -->
-      <div class="step-item">
-        <div class="step-axis">
-          <div class="step-dot active" id="dot3"></div>
-        </div>
-        <div class="step-content">
-          <div class="step-title" id="title3">Barang Diterima & Transaksi Selesai</div>
-          <div class="step-date active-text" id="date3">Tekan tombol di bawah jika barang sudah Anda terima</div>
-        </div>
+      <div class="detail-row">
+        <span class="detail-label">Penjual</span>
+        <span class="detail-val" id="valPenjual">Dimas · USR-008</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Harga jual</span>
+        <span class="detail-val" id="valHarga">Rp3.200.000</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Serah terima</span>
+        <span class="detail-val" id="valLokasi">Lobi Fakultas Teknik</span>
       </div>
     </div>
 
-    <!-- Catatan Kepemilikan -->
-    <div class="info-note">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-      <div>Barang yang Anda <strong>beli</strong> menjadi hak milik Anda sepenuhnya dan <strong>tidak perlu dikembalikan</strong> ke penjual.</div>
+    <!-- Notice Card (Sekarang milikmu) -->
+    <div class="notice-banner">
+      <div class="notice-icon">
+        <svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
+      </div>
+      <div class="notice-text">
+        <div class="notice-title">Sekarang milikmu</div>
+        <div class="notice-desc">Pembelian selesai. Simpan rincian ini sebagai catatan kesepakatan.</div>
+      </div>
     </div>
 
-    <!-- Green Points Banner -->
-    <div class="reward-box">
-      <div class="reward-title" id="rewardPointsText">+15 Green Points</div>
-      <div class="reward-sub">didapat otomatis setelah Anda konfirmasi barang sudah diterima</div>
-    </div>
-
-    <!-- CTA Button -->
-    <button class="cta-btn" id="confirmReceivedBtn" type="button">Konfirmasi Barang Sudah Diterima</button>
+    <!-- Button Beli Lagi -->
+    <button class="btn-beli-lagi" id="beliLagiBtn">Beli Lagi</button>
   </div>
 
-  <!-- Modal Perayaan Green Points -->
-  <div class="modal-overlay" id="rewardModal">
-    <div class="modal-box">
-      <div class="badge-icon-wrap">
-        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.93V18a1 1 0 0 1-2 0v-1.07A4 4 0 0 1 8 13a1 1 0 0 1 2 0 2 2 0 0 0 2 2 2 2 0 0 0 2-2c0-1.1-.9-2-2-2-2.21 0-4-1.79-4-4a4 4 0 0 1 3-3.87V4a1 1 0 0 1 2 0v1.13A4 4 0 0 1 15 9a1 1 0 0 1-2 0 2 2 0 0 0-2-2 2 2 0 0 0-2 2c0 1.1.9 2 2 2 2.21 0 4 1.79 4 4a4 4 0 0 1-3 3.93z"/></svg>
+  <!-- Bottom Navigation Bar -->
+  <nav class="bottom-nav-bar" aria-label="Navigasi Bawah">
+    <a class="nav-tab-item" href="/beranda.html">
+      <div class="nav-icon-pill">
+        <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-4a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5z"/></svg>
       </div>
-      <div class="modal-title">Transaksi Selesai!</div>
-      <div class="modal-points" id="modalPtsText">+15 Poin</div>
-      <p class="modal-desc">Selamat! Barang sudah menjadi milik Anda secara penuh. Terima kasih telah mendukung sirkular ekonomi kampus.</p>
-      <button class="modal-btn" id="modalProfileBtn" type="button">Lihat Saldo di Profil</button>
-      <button class="modal-btn secondary" id="modalHomeBtn" type="button">Kembali ke Beranda</button>
-    </div>
-  </div>
+      <span>Beranda</span>
+    </a>
+    <a class="nav-tab-item active" href="/status-beli.html">
+      <div class="nav-icon-pill">
+        <svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg>
+      </div>
+      <span>Transaksi</span>
+    </a>
+    <a class="nav-tab-item add-btn" href="/unggah.html" aria-label="Unggah Barang">
+      <div class="nav-icon-pill">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+      <span>Tambah</span>
+    </a>
+    <a class="nav-tab-item" href="/chat.html">
+      <div class="nav-icon-pill">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <span>Chat</span>
+    </a>
+    <a class="nav-tab-item" href="/profil.html">
+      <div class="nav-icon-pill">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <span>Profil</span>
+    </a>
+  </nav>
 </div>
 
 <script type="module" src="/js/status-beli.js"></script>
