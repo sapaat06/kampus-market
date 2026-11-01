@@ -4,128 +4,490 @@
 <meta charset="utf-8">
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KampusCircle — Profil & Green Points</title>
+<title>KampusCircle — Profil Mahasiswa</title>
+<link rel="stylesheet" href="/css/style.css">
 <style>
-  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif}
-  *{box-sizing:border-box;margin:0;padding:0}
-  .phone{width:100%;max-width:440px;height:100vh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08)}
+  body {
+    margin: 0;
+    padding: 0;
+    background: #F8FAFC;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    color: #0F172A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  .phone {
+    width: 100%;
+    max-width: 360px;
+    height: 800px;
+    background: #F8FAFC;
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
   /* Scrollable Body */
-  .profile-scroll{flex:1;overflow-y:auto;padding-bottom:16px;scrollbar-width:none}
-  .profile-scroll::-webkit-scrollbar{display:none}
+  .profile-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 90px;
+    scrollbar-width: none;
+  }
+  .profile-scroll::-webkit-scrollbar { display: none; }
 
-  /* Header Section (Teal Curved) */
-  .profile-header{background:#00897B;padding:0 20px 34px;position:relative;overflow:hidden}
-  .profile-header::after{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.08);pointer-events:none}
+  /* Status Bar */
+  .status-bar {
+    height: 28px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+    color: #0F172A;
+    background: #F8FAFC;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .status-bar .icons { display: flex; gap: 6px; align-items: center; }
+  .status-bar svg { width: 14px; height: 14px; fill: #0F172A; }
 
-  .status{height:24px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fff}
-  .status .icons{display:flex;gap:6px;align-items:center}
-  .status svg{width:14px;height:14px;fill:#fff}
+  /* Header Section */
+  .profile-header {
+    background: #008F83;
+    height: 120px;
+    padding: 10px 20px 14px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 0 0 20px 20px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+  .profile-header::after {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+  }
 
-  .header-title-row{margin-top:14px;display:flex;justify-content:space-between;align-items:center}
-  .header-title{font-size:18px;font-weight:700;color:#fff}
-  .logout-btn{background:transparent;border:none;color:#E0F2F1;cursor:pointer;display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600}
-  .logout-btn svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:1.8}
+  /* Title Row */
+  .header-title-row {
+    margin-top: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #FFFFFF;
+    margin: 0;
+  }
+  .logout-btn {
+    background: transparent;
+    border: none;
+    color: #E2E8F0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 0;
+  }
+  .logout-btn svg { width: 18px; height: 18px; stroke: #FFFFFF; fill: none; stroke-width: 2; }
 
-  .user-info-row{margin-top:16px;display:flex;align-items:center;gap:14px}
-  .avatar-circle{width:60px;height:60px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-  .avatar-circle svg{width:34px;height:34px;stroke:#00897B;fill:none;stroke-width:1.8}
+  /* User Info Row */
+  .user-info-row {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .avatar-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px solid #FFFFFF;
+    background: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  }
+  .avatar-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .user-texts {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .user-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #FFFFFF;
+    line-height: 1.2;
+  }
+  .user-dept {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.85);
+    margin-top: 2px;
+  }
+  .badge-ktm {
+    margin-top: 3px;
+    background: #064E3B;
+    color: #FFFFFF;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    width: fit-content;
+  }
+  .badge-ktm svg { width: 10px; height: 10px; stroke: #FFFFFF; fill: none; stroke-width: 2.5; }
 
-  .user-texts{display:flex;flex-direction:column;gap:3px}
-  .user-name{font-size:18px;font-weight:700;color:#fff}
-  .user-dept{font-size:12px;color:#D0EBE8}
-  .badge-ktm{margin-top:2px;background:#004D40;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;width:fit-content}
+  /* Green Points Card */
+  .green-card {
+    margin: 18px 20px 0;
+    background: #FFFFFF;
+    border-radius: 16px;
+    height: 104px;
+    padding: 12px 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    border: 1px solid #F1F5F9;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .green-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .green-lbl {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748B;
+  }
+  .green-points-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-top: 2px;
+  }
+  .green-val {
+    font-size: 28px;
+    font-weight: 800;
+    color: #008F83;
+    line-height: 1;
+  }
+  .green-unit {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748B;
+  }
+  .leaf-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #DCFCE7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .leaf-badge svg { width: 22px; height: 22px; stroke: #008F83; fill: none; stroke-width: 2; }
 
-  /* Green Points Card (Floating Over Header) */
-  .green-card{margin:-20px 20px 0;background:#fff;border-radius:20px;padding:18px 20px;box-shadow:0 4px 16px rgba(0,0,0,0.06);border:1px solid #EBF0EF;position:relative;z-index:5}
-  .green-top{display:flex;justify-content:space-between;align-items:flex-start}
-  .green-lbl{font-size:12px;color:#78909C;font-weight:600}
-  .green-points-wrap{display:flex;align-items:baseline;gap:5px;margin-top:2px}
-  .green-val{font-size:28px;font-weight:800;color:#00897B}
-  .green-unit{font-size:13px;color:#78909C;font-weight:600}
-
-  .leaf-badge{width:46px;height:46px;border-radius:50%;background:#DDF1EC;display:flex;align-items:center;justify-content:center}
-  .leaf-badge svg{width:24px;height:24px;stroke:#00917C;fill:none;stroke-width:2}
-
-  .progress-wrap{margin-top:14px;display:flex;flex-direction:column;gap:6px}
-  .progress-track{height:8px;border-radius:999px;background:#E8ECEB;overflow:hidden;position:relative}
-  .progress-fill{position:absolute;left:0;top:0;bottom:0;width:78%;border-radius:999px;background:linear-gradient(90deg, #F28C28, #F5A623)}
-
-  .progress-labels{display:flex;justify-content:space-between;font-size:11px}
-  .level-curr{color:#00695C;font-weight:700}
-  .level-next{color:#78909C;font-weight:500}
+  .progress-wrap {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .progress-track {
+    height: 8px;
+    border-radius: 9999px;
+    background: #F1F5F9;
+    overflow: hidden;
+    position: relative;
+  }
+  .progress-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 70%;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, #F7942D, #FBBF24);
+  }
+  .progress-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10.5px;
+  }
+  .level-curr { color: #008F83; font-weight: 700; }
+  .level-next { color: #64748B; font-weight: 500; }
 
   /* 3 Stats Grid */
-  .stats-row{margin:14px 20px 0;display:grid;grid-template-columns:repeat(3, 1fr);gap:10px}
-  .stat-box{background:#fff;border:1px solid #EAEFEF;border-radius:14px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;gap:2px}
-  .stat-num{font-size:18px;font-weight:800;color:#1E3A38}
-  .stat-txt{font-size:11px;color:#78909C;font-weight:500}
+  .stats-row {
+    margin: 14px 20px 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .stat-box {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 14px;
+    padding: 12px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .stat-num {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0F172A;
+  }
+  .stat-txt {
+    font-size: 11px;
+    color: #64748B;
+    font-weight: 500;
+  }
 
   /* Section Lencana */
-  .sec-wrap{margin:18px 20px 0}
-  .sec-heading{font-size:15px;font-weight:700;color:#1E3A38;margin-bottom:10px}
-
-  .badges-grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:8px}
-  .badge-item{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
-  .badge-circle{width:56px;height:56px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.04);transition:transform .15s}
-  .badge-circle:hover{transform:scale(1.05)}
-  .badge-circle svg{width:26px;height:26px}
-  
-  .badge-circle.teal{border:2px solid #00917C}
-  .badge-circle.teal svg{fill:#00917C;stroke:#00917C}
-  .badge-circle.orange{border:2px solid #F28C28}
-  .badge-circle.orange svg{fill:#F28C28;stroke:#F28C28}
-  .badge-circle.indigo{border:2px solid #5C6BC0}
-  .badge-circle.indigo svg{fill:#5C6BC0;stroke:#5C6BC0}
-  .badge-circle.green{border:2px solid #43A047}
-  .badge-circle.green svg{fill:#43A047;stroke:#43A047}
-
-  .badge-label{font-size:11px;font-weight:600;color:#1E3A38;line-height:1.2}
+  .sec-wrap {
+    margin: 18px 20px 0;
+  }
+  .sec-heading {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 12px;
+  }
+  .badges-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .badge-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+  }
+  .badge-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    transition: transform 0.15s;
+  }
+  .badge-circle.teal { border: 2px solid #008F83; }
+  .badge-circle.teal svg { fill: #008F83; stroke: #008F83; }
+  .badge-circle.orange { border: 2px solid #F7942D; }
+  .badge-circle.orange svg { fill: #F7942D; stroke: #F7942D; }
+  .badge-circle.indigo { border: 2px solid #6366F1; }
+  .badge-circle.indigo svg { fill: #6366F1; stroke: #6366F1; }
+  .badge-circle.green { border: 2px solid #10B981; }
+  .badge-circle.green svg { fill: #10B981; stroke: #10B981; }
+  .badge-circle svg { width: 22px; height: 22px; }
+  .badge-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #334155;
+    line-height: 1.2;
+  }
 
   /* Aktivitas Terbaru */
-  .activity-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-  .act-item{background:#fff;border:1px solid #EAEFEF;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px}
-  .act-dot-wrap{width:28px;height:28px;border-radius:50%;background:#DDF1EC;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  .act-dot{width:8px;height:8px;border-radius:50%;background:#00917C}
-  
-  .act-info{flex:1;display:flex;flex-direction:column;gap:2px}
-  .act-title{font-size:13px;font-weight:700;color:#1E3A38}
-  .act-time{font-size:11px;color:#78909C}
-  .act-pts{font-size:14px;font-weight:800;color:#00917C}
+  .activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .act-item {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .act-dot-wrap {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #DCFCE7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .act-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #008F83;
+  }
+  .act-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .act-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .act-time {
+    font-size: 10.5px;
+    color: #64748B;
+  }
+  .act-pts {
+    font-size: 13px;
+    font-weight: 700;
+    color: #008F83;
+  }
 
   /* Bottom Navigation */
-  .nav{height:72px;background:#fff;border-top:1px solid #E8ECEB;padding-top:8px;display:flex;justify-content:space-around;align-items:flex-start;flex-shrink:0;z-index:20}
-  .nav .item{display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;cursor:pointer;text-decoration:none}
-  .nav .item .box{width:64px;height:34px;display:flex;align-items:center;justify-content:center}
-  .nav .item .pill{width:64px;height:34px;border-radius:17px;background:#DDF1EC;display:flex;align-items:center;justify-content:center}
-  .nav .item svg{width:22px;height:22px;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;fill:none;stroke:#7A8583}
-  .nav .item.active svg{stroke:#00917C}
-  .nav .item .lbl{font-size:11px;color:#7A8583}
-  .nav .item.active .lbl{font-weight:700;color:#00917C}
-  .nav .center .circle{width:48px;height:48px;border-radius:50%;background:#F28C28;display:flex;align-items:center;justify-content:center;margin-top:-4px;box-shadow:0 3px 10px rgba(242,140,40,0.35);transition:transform .15s}
-  .nav .center .circle:active{transform:scale(0.92)}
-  .nav .center .circle svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-
-  .homeind{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:130px;height:4px;background:#1E3A38;border-radius:999px;z-index:35}
+  .nav {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 360px;
+    height: 72px;
+    background: #FFFFFF;
+    border-top: 1px solid #F1F5F9;
+    padding: 6px 10px 0;
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    box-sizing: border-box;
+    z-index: 20;
+  }
+  .nav .item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 58px;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .nav .item .box {
+    width: 58px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav .item .pill {
+    width: 58px;
+    height: 32px;
+    border-radius: 16px;
+    background: #DCFCE7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav .item svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    stroke: #64748B;
+  }
+  .nav .item.active svg { stroke: #008F83; }
+  .nav .item .lbl {
+    font-size: 10.5px;
+    color: #64748B;
+    font-weight: 500;
+  }
+  .nav .item.active .lbl {
+    font-weight: 700;
+    color: #008F83;
+  }
+  .nav .center .circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #F7942D;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -6px;
+    box-shadow: 0 4px 12px rgba(247, 148, 45, 0.35);
+    transition: transform 0.15s;
+  }
+  .nav .center .circle svg {
+    width: 22px;
+    height: 22px;
+    stroke: #FFFFFF;
+    fill: none;
+    stroke-width: 2.4;
+  }
+  .home-indicator {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 134px;
+    height: 4px;
+    background: #0F172A;
+    border-radius: 2px;
+    z-index: 25;
+  }
 </style>
 </head>
 <body>
 
 <div class="phone">
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span>09:41</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.95 9.05 8.05 9.05 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+
   <div class="profile-scroll">
     <!-- Header -->
     <div class="profile-header">
-      <div class="status">
-        <span>09:41</span>
-        <div class="icons">
-          <svg viewBox="0 0 24 24"><path d="M2 17h3v4H2v-4zm5-4h3v8H7v-8zm5-4h3v12h-3V9zm5-4h3v16h-3V5z"/></svg>
-          <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/></svg>
-          <svg viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
-        </div>
-      </div>
-
       <div class="header-title-row">
-        <h1 class="header-title">Profil</h1>
+        <h1 class="header-title">Profil Saya</h1>
         <button class="logout-btn" id="logoutBtn" title="Keluar">
           <span>Keluar</span>
           <svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/></svg>
@@ -134,14 +496,14 @@
 
       <div class="user-info-row">
         <div class="avatar-circle" id="avatarCircle" style="cursor:pointer" title="Klik untuk ubah foto">
-          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <img src="/img/avatar-rina-figma.png" alt="Rina" onerror="this.src='/img/laptop-asus.png'">
           <input type="file" id="fotoInput" accept="image/*" style="display:none">
         </div>
         <div class="user-texts">
           <div class="user-name" id="userName">Rina Maharani</div>
           <div class="user-dept" id="userDept">Teknik Informatika · Angkatan 2023</div>
           <div class="badge-ktm" id="badgeKtm">
-            <svg viewBox="0 0 24 24" style="width:10px;height:10px;stroke:#fff;fill:none;stroke-width:2.5"><path d="m5 12 4 4L19 6"/></svg>
+            <svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
             <span>KTM Terverifikasi</span>
           </div>
         </div>
@@ -152,10 +514,10 @@
     <div class="green-card">
       <div class="green-top">
         <div>
-          <div class="green-lbl">Green Points</div>
+          <div class="green-lbl">Dompet Green Point</div>
           <div class="green-points-wrap">
-            <span class="green-val" id="greenPointsVal">1.250</span>
-            <span class="green-unit">poin</span>
+            <span class="green-val" id="greenPointsVal">350</span>
+            <span class="green-unit">Poin</span>
           </div>
         </div>
         <div class="leaf-badge">
@@ -168,8 +530,8 @@
           <div class="progress-fill" id="progressFill"></div>
         </div>
         <div class="progress-labels">
-          <span class="level-curr" id="levelName">Circle Helper</span>
-          <span class="level-next" id="levelNext">250 poin lagi ke Campus Hero</span>
+          <span class="level-curr" id="levelName">Level 2: Green Contributor</span>
+          <span class="level-next" id="levelNext">350/500 Poin Menuju Level 3</span>
         </div>
       </div>
     </div>
@@ -177,22 +539,22 @@
     <!-- 3 Metrics Grid -->
     <div class="stats-row">
       <div class="stat-box">
-        <span class="stat-num" id="statDipinjamkan">12</span>
-        <span class="stat-txt">Dipinjamkan</span>
+        <span class="stat-num" id="statDisewakan">12</span>
+        <span class="stat-txt">Barang Disewa</span>
       </div>
       <div class="stat-box">
-        <span class="stat-num" id="statDisewakan">8</span>
-        <span class="stat-txt">Disewakan</span>
+        <span class="stat-num" id="statDipinjamkan">3</span>
+        <span class="stat-txt">Barang Dipinjam</span>
       </div>
       <div class="stat-box">
         <span class="stat-num" id="statDipakaiUlang">5</span>
-        <span class="stat-txt">Dipakai ulang</span>
+        <span class="stat-txt">Barang Dijual</span>
       </div>
     </div>
 
     <!-- Section Lencana -->
     <div class="sec-wrap">
-      <div class="sec-heading">Lencana</div>
+      <div class="sec-heading">Lencana Penghargaan</div>
       <div class="badges-grid">
         <div class="badge-item">
           <div class="badge-circle teal">
@@ -231,28 +593,28 @@
         <div class="act-item">
           <div class="act-dot-wrap"><div class="act-dot"></div></div>
           <div class="act-info">
-            <div class="act-title">Meminjamkan Modul Fisika</div>
-            <div class="act-time">Kemarin</div>
+            <div class="act-title">Berbagi Modul Kalkulus</div>
+            <div class="act-time">Kemarin · Free Sharing</div>
           </div>
-          <div class="act-pts">+20</div>
+          <div class="act-pts">+30 Poin</div>
         </div>
 
         <div class="act-item">
           <div class="act-dot-wrap"><div class="act-dot"></div></div>
           <div class="act-info">
-            <div class="act-title">Menyewakan Kalkulator</div>
-            <div class="act-time">3 hari lalu</div>
+            <div class="act-title">Menyewakan Kamera Canon</div>
+            <div class="act-time">3 hari lalu · Sewa</div>
           </div>
-          <div class="act-pts">+30</div>
+          <div class="act-pts">+20 Poin</div>
         </div>
 
         <div class="act-item">
           <div class="act-dot-wrap"><div class="act-dot"></div></div>
           <div class="act-info">
-            <div class="act-title">Membeli Lampu Belajar bekas</div>
-            <div class="act-time">1 minggu lalu</div>
+            <div class="act-title">Membeli Lampu Belajar LED</div>
+            <div class="act-time">1 minggu lalu · Jual Beli</div>
           </div>
-          <div class="act-pts">+10</div>
+          <div class="act-pts">+15 Poin</div>
         </div>
       </div>
     </div>
@@ -289,9 +651,8 @@
       </div>
       <span class="lbl">Profil</span>
     </a>
+    <div class="home-indicator"></div>
   </nav>
-
-  <div class="homeind"></div>
 </div>
 
 <script src="/js/profil.js"></script>

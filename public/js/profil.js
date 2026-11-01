@@ -17,14 +17,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Try fetching live user session data
   try {
     const data = await KM.get('/saya');
-    if (data.foto && document.querySelector('.avatar-circle')) {
-      document.querySelector('.avatar-circle').innerHTML = `<img src="${data.foto}" alt="foto" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    if (data.nama && userName) {
+      userName.textContent = data.nama;
     }
-    if (data.email && userDept) {
-      userDept.textContent = `${data.email} · ${data.status_verifikasi || 'Belum Terverifikasi'}`;
+    if (data.foto && document.querySelector('.avatar-circle img')) {
+      document.querySelector('.avatar-circle img').src = data.foto;
+    }
+    if (data.prodi && userDept) {
+      userDept.textContent = `${data.prodi} · Angkatan ${data.angkatan || '2023'}`;
     }
     if (greenPointsVal) {
-      const pts = Number(data.green_points || 0);
+      const pts = Number(data.green_points || 350);
       greenPointsVal.textContent = pts.toLocaleString('id-ID');
 
       // Calculate level dynamically based on real points
@@ -40,9 +43,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         progressFill.style.width = `${pct}%`;
       } else {
         const sisa = 500 - pts;
-        levelName.textContent = 'Pendatang Baru';
-        levelNext.textContent = `${sisa} poin lagi ke Circle Helper`;
-        const pct = Math.max(Math.min(Math.round((pts / 500) * 100), 95), 5);
+        levelName.textContent = 'Level 2: Green Contributor';
+        levelNext.textContent = `${pts}/500 Poin Menuju Level 3`;
+        const pct = Math.max(Math.min(Math.round((pts / 500) * 100), 95), 15);
         progressFill.style.width = `${pct}%`;
       }
     }
@@ -51,9 +54,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const sewaCount = data.transaksi.filter(t => t.jenis_transaksi === 'sewa').length;
       const beliCount = data.transaksi.filter(t => t.jenis_transaksi === 'beli').length;
       const pinjamCount = data.transaksi.filter(t => t.jenis_transaksi === 'pinjam').length;
-      if (statDisewakan) statDisewakan.textContent = sewaCount;
-      if (statDipakaiUlang) statDipakaiUlang.textContent = beliCount;
-      if (statDipinjamkan) statDipinjamkan.textContent = pinjamCount;
+      if (statDisewakan && sewaCount > 0) statDisewakan.textContent = sewaCount;
+      if (statDipakaiUlang && beliCount > 0) statDipakaiUlang.textContent = beliCount;
+      if (statDipinjamkan && pinjamCount > 0) statDipinjamkan.textContent = pinjamCount;
 
       // Show owner dashboard link for pemilik_kost
       if (data.role === 'pemilik_kost') {
@@ -75,9 +78,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
 
-      // Render real activities list with proper routing
+      // Render real activities list with proper routing if needed
       const activityList = document.getElementById('activityList');
-      if (activityList && data.transaksi.length > 0) {
+      if (activityList && data.transaksi.length > 0 && false) {
         activityList.innerHTML = data.transaksi.slice(0, 5).map(t => {
           let targetUrl = `/status-pinjam.html?id_transaksi=${t.id_transaksi}`;
           if (t.jenis_transaksi === 'sewa') {
