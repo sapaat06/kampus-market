@@ -65,43 +65,43 @@ function getSvg(title) {
 // Initial sample items (matching Figma prototype data)
 let data = [
   {
-    id: 1,
+    id: 'kalk-1',
     badge: 'Sewa',
-    title: 'Kalkulator Scientific Casio fx-991ID Plus',
+    title: 'Kalkulator Casio fx-991ID Plus',
     kondisi: 'baik',
     price: 'Rp5.000/hari',
     priceNum: 5000,
     dist: 350,
-    distText: '350 m · Fak. Teknik',
+    distText: '350 m · Fakultas Teknik',
     img: 'lav',
     campus: 'teknik',
     verified: true
   },
   {
-    id: 2,
+    id: 'kalk-2',
     badge: 'Sewa',
     title: 'Kalkulator Casio fx-82MS',
     kondisi: 'baik',
     price: 'Rp3.000/hari',
     priceNum: 3000,
     dist: 900,
-    distText: '900 m · Rektorat',
+    distText: '900 m · Gedung Rektorat',
     img: 'lav',
     campus: 'teknik',
     verified: true
   },
   {
-    id: 3,
+    id: 'kalk-3',
     badge: 'Beli',
-    title: 'Kalkulator Scientific Sharp EL-531',
+    title: 'Kalkulator Sharp EL-531',
     kondisi: 'cukup',
     price: 'Rp85.000',
     priceNum: 85000,
     dist: 1200,
-    distText: '1.2 km · Gerbang Utama',
+    distText: '1,2 km · Gerbang kampus',
     img: 'lav',
-    campus: 'itg',
-    verified: false
+    campus: 'teknik',
+    verified: true
   },
   {
     id: 4,
@@ -150,7 +150,7 @@ async function syncFromApi() {
     const items = await KM.get('/barang');
     if (Array.isArray(items) && items.length > 0) {
       const colors = ['lav', 'mint', 'peach'];
-      data = items.map((b, idx) => {
+      const dbMapped = items.map((b, idx) => {
         const descLower = (b.deskripsi || '').toLowerCase();
         const titleLower = (b.nama_barang || '').toLowerCase();
 
@@ -200,6 +200,7 @@ async function syncFromApi() {
           verified: true
         };
       });
+      data = [...data.filter(d => !dbMapped.some(m => m.id === d.id)), ...dbMapped];
       updateFilterPreview();
       render();
     }
@@ -211,12 +212,12 @@ async function syncFromApi() {
 // Current filter state (default values matching figma7-0.png)
 let sortMode = 'near';
 let filterActive = true;
-let selectedMode = 'sewa';
-let maxPriceVal = 15000;
-let maxDistVal = 1000;
-let selectedCond = 'baik';
-let selectedCampus = 'teknik';
-let verifiedOnly = true;
+let selectedMode = 'semua';
+let maxPriceVal = 100000;
+let maxDistVal = 2000;
+let selectedCond = 'all';
+let selectedCampus = 'all';
+let verifiedOnly = false;
 
 // DOM Elements
 const q = document.getElementById('q');
@@ -278,12 +279,12 @@ function getFilteredItems(tempMode = selectedMode, tempPrice = maxPriceVal, temp
     }
 
     // Condition match
-    if (tempCond && tempCond !== 'semua' && d.kondisi !== tempCond) {
+    if (tempCond && tempCond !== 'semua' && tempCond !== 'all' && d.kondisi !== tempCond) {
       return false;
     }
 
     // Campus location match
-    if (tempCampus && tempCampus !== 'all' && d.campus && d.campus !== tempCampus) {
+    if (tempCampus && tempCampus !== 'semua' && tempCampus !== 'all' && d.campus && d.campus !== tempCampus) {
       return false;
     }
 
@@ -338,16 +339,16 @@ function render() {
   }
 
   let html = items.map(d => `
-    <div class="result-card" data-id="${d.id}" role="button" tabindex="0" aria-label="${escHtml(d.title)}, ${escHtml(d.badge)}, ${escHtml(d.price)}">
-      <div class="img ${escHtml(d.img)}">
-        ${d.foto ? `<img src="${escHtml(d.foto)}" alt="${escHtml(d.title)}" loading="lazy">` : (d.svg || getSvg(d.title))}
+    <div class="horizontal-item-card result-card" data-id="${d.id}" role="button" tabindex="0" aria-label="${escHtml(d.title)}, ${escHtml(d.badge)}, ${escHtml(d.price)}">
+      <div class="card-left-thumb ${escHtml(d.img)}">
+        ${d.foto && !d.foto.includes('AARCAAEAAEDASIAAhEBAxEB') ? `<img src="${escHtml(d.foto)}" alt="${escHtml(d.title)}" loading="lazy">` : (d.svg || getSvg(d.title))}
       </div>
-      <div class="info">
-        <div class="badge ${escHtml(d.badge.toLowerCase())}">${escHtml(d.badge)}</div>
-        <div class="title">${escHtml(d.title)}</div>
-        <div class="price ${escHtml(d.badge.toLowerCase())}">${escHtml(d.price)}</div>
-        <div class="loc">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="var(--text-muted)"/></svg>
+      <div class="card-right-info">
+        <span class="badge-tag-sm ${escHtml(d.badge.toLowerCase())}">${escHtml(d.badge)}</span>
+        <div class="card-title-text">${escHtml(d.title)}</div>
+        <div class="card-price-text ${d.badge.toLowerCase() === 'sewa' ? 'orange' : ''}">${escHtml(d.price)}</div>
+        <div class="card-location-row">
+          <svg viewBox="0 0 24 24"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
           <span>${escHtml(d.distText)}</span>
         </div>
       </div>
@@ -355,9 +356,9 @@ function render() {
   `).join('');
 
   html += `
-    <div class="infonote">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-      <p>Semua barang diverifikasi dari mahasiswa aktif satu lingkaran kampus.</p>
+    <div class="community-banner">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <p>Semua barang berasal dari mahasiswa di komunitas kampus terverifikasi.</p>
     </div>`;
 
   list.innerHTML = html;
@@ -412,6 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
   chipMode?.addEventListener('click', openModal);
   chipPrice?.addEventListener('click', openModal);
   chipDist?.addEventListener('click', openModal);
+  document.getElementById('closeFilterBtn')?.addEventListener('click', closeModal);
 
   // Close modal on backdrop click or Escape
   filterModal?.addEventListener('click', (e) => {
@@ -422,18 +424,38 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Mode chips in modal
-  document.querySelectorAll('#modeChips .f-chip').forEach(chip => {
+  document.querySelectorAll('#filterModeChips .f-pill-opt, #modeChips .f-chip').forEach(chip => {
     chip.addEventListener('click', function() {
-      document.querySelectorAll('#modeChips .f-chip').forEach(c => c.classList.remove('active'));
+      chip.parentElement.querySelectorAll('.f-pill-opt, .f-chip').forEach(c => c.classList.remove('active'));
       this.classList.add('active');
-      const m = this.dataset.mode;
-      if (filterPriceVal) {
-        if (m === 'sewa') filterPriceVal.textContent = `Rp0 – Rp${maxPriceVal.toLocaleString('id-ID')}/hari`;
-        else if (m === 'pinjam') filterPriceVal.textContent = 'Gratis';
-        else filterPriceVal.textContent = `Hingga Rp${maxPriceVal.toLocaleString('id-ID')}`;
-      }
-      updateFilterPreview();
+      selectedMode = this.dataset.mode || 'sewa';
+      render();
     });
+  });
+
+  // Dist chips in modal
+  document.querySelectorAll('#filterDistChips .f-pill-opt').forEach(chip => {
+    chip.addEventListener('click', function() {
+      chip.parentElement.querySelectorAll('.f-pill-opt').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  // Cond chips in modal
+  document.querySelectorAll('#filterCondChips .f-pill-opt').forEach(chip => {
+    chip.addEventListener('click', function() {
+      chip.parentElement.querySelectorAll('.f-pill-opt').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  filterApplyBtn?.addEventListener('click', () => {
+    closeModal();
+    render();
+  });
+  filterResetBtn?.addEventListener('click', () => {
+    closeModal();
+    render();
   });
 
   // Condition chips in modal

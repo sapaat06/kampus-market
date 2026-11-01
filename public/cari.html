@@ -4,943 +4,694 @@
 <meta charset="utf-8">
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CampusCircle — Cari Barang</title>
+<title>KampusCircle — Cari Barang</title>
+<link rel="stylesheet" href="/css/style.css">
 <style>
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-400.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-  }
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-500.woff2') format('woff2');
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
-  }
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-600.woff2') format('woff2');
-    font-weight: 600;
-    font-style: normal;
-    font-display: swap;
-  }
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-700.woff2') format('woff2');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-  }
-
-  :root {
-    --primary: #007A68;
-    --primary-active: #006354;
-    --text-dark: #1E3A38;
-    --text-muted: #7A8583;
-    --placeholder: #8A9492;
-    --orange: #F28C28;
-    --mint-bg: #DDF1EC;
-    --mint-text: #0B6B5B;
-    --peach-bg: #FFF0DB;
-    --peach-text: #A65A00;
-    --lav-bg: #EDEAF7;
-    --lav-text: #5C4BA5;
-    --border-light: #E3E8E7;
-    --card-bg: #F4F7F6;
-  }
-
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: #EAEFEF;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: var(--text-dark);
-    -webkit-font-smoothing: antialiased;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  .phone {
-    width: 100%;
-    max-width: 440px;
-    height: 100vh;
-    height: 100dvh;
-    background: #fff;
-    margin: 0 auto;
-    position: relative;
+  .cari-body {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: none;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    box-shadow: 0 0 28px rgba(0,0,0,0.08);
+    padding: 10px 18px 80px;
+    background: #F8FAFC;
   }
+  .cari-body::-webkit-scrollbar { display: none; }
 
-  .top-section { flex-shrink: 0; background: #fff; }
-
-  /* Status Bar */
-  .status {
-    height: 24px;
-    padding: 0 20px;
+  .status-bar {
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
-    color: var(--text-dark);
-    margin-top: 6px;
+    color: #0F172A;
   }
-  .status .icons { display: flex; gap: 6px; align-items: center; }
-  .status svg { width: 14px; height: 14px; fill: var(--text-dark); }
+  .status-icons {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+  }
 
   /* Header */
-  .header {
-    height: 48px;
-    padding: 0 16px;
+  .cari-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-top: 4px;
+    justify-content: space-between;
+    margin-top: 10px;
+    margin-bottom: 16px;
+    height: 36px;
   }
-  .header .back-btn {
+  .header-back-btn {
     width: 36px;
     height: 36px;
-    border-radius: 50%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     color: var(--text-dark);
-    text-decoration: none;
-    cursor: pointer;
-    background: none;
-    border: none;
-    transition: background 0.15s;
   }
-  .header .back-btn:hover { background: var(--card-bg); }
-  .header .back-btn svg {
-    width: 22px;
-    height: 22px;
-    stroke: var(--text-dark);
-    fill: none;
-    stroke-width: 2.2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-  .header .title {
+  .header-title {
     font-size: 18px;
     font-weight: 700;
     color: var(--text-dark);
-    letter-spacing: -0.2px;
   }
-  .header .spacer { margin-left: auto; }
-
-  /* Search Input Box */
-  .search-wrap {
-    margin: 10px 16px 0;
-    height: 46px;
-    background: #fff;
-    border: 1.5px solid var(--border-light);
-    border-radius: 14px;
-    padding: 0 12px;
+  .header-loc-btn {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
     display: flex;
     align-items: center;
+    justify-content: flex-end;
+    color: var(--text-dark);
+  }
+
+  /* Search Input Pill */
+  .search-input-pill {
+    background: #FFFFFF;
+    border: 1.5px solid var(--primary);
+    border-radius: 16px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
     gap: 10px;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    box-shadow: 0 2px 8px rgba(0, 143, 131, 0.08);
   }
-  .search-wrap:focus-within {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(0, 122, 104, 0.1);
-  }
-  .search-wrap .search-icon {
+  .search-input-pill svg.search-ico {
     width: 18px;
     height: 18px;
-    stroke: var(--text-muted);
+    stroke: var(--primary);
     fill: none;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    stroke-width: 2.2;
     flex-shrink: 0;
   }
-  .search-wrap input {
+  .search-input-pill input {
     flex: 1;
     border: none;
     outline: none;
     font-size: 14px;
     color: var(--text-dark);
-    background: transparent;
     font-family: inherit;
-    font-weight: 500;
+    background: transparent;
   }
-  .search-wrap input::placeholder { color: var(--placeholder); font-weight: 400; }
-  .search-wrap .clear-btn {
-    width: 22px;
-    height: 22px;
-    cursor: pointer;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-muted);
+  .search-input-pill .clear-btn {
+    background: transparent;
     border: none;
-    background: none;
-  }
-  .search-wrap .clear-btn svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
-
-  /* Quick Filter Chips */
-  .chips {
-    margin: 12px 16px 0;
+    cursor: pointer;
+    padding: 2px;
+    color: var(--text-muted);
     display: flex;
+    align-items: center;
+  }
+
+  /* Filter Chips Row */
+  .filter-chips-row {
+    display: flex;
+    align-items: center;
     gap: 8px;
+    margin-top: 14px;
     overflow-x: auto;
     scrollbar-width: none;
-    padding-bottom: 2px;
   }
-  .chips::-webkit-scrollbar { display: none; }
-  .chip {
-    height: 32px;
+  .filter-chips-row::-webkit-scrollbar { display: none; }
+  .btn-filter-toggle {
+    background: var(--primary);
+    color: #FFFFFF;
+    border: none;
     border-radius: 999px;
-    padding: 0 14px;
+    padding: 6px 14px;
     font-size: 12px;
-    font-weight: 600;
-    display: inline-flex;
+    font-weight: 700;
+    display: flex;
     align-items: center;
     gap: 6px;
     cursor: pointer;
+    flex-shrink: 0;
+  }
+  .btn-filter-toggle svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+  }
+  .chip-tag-pill {
+    background: #FFFFFF;
     border: 1px solid var(--border-light);
-    background: #fff;
-    color: var(--text-dark);
-    white-space: nowrap;
-    transition: all 0.15s;
-    font-family: inherit;
-  }
-  .chip.filter-btn {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: #fff;
-    font-weight: 700;
-  }
-  .chip.active {
-    background: var(--mint-bg);
-    border-color: var(--primary);
-    color: var(--primary);
-  }
-  .chip svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
-
-  /* Count & Sort Row */
-  .countrow {
-    margin: 14px 16px 6px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .countrow .count { font-size: 13px; font-weight: 700; color: var(--text-dark); }
-  .countrow .sort-btn {
+    border-radius: 999px;
+    padding: 6px 14px;
     font-size: 12px;
     font-weight: 600;
-    color: var(--primary);
+    color: var(--text-dark);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Result header row */
+  .result-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 18px;
+    margin-bottom: 12px;
+  }
+  .result-count-text {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text-dark);
+  }
+  .sort-dropdown-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
     display: flex;
     align-items: center;
     gap: 4px;
-    cursor: pointer;
-    position: relative;
-    background: none;
-    border: none;
-    padding: 4px 6px;
-    border-radius: 8px;
-    font-family: inherit;
-  }
-  .countrow .sort-btn svg { width: 14px; height: 14px; stroke: var(--primary); fill: none; stroke-width: 2; }
-  .sort-dropdown {
-    position: absolute;
-    top: 28px;
-    right: 0;
-    background: #fff;
-    border: 1px solid var(--border-light);
-    border-radius: 12px;
-    padding: 6px 0;
-    min-width: 130px;
-    display: none;
-    z-index: 30;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
-  }
-  .sort-dropdown.open { display: block; }
-  .sort-dropdown .opt {
-    padding: 8px 14px;
     font-size: 12px;
-    font-weight: 500;
-    color: var(--text-dark);
-    cursor: pointer;
-    transition: background 0.12s;
+    font-weight: 700;
+    color: var(--primary);
   }
-  .sort-dropdown .opt:hover { background: var(--card-bg); color: var(--primary); font-weight: 600; }
+  .sort-dropdown-btn svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2.2;
+  }
 
-  /* Results List */
-  .list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px 16px 16px;
+  /* Horizontal card items list */
+  .cards-vertical-list {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    scrollbar-width: none;
   }
-  .list::-webkit-scrollbar { display: none; }
-
-  .result-card {
-    background: #fff;
+  .horizontal-item-card {
+    background: #FFFFFF;
     border: 1px solid var(--border-light);
     border-radius: 18px;
-    padding: 10px;
+    padding: 12px;
     display: flex;
-    gap: 14px;
     align-items: center;
-    transition: transform 0.15s, box-shadow 0.15s;
+    gap: 14px;
     cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast);
   }
-  .result-card:active { transform: scale(0.985); }
-  .result-card .img {
-    width: 90px;
-    height: 94px;
+  .horizontal-item-card:active {
+    transform: scale(0.98);
+  }
+  .card-left-thumb {
+    width: 82px;
+    height: 82px;
     border-radius: 14px;
+    background: #EDEAF7;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     overflow: hidden;
   }
-  .result-card .img img { width: 100%; height: 100%; object-fit: cover; }
-  .result-card .img.lav { background: var(--lav-bg); }
-  .result-card .img.mint { background: var(--mint-bg); }
-  .result-card .img.peach { background: var(--peach-bg); }
-
-  .result-card .info {
+  .card-left-thumb img {
+    max-width: 85%;
+    max-height: 85%;
+    object-fit: contain;
+  }
+  .card-right-info {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    align-items: flex-start;
+    gap: 3px;
     min-width: 0;
   }
-
-  /* Badges matching Figma */
-  .badge {
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-size: 11px;
+  .badge-tag-sm {
+    align-self: flex-start;
+    font-size: 10px;
     font-weight: 700;
-    line-height: 1.2;
+    padding: 2px 8px;
+    border-radius: 999px;
   }
-  .badge.sewa { background: var(--orange); color: #fff; }
-  .badge.pinjam { background: var(--lav-bg); color: var(--lav-text); }
-  .badge.beli { background: var(--primary); color: #fff; }
+  .badge-tag-sm.sewa { background: #FFF1DE; color: #9A3412; }
+  .badge-tag-sm.beli { background: #DCFCE7; color: #166534; }
+  .badge-tag-sm.pinjam { background: #EDEAF7; color: #6D28D9; }
 
-  .result-card .title {
-    font-size: 14px;
+  .card-title-text {
+    font-size: 13.5px;
     font-weight: 700;
     color: var(--text-dark);
-    line-height: 1.3;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 220px;
   }
-  .result-card .price {
-    font-size: 15px;
+  .card-price-text {
+    font-size: 14px;
     font-weight: 800;
+    color: var(--primary);
+  }
+  .card-price-text.orange {
     color: var(--orange);
   }
-  .result-card .price.pinjam { color: var(--primary); }
-  .result-card .price.beli { color: var(--text-dark); }
-  .result-card .loc {
+  .card-location-row {
     display: flex;
     align-items: center;
     gap: 4px;
     font-size: 11px;
-    font-weight: 500;
     color: var(--text-muted);
+    margin-top: 2px;
   }
-  .result-card .loc svg {
+  .card-location-row svg {
     width: 12px;
     height: 12px;
-    stroke: var(--text-muted);
+    stroke: currentColor;
     fill: none;
     stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    flex-shrink: 0;
   }
 
-  .empty-state {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    text-align: center;
-    padding: 50px 20px;
-  }
-  .empty-state svg { width: 44px; height: 44px; stroke: var(--text-muted); fill: none; stroke-width: 1.8; }
-  .empty-state .t { font-size: 15px; font-weight: 700; color: var(--text-dark); }
-  .empty-state .s { font-size: 13px; color: var(--text-muted); }
-
-  /* Info Note at bottom of list */
-  .infonote {
-    background: var(--card-bg);
+  /* Community banner */
+  .community-banner {
+    margin-top: 14px;
+    background: #E6F4F1;
     border-radius: 14px;
     padding: 12px 14px;
     display: flex;
+    align-items: center;
     gap: 10px;
-    align-items: center;
-    margin-top: 4px;
   }
-  .infonote svg { width: 20px; height: 20px; stroke: var(--primary); fill: none; stroke-width: 2; flex-shrink: 0; }
-  .infonote p { font-size: 12px; color: var(--text-dark); line-height: 1.4; font-weight: 500; }
-
-  /* Bottom Navigation matching Beranda */
-  .nav {
-    height: 64px;
-    background: #fff;
-    border-top: 1px solid #ECEFEF;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    position: relative;
-    z-index: 20;
-    padding: 0 4px;
+  .community-banner svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--primary);
+    fill: none;
+    stroke-width: 2;
     flex-shrink: 0;
   }
-  .nav .item {
+  .community-banner p {
+    font-size: 11px;
+    color: #0F766E;
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  /* Bottom Navigation */
+  .bottom-nav-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 68px;
+    background: #FFFFFF;
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 6px 10px;
+    z-index: 100;
+  }
+  .nav-tab-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     gap: 3px;
-    width: 60px;
-    cursor: pointer;
-    text-decoration: none;
-    background: none;
+    background: transparent;
     border: none;
-    padding: 0;
-    font-family: inherit;
-  }
-  .nav .item .icon-wrap {
-    width: 26px;
-    height: 26px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .nav .item svg {
-    width: 22px;
-    height: 22px;
-    stroke: #7A8583;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    fill: none;
-    transition: stroke 0.15s, fill 0.15s;
-  }
-  .nav .item .lbl {
-    font-size: 11px;
-    font-weight: 500;
-    color: #7A8583;
-    line-height: 1;
-  }
-  .nav .item.active svg { stroke: var(--primary); }
-  .nav .item.active .lbl { font-weight: 700; color: var(--primary); }
-  .nav .center-btn-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 56px;
     cursor: pointer;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
     text-decoration: none;
+    padding: 4px 10px;
   }
-  .nav .center-btn-wrap .circle {
+  .nav-tab-item.active {
+    color: var(--primary);
+  }
+  .nav-tab-item.active .nav-icon-pill {
+    background: var(--mint-bg);
+    color: var(--primary);
+    border-radius: 999px;
+    padding: 2px 14px;
+  }
+  .nav-icon-pill svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2.2;
+  }
+  .floating-plus-btn {
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: #F28C28;
+    background: var(--orange);
+    color: #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: -24px;
-    box-shadow: 0 4px 14px rgba(242, 140, 40, 0.42);
-    transition: transform 0.15s, box-shadow 0.15s;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(247, 148, 45, 0.4);
+    margin-top: -12px;
   }
-  .nav .center-btn-wrap:active .circle { transform: scale(0.94); }
-  .nav .center-btn-wrap .circle svg {
+  .floating-plus-btn svg {
     width: 24px;
     height: 24px;
-    stroke: #fff;
+    stroke: #FFFFFF;
     fill: none;
-    stroke-width: 2.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    stroke-width: 2.5;
   }
-
-  /* ========================================================
-     MODAL FILTER PENCARIAN (Figma figma7-0.png Pixel-Perfect)
-     ======================================================== */
-  .filter-overlay {
+  .home-indicator {
     position: absolute;
-    inset: 0;
-    background: rgba(30, 58, 56, 0.5);
-    z-index: 60;
-    display: none;
-    align-items: flex-end;
-    justify-content: center;
-    backdrop-filter: blur(2px);
-  }
-  .filter-overlay.open { display: flex; }
-  .filter-sheet {
-    background: #fff;
-    width: 100%;
-    border-top-left-radius: 28px;
-    border-top-right-radius: 28px;
-    padding: 14px 20px 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    position: relative;
-    box-shadow: 0 -8px 28px rgba(0,0,0,0.18);
-    max-height: 90%;
-    overflow-y: auto;
-    z-index: 62;
-    scrollbar-width: none;
-  }
-  .filter-sheet::-webkit-scrollbar { display: none; }
-
-  .filter-handle {
-    width: 38px;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 134px;
     height: 4px;
-    background: #D5DCDA;
-    border-radius: 999px;
-    margin: 0 auto 4px;
-  }
-
-  .filter-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .filter-title {
-    font-size: 19px;
-    font-weight: 700;
-    color: var(--text-dark);
-    letter-spacing: -0.2px;
-  }
-  .filter-reset-btn {
-    background: none;
-    border: none;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--orange);
-    cursor: pointer;
-    font-family: inherit;
-    padding: 4px;
-    transition: opacity 0.15s;
-  }
-  .filter-reset-btn:hover { opacity: 0.8; }
-
-  .f-sec-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 8px;
-  }
-  .f-sec-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--text-dark);
-  }
-  .f-val-text {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--primary);
-  }
-
-  /* Mode Chips (Semua, Beli, Sewa, Pinjam) */
-  .f-chips {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .f-chip {
-    height: 36px;
-    border-radius: 999px;
-    padding: 0 18px;
-    font-size: 13px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1.5px solid var(--border-light);
-    background: #fff;
-    color: var(--text-dark);
-    cursor: pointer;
-    transition: all 0.15s;
-    font-family: inherit;
-  }
-  .f-chip.active {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: #fff;
-    font-weight: 700;
-  }
-
-  /* Range Sliders */
-  .f-slider {
-    width: 100%;
-    height: 6px;
-    border-radius: 999px;
-    outline: none;
-    -webkit-appearance: none;
-    background: #DDF1EC;
-    cursor: pointer;
-    margin-top: 4px;
-  }
-  .f-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: #fff;
-    border: 3px solid var(--primary);
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
-  }
-  .f-slider-scale {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 6px;
-    font-weight: 600;
-  }
-
-  /* Condition Chips (Seperti Baru, Baik, Cukup) */
-  .f-cond-chips {
-    display: flex;
-    gap: 8px;
-  }
-  .f-cond-chip {
-    height: 36px;
-    border-radius: 999px;
-    padding: 0 16px;
-    font-size: 13px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1.5px solid var(--border-light);
-    background: #fff;
-    color: var(--text-dark);
-    cursor: pointer;
-    transition: all 0.15s;
-    font-family: inherit;
-  }
-  .f-cond-chip.active {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: #fff;
-    font-weight: 700;
-  }
-
-  /* Dropdown Select Kampus */
-  .f-select-wrap {
-    position: relative;
-    width: 100%;
-  }
-  .f-select {
-    width: 100%;
-    height: 48px;
-    border: 1.5px solid var(--border-light);
-    border-radius: 14px;
-    padding: 0 38px 0 14px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-dark);
-    background: #fff;
-    outline: none;
-    font-family: inherit;
-    appearance: none;
-    -webkit-appearance: none;
-    cursor: pointer;
-  }
-  .f-select:focus { border-color: var(--primary); }
-  .f-select-wrap svg {
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 18px;
-    height: 18px;
-    stroke: var(--text-muted);
-    fill: none;
-    stroke-width: 2;
+    background: #0F172A;
+    border-radius: 2px;
     pointer-events: none;
   }
 
-  /* Toggle Switch: Hanya pemilik terverifikasi */
-  .f-toggle-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 4px 0;
+  /* Modal Bottom Sheet: Filter Pencarian */
+  .filter-sheet-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    z-index: 200;
+    display: none;
+    align-items: flex-end;
   }
-  .f-toggle-label {
+  .filter-sheet-overlay.open {
+    display: flex;
+  }
+  .filter-sheet-panel {
+    width: 100%;
+    max-height: 92%;
+    background: #FFFFFF;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    padding: 16px 20px 24px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    scrollbar-width: none;
+    gap: 14px;
+  }
+  .filter-sheet-panel::-webkit-scrollbar { display: none; }
+  .sheet-handle-bar {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: #CBD5E1;
+    margin: 0 auto 6px;
+  }
+  .filter-nav-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .f-head-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-dark);
+  }
+  .f-headline-big {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-dark);
+    line-height: 1.2;
+    margin-top: 6px;
+  }
+  .f-headline-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .f-chips-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .f-pill-opt {
+    padding: 6px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--border-light);
+    background: #FFFFFF;
     font-size: 13px;
     font-weight: 600;
     color: var(--text-dark);
-  }
-  .switch {
-    position: relative;
-    display: inline-block;
-    width: 46px;
-    height: 26px;
-  }
-  .switch input { opacity: 0; width: 0; height: 0; }
-  .slider-toggle {
-    position: absolute;
     cursor: pointer;
-    inset: 0;
-    background-color: #D5DCDA;
-    transition: .25s;
-    border-radius: 999px;
   }
-  .slider-toggle:before {
-    position: absolute;
-    content: "";
-    height: 20px;
-    width: 20px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: .25s;
-    border-radius: 50%;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  .f-pill-opt.active {
+    background: var(--orange);
+    color: #FFFFFF;
+    border-color: var(--orange);
   }
-  input:checked + .slider-toggle { background-color: var(--primary); }
-  input:checked + .slider-toggle:before { transform: translateX(20px); }
 
-  /* Big Apply Button (Figma Terapkan (24 barang)) */
-  .f-btn-apply {
+  .f-field-lbl {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .f-input-box {
     width: 100%;
-    height: 50px;
-    border-radius: 16px;
-    border: none;
-    background: var(--primary);
-    color: #fff;
-    font-size: 15px;
+    height: 46px;
+    border: 1.5px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 0 14px;
+    font-size: 13.5px;
+    color: var(--text-dark);
+    font-family: inherit;
+  }
+  .f-price-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .f-bottom-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-light);
+  }
+  .f-btn-reset {
+    height: 48px;
+    background: #FFFFFF;
+    border: 1.5px solid var(--primary);
+    color: var(--primary);
+    border-radius: 14px;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
-    font-family: inherit;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.15s, transform 0.15s;
-    box-shadow: 0 4px 12px rgba(0, 122, 104, 0.25);
-    margin-top: 4px;
   }
-  .f-btn-apply:active { transform: scale(0.98); background: var(--primary-active); }
+  .f-btn-submit {
+    height: 48px;
+    background: var(--primary);
+    border: none;
+    color: #FFFFFF;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
-<div class="phone">
-  <div class="top-section">
-    <!-- Status Bar -->
-    <div class="status">
-      <span>09:41</span>
-      <div class="icons">
-        <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
-        <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.95 9.05 8.05 9.05 5 13z"/></svg>
-        <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+<div class="app-frame">
+  <div class="cari-body">
+    <div class="status-bar">
+      <span>09.41</span>
+      <div class="status-icons">
+        <svg width="12" height="10" viewBox="0 0 12 10" fill="currentColor"><path d="M6 1a5 5 0 0 1 3.5 1.5L6 6 2.5 2.5A5 5 0 0 1 6 1z"/></svg>
+        <svg width="14" height="10" viewBox="0 0 16 12" fill="currentColor" style="margin-left:2px"><path d="M8 9.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM1.5 4.5a9.5 9.5 0 0 1 13 0l-1.5 1.5a7.5 7.5 0 0 0-10 0l-1.5-1.5z"/></svg>
+        <svg width="18" height="10" viewBox="0 0 22 11" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-left:2px"><rect x="1" y="1" width="18" height="9" rx="2"/><path d="M20 4v3" stroke-linecap="round"/><rect x="2.5" y="2.5" width="13" height="6" fill="currentColor" stroke="none"/></svg>
       </div>
     </div>
 
-    <!-- Header Navigation -->
-    <div class="header">
-      <a href="/beranda.html" class="back-btn" aria-label="Kembali ke Beranda">
-        <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-      </a>
-      <span class="title">Cari Barang</span>
-      <span class="spacer"></span>
-      <a href="/kos.html" class="back-btn" title="Cari Kos">
-        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      </a>
-    </div>
-
-    <!-- Search Input Box -->
-    <div class="search-wrap">
-      <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input id="q" type="text" placeholder="Cari buku, laptop, alat praktikum..." aria-label="Cari barang">
-      <button class="clear-btn" id="clearBtn" type="button" aria-label="Hapus kata kunci">
-        <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-
-    <!-- Quick Chips Row -->
-    <div class="chips">
-      <button type="button" class="chip filter-btn" id="filterChip">
-        <svg viewBox="0 0 24 24">
-          <path d="M4 7h10M18 7h2M4 12h4M12 12h8M4 17h12M20 17h0"/>
-          <circle cx="16" cy="7" r="2"/>
-          <circle cx="10" cy="12" r="2"/>
-          <circle cx="18" cy="17" r="2"/>
+    <!-- Header -->
+    <div class="cari-header">
+      <button class="header-back-btn" id="backBtn" type="button" aria-label="Kembali" onclick="location.href='/beranda.html'">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
-        Filter
       </button>
-      <button type="button" class="chip" id="chipMode">Mode: Semua</button>
-      <button type="button" class="chip" id="chipPrice">≤ Rp15.000/hari</button>
-      <button type="button" class="chip" id="chipDist">Maks. 1 km</button>
+      <span class="header-title">Cari barang</span>
+      <button class="header-loc-btn" type="button" aria-label="Lokasi">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/>
+        </svg>
+      </button>
     </div>
 
-    <!-- Count & Sort Row -->
-    <div class="countrow">
-      <div class="count" id="countText">Memuat barang...</div>
-      <button type="button" class="sort-btn" id="sortBtn">
+    <!-- Search input -->
+    <div class="search-input-pill">
+      <svg class="search-ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="q" type="search" value="kalkulator" placeholder="Cari buku, laptop, alat praktikum...">
+      <button class="clear-btn" id="clearBtn" type="button" aria-label="Hapus pencarian">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Filter chips row -->
+    <div class="filter-chips-row">
+      <button class="btn-filter-toggle" id="filterChip" type="button">
+        <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        <span>Filter</span>
+      </button>
+      <span class="chip-tag-pill" id="chipPrice">≤ Rp100.000</span>
+      <span class="chip-tag-pill" id="chipDist">≤ 2 km</span>
+    </div>
+
+    <!-- Result header row -->
+    <div class="result-header-row">
+      <span class="result-count-text" id="countText">3 barang ditemukan</span>
+      <button class="sort-dropdown-btn" id="sortBtn" type="button">
         <span id="sortLabel">Terdekat</span>
-        <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
-        <div class="sort-dropdown" id="sortDrop">
-          <div class="opt" data-val="near">Terdekat</div>
-          <div class="opt" data-val="cheap">Termurah</div>
-          <div class="opt" data-val="new">Terbaru</div>
-        </div>
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
+    </div>
+
+    <!-- Cards vertical list -->
+    <div class="cards-vertical-list" id="list">
+      <!-- Diisi dinamis oleh cari.js -->
     </div>
   </div>
 
-  <!-- Results List -->
-  <div class="list" id="list">
-    <!-- Diisi dinamis oleh cari.js -->
-  </div>
-
-  <!-- Bottom Navigation Bar (Figma 1:1) -->
-  <nav class="nav" aria-label="Navigasi Utama">
-    <a class="item" href="/beranda.html">
-      <div class="icon-wrap">
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav-bar" aria-label="Navigasi Bawah">
+    <a class="nav-tab-item" href="/beranda.html">
+      <div class="nav-icon-pill">
         <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-4a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5z"/></svg>
       </div>
-      <div class="lbl">Beranda</div>
+      <span>Beranda</span>
     </a>
-    <div class="item active" id="navCari">
-      <div class="icon-wrap">
+
+    <button class="nav-tab-item active" id="navCari" type="button">
+      <div class="nav-icon-pill">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       </div>
-      <div class="lbl">Cari</div>
-    </div>
-    <a class="center-btn-wrap" href="/unggah.html" id="navTambah" role="button" aria-label="Unggah atau Tambah barang">
-      <div class="circle">
-        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-      </div>
+      <span>Cari</span>
+    </button>
+
+    <a class="floating-plus-btn" href="/unggah.html" id="navTambah" aria-label="Unggah Barang">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </a>
-    <a class="item" href="/chat.html" id="navChat">
-      <div class="icon-wrap">
+
+    <a class="nav-tab-item" href="/chat.html" id="navChat">
+      <div class="nav-icon-pill">
         <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       </div>
-      <div class="lbl">Chat</div>
+      <span>Chat</span>
     </a>
-    <a class="item" href="/profil.html" id="navProfil">
-      <div class="icon-wrap">
+
+    <a class="nav-tab-item" href="/profil.html" id="navProfil">
+      <div class="nav-icon-pill">
         <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       </div>
-      <div class="lbl">Profil</div>
+      <span>Profil</span>
     </a>
   </nav>
 
-  <!-- ========================================================
-       MODAL BOTTOM SHEET FILTER PENCARIAN (Figma figma7-0.png)
-       ======================================================== -->
-  <div class="filter-overlay" id="filterModal" role="dialog" aria-modal="true" aria-labelledby="filterModalTitle">
-    <div class="filter-sheet">
-      <div class="filter-handle"></div>
-      <div class="filter-header">
-        <div class="filter-title" id="filterModalTitle">Filter Pencarian</div>
-        <button type="button" class="filter-reset-btn" id="filterResetBtn">Reset</button>
+  <div class="home-indicator"></div>
+
+  <!-- Bottom Sheet: Filter Pencarian (Screen 08) -->
+  <div class="filter-sheet-overlay" id="filterModal">
+    <div class="filter-sheet-panel">
+      <div class="sheet-handle-bar"></div>
+      <div class="filter-nav-head">
+        <button type="button" id="closeFilterBtn" style="background:transparent;border:none;cursor:pointer;color:var(--text-dark);padding:0">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+        <span class="f-head-title">Filter Pencarian</span>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
       </div>
 
-      <!-- Mode (Semua, Beli, Sewa, Pinjam) -->
+      <div class="f-headline-big">Temukan yang pas.</div>
+      <div class="f-headline-sub">Pilihan transaksi bersifat eksklusif.</div>
+
+      <!-- Mode Chips -->
+      <div class="f-chips-group" id="filterModeChips">
+        <button type="button" class="f-pill-opt active" data-mode="sewa">Sewa</button>
+        <button type="button" class="f-pill-opt" data-mode="beli">Beli</button>
+        <button type="button" class="f-pill-opt" data-mode="pinjam">Pinjam Free</button>
+      </div>
+
+      <!-- Kategori -->
       <div>
-        <div class="f-sec-title" style="margin-bottom:8px">Mode</div>
-        <div class="f-chips" id="modeChips">
-          <button type="button" class="f-chip" data-mode="semua">Semua</button>
-          <button type="button" class="f-chip" data-mode="beli">Beli</button>
-          <button type="button" class="f-chip active" data-mode="sewa">Sewa</button>
-          <button type="button" class="f-chip" data-mode="pinjam">Pinjam</button>
+        <label class="f-field-lbl" for="filterKategori">Kategori</label>
+        <input class="f-input-box" id="filterKategori" type="text" value="Elektronik">
+      </div>
+
+      <!-- Rentang Harga (Min - Max) -->
+      <div class="f-price-grid">
+        <div>
+          <label class="f-field-lbl" for="filterMinPrice">Minimum</label>
+          <input class="f-input-box" id="filterMinPrice" type="text" value="Rp0">
+        </div>
+        <div>
+          <label class="f-field-lbl" for="filterMaxPrice">Maksimum</label>
+          <input class="f-input-box" id="filterMaxPrice" type="text" value="Rp10.000">
         </div>
       </div>
 
-      <!-- Rentang Harga -->
+      <!-- Lokasi Pencarian -->
       <div>
-        <div class="f-sec-head">
-          <span class="f-sec-title">Rentang Harga</span>
-          <span class="f-val-text" id="filterPriceVal">Rp0 – Rp15.000/hari</span>
-        </div>
-        <input type="range" class="f-slider" id="filterPriceSlider" min="0" max="100000" step="1000" value="15000">
-        <div class="f-slider-scale">
-          <span>Rp0</span>
-          <span>Rp100.000+</span>
-        </div>
+        <label class="f-field-lbl" for="filterLokasi">Lokasi pencarian</label>
+        <input class="f-input-box" id="filterLokasi" type="text" value="Institut Teknologi Garut">
       </div>
 
-      <!-- Jarak dari Lokasi Kamu -->
+      <!-- Jarak Maksimum -->
       <div>
-        <div class="f-sec-head">
-          <span class="f-sec-title">Jarak dari Lokasi Kamu</span>
-          <span class="f-val-text" id="filterDistVal">Maks. 1 km</span>
-        </div>
-        <input type="range" class="f-slider" id="filterDistSlider" min="100" max="5000" step="100" value="1000">
-        <div class="f-slider-scale">
-          <span>100 m</span>
-          <span>5 km</span>
+        <label class="f-field-lbl">Jarak maksimum</label>
+        <div class="f-chips-group" id="filterDistChips">
+          <button type="button" class="f-pill-opt" data-dist="1">1 km</button>
+          <button type="button" class="f-pill-opt active" data-dist="2">2 km</button>
+          <button type="button" class="f-pill-opt" data-dist="5">5 km</button>
+          <button type="button" class="f-pill-opt" data-dist="all">Semua</button>
         </div>
       </div>
 
-      <!-- Kondisi Barang (Seperti Baru, Baik, Cukup) -->
+      <!-- Kondisi Barang -->
       <div>
-        <div class="f-sec-title" style="margin-bottom:8px">Kondisi Barang</div>
-        <div class="f-cond-chips" id="condChips">
-          <button type="button" class="f-cond-chip" data-cond="baru">Seperti Baru</button>
-          <button type="button" class="f-cond-chip active" data-cond="baik">Baik</button>
-          <button type="button" class="f-cond-chip" data-cond="cukup">Cukup</button>
+        <label class="f-field-lbl">Kondisi barang</label>
+        <div class="f-chips-group" id="filterCondChips">
+          <button type="button" class="f-pill-opt" data-cond="all">Semua</button>
+          <button type="button" class="f-pill-opt" data-cond="baru">Seperti baru</button>
+          <button type="button" class="f-pill-opt active" data-cond="baik">Baik</button>
         </div>
       </div>
 
-      <!-- Lokasi Kampus Dropdown -->
+      <!-- Urutkan -->
       <div>
-        <div class="f-sec-title" style="margin-bottom:8px">Lokasi Kampus</div>
-        <div class="f-select-wrap">
-          <select class="f-select" id="filterCampusSelect">
-            <option value="all">Semua Lokasi Kampus</option>
-            <option value="teknik" selected>Fakultas Teknik – Kampus Utama</option>
-            <option value="itg">Institut Teknologi Garut</option>
-            <option value="itb">Institut Teknologi Bandung</option>
-            <option value="unpad">Universitas Padjadjaran</option>
-            <option value="ui">Universitas Indonesia</option>
-          </select>
-          <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
-        </div>
+        <label class="f-field-lbl" for="filterSort">Urutkan</label>
+        <input class="f-input-box" id="filterSort" type="text" value="Jarak terdekat" readonly>
       </div>
 
-      <!-- Hanya Pemilik Terverifikasi Toggle -->
-      <div class="f-toggle-row">
-        <span class="f-toggle-label">Hanya pemilik terverifikasi</span>
-        <label class="switch" aria-label="Toggle pemilik terverifikasi">
-          <input type="checkbox" id="filterVerifiedToggle" checked>
-          <span class="slider-toggle"></span>
-        </label>
+      <!-- Bottom Actions -->
+      <div class="f-bottom-actions">
+        <button type="button" class="f-btn-reset" id="filterResetBtn">Atur ulang</button>
+        <button type="button" class="f-btn-submit" id="filterApplyBtn">Terapkan filter</button>
       </div>
-
-      <!-- Tombol Terapkan (Figma: Terapkan (24 barang)) -->
-      <button type="button" class="f-btn-apply" id="filterApplyBtn">
-        Terapkan (0 barang)
-      </button>
     </div>
   </div>
 </div>
+
 <script type="module" src="/js/cari.js"></script>
+<script>
+  if (new URLSearchParams(location.search).get('filter') === 'open') {
+    document.getElementById('filterModal')?.classList.add('open');
+  }
+</script>
 </body>
 </html>
