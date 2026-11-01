@@ -16,47 +16,52 @@ function escHtml(str) {
 
 // Default SVG illustrations matching Figma 1:1
 const ilustrasi = {
-  kalkulator: `<svg viewBox="0 0 100 80" width="70" height="60">
-    <rect x="22" y="6" width="56" height="68" rx="8" fill="#1E2A28"/>
-    <rect x="28" y="12" width="44" height="15" rx="3" fill="#BFE3DA"/>
-    <g fill="#fff" opacity=".95">
-      <circle cx="34" cy="36" r="3"/>
-      <circle cx="44" cy="36" r="3"/>
-      <circle cx="54" cy="36" r="3"/>
-      <circle cx="64" cy="36" r="3"/>
-      <circle cx="34" cy="46" r="3"/>
-      <circle cx="44" cy="46" r="3"/>
-      <circle cx="54" cy="46" r="3"/>
-      <circle cx="64" cy="46" r="3"/>
-      <circle cx="34" cy="56" r="3"/>
-      <circle cx="44" cy="56" r="3"/>
-      <circle cx="54" cy="56" r="3"/>
-      <circle cx="64" cy="56" r="3" fill="#F28C28"/>
+  kalkulator: `<svg viewBox="0 0 100 85" width="70" height="70">
+    <rect x="26" y="8" width="48" height="68" rx="8" fill="#1E293B"/>
+    <rect x="32" y="14" width="36" height="16" rx="3" fill="#E2F1ED"/>
+    <text x="64" y="26" font-size="8" font-family="monospace" font-weight="bold" fill="#007A68" text-anchor="end">1.618</text>
+    <g fill="#94A3B8">
+      <rect x="32" y="36" width="6" height="4" rx="1"/>
+      <rect x="42" y="36" width="6" height="4" rx="1"/>
+      <rect x="52" y="36" width="6" height="4" rx="1"/>
+      <rect x="62" y="36" width="6" height="4" rx="1"/>
+      <rect x="32" y="44" width="6" height="4" rx="1"/>
+      <rect x="42" y="44" width="6" height="4" rx="1"/>
+      <rect x="52" y="44" width="6" height="4" rx="1"/>
+      <rect x="62" y="44" width="6" height="4" rx="1"/>
+      <rect x="32" y="52" width="6" height="4" rx="1"/>
+      <rect x="42" y="52" width="6" height="4" rx="1"/>
+      <rect x="52" y="52" width="6" height="4" rx="1"/>
+      <rect x="62" y="52" width="6" height="4" rx="1" fill="#F7942D"/>
+      <rect x="32" y="60" width="16" height="5" rx="1" fill="#CBD5E1"/>
+      <rect x="52" y="60" width="16" height="5" rx="1" fill="#008F83"/>
     </g>
   </svg>`,
 
-  buku: `<svg viewBox="0 0 100 80" width="65" height="70">
-    <rect x="25" y="6" width="50" height="68" rx="6" fill="#007A68"/>
-    <rect x="31" y="18" width="30" height="4" rx="2" fill="#fff" opacity=".9"/>
-    <rect x="31" y="27" width="22" height="4" rx="2" fill="#fff" opacity=".9"/>
-    <rect x="31" y="36" width="30" height="4" rx="2" fill="#fff" opacity=".9"/>
+  buku: `<svg viewBox="0 0 100 85" width="70" height="70">
+    <rect x="28" y="10" width="44" height="64" rx="6" fill="#007A68"/>
+    <rect x="36" y="18" width="28" height="3" rx="1" fill="#FFFFFF" opacity="0.9"/>
+    <text x="50" y="32" font-size="7" font-weight="800" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.5">KALKULUS</text>
+    <text x="50" y="54" font-size="22" font-weight="800" fill="#FFFFFF" text-anchor="middle">2</text>
   </svg>`,
 
-  laptop: `<svg viewBox="0 0 100 80" width="75" height="52">
-    <rect x="20" y="14" width="60" height="40" rx="5" fill="#1E3A38"/>
-    <rect x="24" y="17" width="52" height="34" rx="3" fill="#BFE3DA"/>
-    <path d="M12 56h76a3 3 0 0 1 3 3v2H9v-2a3 3 0 0 1 3-3z" fill="#1E3A38"/>
+  laptop: `<svg viewBox="0 0 100 85" width="75" height="56">
+    <rect x="22" y="16" width="56" height="36" rx="5" fill="#1E293B"/>
+    <rect x="26" y="19" width="48" height="30" rx="3" fill="#88D4C8"/>
+    <path d="M14 54h72a3 3 0 0 1 3 3v2H11v-2a3 3 0 0 1 3-3z" fill="#1E293B"/>
   </svg>`,
 
-  jaslab: `<svg viewBox="0 0 100 80" width="65" height="65">
-    <path d="M42 12v14L28 60a4 4 0 0 0 3.5 6h37a4 4 0 0 0 3.5-6L58 26V12h-16z" fill="#007A68" opacity=".9"/>
-    <path d="M32 54l5-12h26l5 12a4 4 0 0 1-3.5 6h-29a4 4 0 0 1-3.5-6z" fill="#20B29A"/>
-    <line x1="39" y1="12" x2="61" y2="12" stroke="#1E3A38" stroke-width="3" stroke-linecap="round"/>
+  jaslab: `<svg viewBox="0 0 100 85" width="70" height="70">
+    <path d="M38 16L30 28V70H70V28L62 16H38Z" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
+    <path d="M38 16L50 40L62 16" fill="none" stroke="#CBD5E1" stroke-width="2"/>
+    <rect x="34" y="38" width="14" height="12" rx="2" fill="none" stroke="#007A68" stroke-width="3"/>
+    <rect x="52" y="38" width="14" height="12" rx="2" fill="none" stroke="#007A68" stroke-width="3"/>
+    <line x1="48" y1="44" x2="52" y2="44" stroke="#007A68" stroke-width="3"/>
   </svg>`,
 
-  umum: (title) => `<svg viewBox="0 0 100 80" width="70" height="60">
-    <rect x="20" y="10" width="60" height="60" rx="16" fill="#DDF1EC"/>
-    <text x="50" y="47" font-size="24" fill="#007A68" text-anchor="middle" font-weight="bold">${(title || 'K').charAt(0)}</text>
+  umum: (title) => `<svg viewBox="0 0 100 85" width="70" height="65">
+    <rect x="25" y="14" width="50" height="56" rx="12" fill="#DDF1EC"/>
+    <text x="50" y="50" font-size="22" fill="#007A68" text-anchor="middle" font-weight="bold">${(title || 'K').charAt(0)}</text>
   </svg>`
 };
 
@@ -110,7 +115,7 @@ async function muatUser() {
   } catch (e) {
     const elSapaan = document.getElementById('sapaanNama');
     if (elSapaan) {
-      elSapaan.innerHTML = 'Halo, Rina <a href="/masuk.html" style="font-size:12px;color:rgba(255,255,255,0.85);text-decoration:underline;margin-left:6px;font-weight:400">Masuk</a>';
+      elSapaan.textContent = 'Halo, Rina!';
     }
     if (e && e.status !== 401) console.log('Gagal memuat profil:', e);
   }
@@ -120,7 +125,7 @@ async function muatUser() {
 async function muatBarang() {
   try {
     const dbItems = await KM.get('/barang');
-    const colors = ['lav', 'mint', 'peach'];
+    const colors = ['lavender', 'mint', 'peach'];
 
     allItems = dbItems.map((b, idx) => {
       const descLower = (b.deskripsi || '').toLowerCase();
@@ -179,6 +184,8 @@ async function muatBarang() {
       };
     });
 
+    allItems.sort((a, b) => a.id - b.id);
+
     renderCards();
   } catch (e) {
     console.error('Gagal memuat barang:', e);
@@ -209,14 +216,18 @@ function renderCards(keyword = '') {
   }
 
   grid.innerHTML = filtered.map(item => `
-    <div class="card card-item" data-id="${item.id}" role="button" tabindex="0" style="cursor:pointer" aria-label="${escHtml(item.title)}, ${escHtml(item.badge)}, ${escHtml(item.hargaText)}">
-      <div class="img ${escHtml(item.color)}">
-        <div class="badge ${escHtml(item.badge.toLowerCase())}">${escHtml(item.badge)}</div>
-        ${item.foto ? `<img src="${escHtml(item.foto)}" alt="${escHtml(item.title)}" loading="lazy">` : getSvg(item.title)}
+    <div class="product-card card-item" data-id="${item.id}" role="button" tabindex="0" aria-label="${escHtml(item.title)}, ${escHtml(item.badge)}, ${escHtml(item.hargaText)}">
+      <div class="card-thumb-wrap ${escHtml(item.color)}">
+        <span class="card-badge-pill ${escHtml(item.badge.toLowerCase())}">${escHtml(item.badge)}</span>
+        ${item.foto && !item.foto.includes('AARCAAEAAEDASIAAhEBAxEB') ? `<img src="${escHtml(item.foto)}" alt="${escHtml(item.title)}" loading="lazy">` : getSvg(item.title)}
       </div>
-        <div class="body">
-        <div class="title">${escHtml(item.title)}</div>
-        <div class="price ${escHtml(item.badge.toLowerCase())}">${escHtml(item.hargaText)}<span class="unit">${escHtml(item.unitText)}</span></div>
+      <div class="card-body-content">
+        <div class="card-item-title">${escHtml(item.title)}</div>
+        <div class="card-price-row ${escHtml(item.badge.toLowerCase())}">${escHtml(item.hargaText)}<span class="unit">${escHtml(item.unitText)}</span></div>
+        <div class="card-distance-row">
+          <svg viewBox="0 0 24 24"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span>${escHtml(item.lokasi || '350 m dari kamu')}</span>
+        </div>
       </div>
     </div>
   `).join('');
