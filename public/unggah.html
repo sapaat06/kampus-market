@@ -4,134 +4,501 @@
 <meta charset="utf-8">
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CampusCircle — Unggah Barang</title>
+<title>CampusCircle — Unggah Produk</title>
+<link rel="stylesheet" href="/css/style.css">
 <style>
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-400.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
+  body {
+    margin: 0;
+    padding: 0;
+    background: #F8FAFC;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    color: #0F172A;
   }
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-500.woff2') format('woff2');
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  .phone {
+    width: 100%;
+    max-width: 360px;
+    height: 800px;
+    background: #F8FAFC;
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-600.woff2') format('woff2');
-    font-weight: 600;
-    font-style: normal;
-    font-display: swap;
-  }
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-700.woff2') format('woff2');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-  }
-
-  :root {
-    --primary: #007A68;
-    --primary-active: #006354;
-    --text-dark: #1E3A38;
-    --text-muted: #7A8583;
-    --placeholder: #8A9492;
-    --orange: #F28C28;
-    --mint-bg: #DDF1EC;
-    --peach-bg: #FFF0DB;
-    --border-light: #E3E8E7;
-    --card-bg: #F4F7F6;
-  }
-
-  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Poppins',system-ui,-apple-system,sans-serif}
-  *{box-sizing:border-box;margin:0;padding:0}
-  .phone{width:100%;max-width:440px;height:100vh;height:100dvh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08)}
 
   /* Status Bar */
-  .status{height:24px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;color:var(--text-dark);flex-shrink:0;margin-top:6px}
-  .status .icons{display:flex;gap:6px;align-items:center}
-  .status svg{width:14px;height:14px;fill:var(--text-dark)}
+  .status-bar {
+    height: 28px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+    color: #0F172A;
+    flex-shrink: 0;
+    background: #F8FAFC;
+    z-index: 10;
+  }
+  .status-bar .icons { display: flex; gap: 6px; align-items: center; }
+  .status-bar svg { width: 14px; height: 14px; fill: #0F172A; }
 
   /* Header */
-  .header{height:50px;padding:0 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
-  .back-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
-  .back-btn:hover{background:var(--card-bg)}
-  .back-btn svg{width:22px;height:22px;stroke:var(--text-dark);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-  .header-title{font-size:18px;font-weight:700;color:var(--text-dark)}
+  .header-bar {
+    padding: 8px 20px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex-shrink: 0;
+    background: #F8FAFC;
+    z-index: 10;
+  }
+  .back-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0F172A;
+    padding: 0;
+    margin-top: 2px;
+  }
+  .back-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .header-text-wrap { display: flex; flex-direction: column; }
+  .header-title { font-size: 16px; font-weight: 700; color: #0F172A; line-height: 1.2; }
+  .header-sub { font-size: 11px; color: #64748B; margin-top: 3px; }
 
-  /* Scrollable Form Content */
-  .form-scroll{flex:1;overflow-y:auto;padding:8px 20px 24px;display:flex;flex-direction:column;gap:14px;scrollbar-width:none}
-  .form-scroll::-webkit-scrollbar{display:none}
+  /* Form Layout */
+  .form-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 20px 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    scrollbar-width: none;
+  }
+  .form-scroll::-webkit-scrollbar { display: none; }
 
-  /* Photo Upload Box */
-  .upload-box{background:#E8F5F3;border:1.5px dashed var(--primary);border-radius:18px;padding:22px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;transition:background .15s}
-  .upload-box:hover{background:#DDF1EC}
-  .plus-circle{width:44px;height:44px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
-  .plus-circle svg{width:22px;height:22px;stroke:var(--primary);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-  .upload-text{font-size:13px;font-weight:600;color:var(--primary)}
-  .file-input{display:none}
+  /* Banner Info */
+  .info-banner {
+    background: #DCFCE7;
+    border-radius: 14px;
+    height: 62px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-sizing: border-box;
+    margin-bottom: 25px;
+  }
+  .info-banner-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #166534;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #fff;
+  }
+  .info-banner-icon svg { width: 14px; height: 14px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .info-banner-content { display: flex; flex-direction: column; gap: 2px; }
+  .info-banner-title { font-size: 12px; font-weight: 700; color: #166534; }
+  .info-banner-sub { font-size: 11px; color: #166534; opacity: 0.9; line-height: 1.3; }
 
-  /* Photo Preview */
-  .photo-preview{display:none;width:100%;height:160px;border-radius:18px;overflow:hidden;position:relative;background:var(--card-bg);border:1.5px solid var(--border-light);align-items:center;justify-content:center}
-  .photo-preview img{width:100%;height:160px;object-fit:cover;display:block}
-  .remove-photo{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:rgba(30,58,56,0.75);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1}
+  /* Mode Chips (Kept for compatibility and test) */
+  .type-tabs {
+    display: none;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .type-chip {
+    flex: 1;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    color: #64748B;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .type-chip.active {
+    background: #008F83;
+    color: #FFFFFF;
+    border-color: #008F83;
+  }
 
-  /* Form Controls */
-  .form-group{display:flex;flex-direction:column;gap:6px}
-  .form-label{font-size:13px;font-weight:700;color:var(--text-dark)}
-  .form-input{height:46px;border-radius:12px;border:1.5px solid var(--border-light);background:#fff;padding:0 14px;font-size:13px;color:var(--text-dark);outline:none;font-family:inherit;transition:border-color .15s}
-  .form-input:focus{border-color:var(--primary)}
+  /* Photos Section */
+  .photos-section {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 22px;
+  }
+  .section-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .section-label { font-size: 13px; font-weight: 700; color: #0F172A; }
+  .section-sub { font-size: 11px; color: #64748B; }
 
-  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .form-select{height:46px;border-radius:12px;border:1.5px solid var(--border-light);background:#fff;padding:0 12px;font-size:13px;font-weight:600;color:var(--text-dark);outline:none;font-family:inherit;cursor:pointer}
+  .photos-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .photo-item-box {
+    width: 146px;
+    height: 120px;
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    border: none;
+    background: transparent;
+    flex-shrink: 0;
+  }
+  .photo-item-box img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-overlay-btn {
+    position: absolute;
+    bottom: 6px;
+    left: 8px;
+    right: 8px;
+    height: 24px;
+    background: rgba(15, 23, 42, 0.75);
+    color: #fff;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+  }
 
-  /* Transaction Mode Chips */
-  .chips-row{display:flex;gap:8px}
-  .type-chip{flex:1;height:38px;border-radius:999px;border:1.5px solid var(--border-light);background:#fff;font-size:13px;font-weight:700;color:var(--text-dark);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-family:inherit}
-  .type-chip.active{background:var(--orange);border-color:var(--orange);color:#fff;box-shadow:0 2px 6px rgba(242,140,40,0.25)}
+  .upload-dashed-btn {
+    width: 164px;
+    height: 120px;
+    border-radius: 14px;
+    border: 1.5px dashed #CBD5E1;
+    background: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    box-sizing: border-box;
+    flex-shrink: 0;
+  }
+  .upload-dashed-btn svg { width: 22px; height: 22px; stroke: #94A3B8; fill: none; stroke-width: 2.2; }
+  .upload-dashed-text { font-size: 11px; font-weight: 600; color: #64748B; }
+  .photo-helper-text { font-size: 11px; color: #94A3B8; line-height: 1.3; }
 
-  /* Smart Price Estimator Card */
-  .smart-price-card{background:var(--primary);border-radius:20px;padding:16px 18px;color:#fff;display:flex;flex-direction:column;gap:10px;box-shadow:0 4px 16px rgba(0,122,104,0.25);transition:opacity .2s}
-  .smart-top{display:flex;align-items:center;gap:10px}
-  .sparkle-badge{width:32px;height:32px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  .sparkle-badge svg{width:18px;height:18px;fill:var(--orange);stroke:var(--orange)}
-  .smart-title{font-size:14px;font-weight:700;color:#fff}
-  .smart-sub{font-size:11px;color:rgba(255,255,255,0.85)}
+  /* Form Groups */
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 18px;
+  }
+  .form-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 8px;
+  }
+  .form-input {
+    width: 100%;
+    height: 46px;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #0F172A;
+    font-family: inherit;
+    box-sizing: border-box;
+    outline: none;
+  }
+  .form-input:focus { border-color: #008F83; }
 
-  .smart-price-val{font-size:22px;font-weight:800;letter-spacing:-0.3px}
-  .smart-subline{font-size:12px;color:rgba(255,255,255,0.9);margin-top:-6px}
+  .form-textarea {
+    width: 100%;
+    height: 82px;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #0F172A;
+    font-family: inherit;
+    resize: none;
+    box-sizing: border-box;
+    outline: none;
+    line-height: 1.4;
+  }
+  .form-textarea:focus { border-color: #008F83; }
 
-  /* Slider graphic */
-  .slider-box{display:flex;flex-direction:column;gap:6px;margin-top:2px}
-  .slider-bar-wrap{position:relative;height:8px;background:rgba(255,255,255,0.25);border-radius:999px;display:flex;align-items:center}
-  .slider-active-range{position:absolute;left:25%;right:25%;height:8px;background:var(--orange);border-radius:999px}
-  .slider-thumb{position:absolute;left:50%;top:50%;transform:translate(-50%, -50%);width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
-  .slider-labels{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,0.8);font-weight:600}
+  .form-select {
+    width: 100%;
+    height: 46px;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #0F172A;
+    font-family: inherit;
+    box-sizing: border-box;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+  }
+  .form-select:focus { border-color: #008F83; }
 
-  /* User Price Input */
-  .price-input-custom{border:1.5px solid var(--primary);font-weight:700;color:var(--text-dark)}
+  /* Chips */
+  .chips-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .condition-chip {
+    flex: 1;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+  .condition-chip.active {
+    background: #DCFCE7;
+    color: #166534;
+    border-color: #86EFAC;
+  }
 
-  /* Submit Button */
-  .submit-btn{height:50px;border-radius:18px;background:var(--primary);color:#fff;border:none;outline:none;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,122,104,0.3);margin-top:6px;transition:background .15s, transform .15s;font-family:inherit}
-  .submit-btn:active{transform:scale(0.98);background:var(--primary-active)}
+  /* Bottom Fixed Action Bar */
+  .bottom-action-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 360px;
+    height: 88px;
+    background: #FFFFFF;
+    border-top: 1px solid #F1F5F9;
+    padding-top: 11px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+    z-index: 20;
+  }
+  .btn-kirim {
+    width: 320px;
+    height: 46px;
+    background: #008F83;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 143, 131, 0.2);
+    margin-bottom: 15px;
+    transition: background 0.15s;
+  }
+  .btn-kirim:hover { background: #007A70; }
+  .home-indicator {
+    width: 134px;
+    height: 4px;
+    background: #0F172A;
+    border-radius: 2px;
+  }
 
-  .toast{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:rgba(30,58,56,0.92);color:#fff;padding:8px 18px;border-radius:999px;font-size:12px;font-weight:600;z-index:60;display:none;align-items:center;gap:6px}
+
+
+
+  /* Bottom Sheets / Modals */
+  .sheet-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    z-index: 50;
+    display: none;
+    align-items: flex-end;
+    backdrop-filter: blur(2px);
+  }
+  .sheet-card {
+    background: #F8FAFC;
+    width: 100%;
+    border-radius: 24px 24px 0 0;
+    padding: 16px 20px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp .25s ease-out;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+  .sheet-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .sheet-title { font-size: 15px; font-weight: 700; color: #0F172A; }
+  .sheet-close-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: #E2E8F0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+  }
+  .sheet-close-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.2; }
+
+  .inner-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .inner-card-title { font-size: 13px; font-weight: 700; color: #0F172A; }
+  .inner-card-sub { font-size: 11px; color: #64748B; line-height: 1.4; }
+  .highlight-range { font-size: 20px; font-weight: 800; color: #008F83; margin: 4px 0; }
+
+  .sheet-btn-action {
+    height: 44px;
+    border-radius: 12px;
+    background: #008F83;
+    color: #FFFFFF;
+    border: none;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 4px 12px rgba(0,143,131,0.2);
+    margin-top: 4px;
+  }
+
+  /* Map Box */
+  .map-box {
+    width: 100%;
+    height: 120px;
+    border-radius: 12px;
+    background: #E2E8F0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #CBD5E1;
+  }
+  .map-box svg { width: 32px; height: 32px; stroke: #FE8F26; fill: none; stroke-width: 2; }
+  .map-tag {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(15, 23, 42, 0.75);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  /* Success Screen / Screen 26 */
+  .success-overlay {
+    position: absolute;
+    inset: 0;
+    background: #F8FAFC;
+    z-index: 60;
+    display: none;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 24px 20px;
+  }
+  .success-header-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .success-badge-banner {
+    background: #DCFCE7;
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+  .success-badge-title { font-size: 14px; font-weight: 700; color: #166534; display: flex; align-items: center; gap: 6px; }
+  .success-badge-sub { font-size: 11px; color: #166534; opacity: 0.9; }
+
+  /* Toast */
+  .toast {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0F172A;
+    color: #FFFFFF;
+    padding: 8px 18px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    z-index: 80;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+  }
 </style>
 </head>
 <body>
 
 <div class="phone">
-  <div class="toast" id="toastMsg">
-    <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.2"><path d="m5 12 4 4L19 6"/></svg>
-    <span id="toastText">Barang berhasil ditayangkan!</span>
-  </div>
-
-  <div class="status">
+  <!-- Status Bar -->
+  <div class="status-bar">
     <span>09:41</span>
     <div class="icons">
       <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
@@ -140,126 +507,237 @@
     </div>
   </div>
 
-  <div class="header">
+  <!-- Header Bar -->
+  <div class="header-bar">
     <button class="back-btn" id="backBtn" aria-label="Kembali">
       <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
     </button>
-    <h1 class="header-title">Unggah Barang</h1>
+    <div class="header-text-wrap">
+      <h1 class="header-title" id="pageTitle">Unggah Produk Sewa</h1>
+      <span class="header-sub">Lengkapi informasi sebelum moderasi</span>
+    </div>
   </div>
 
+  <!-- Form Body -->
   <div class="form-scroll">
-    <!-- Photo Upload Box -->
-    <div class="upload-box" id="uploadBox">
-      <div class="plus-circle">
-        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    <!-- Notice Banner -->
+    <div class="info-banner">
+      <div class="info-banner-icon">
+        <svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
       </div>
-      <div class="upload-text" id="uploadText">Tambah foto barang (1 – 3 foto, min. 1)</div>
-    </div>
-    <input type="file" id="photoInput" accept="image/*" multiple hidden>
-    <div id="photoPreviewList" style="display:flex;flex-direction:row;gap:10px;flex-wrap:wrap"></div>
-
-    <!-- Nama Barang -->
-    <div class="form-group">
-      <label class="form-label" for="namaBarang">Nama Barang</label>
-      <input type="text" class="form-input" id="namaBarang" placeholder="Misal: Kalkulator Scientific Casio, Modul Kalkulus, Jas Lab">
-    </div>
-
-    <!-- Lokasi Pemilik (Point 6: Untuk estimasi jarak) -->
-    <div class="form-group">
-      <label class="form-label" for="lokasiBarang">Lokasi Pemilik / Kampus</label>
-      <input type="text" class="form-input" id="lokasiBarang" placeholder="Misal: Fakultas Teknik, Gedung C, Kos Dekat ITG" value="Fakultas Teknik, ITG">
-    </div>
-
-    <!-- Koordinat Lokasi (Latitude & Longitude untuk estimasi jarak) -->
-    <div class="grid-2">
-      <div class="form-group">
-        <label class="form-label" for="lokasiLat">Latitude</label>
-        <input type="number" class="form-input" id="lokasiLat" step="any" placeholder="-6.89" value="-6.8950">
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="lokasiLng">Longitude</label>
-        <input type="number" class="form-input" id="lokasiLng" step="any" placeholder="107.61" value="107.6100">
+      <div class="info-banner-content">
+        <div class="info-banner-title">Berbagi dari lingkaranmu</div>
+        <div class="info-banner-sub">Produk akan diperiksa Admin sebelum tayang.</div>
       </div>
     </div>
 
-    <!-- Kategori & Kondisi -->
-    <div class="grid-2">
-      <div class="form-group">
-        <label class="form-label" for="kategoriSelect">Kategori</label>
-        <select class="form-select" id="kategoriSelect">
-          <option value="1">Elektronik</option>
-          <option value="2">Buku & Modul</option>
-          <option value="4">Alat Praktikum</option>
-          <option value="5">Olahraga</option>
-          <option value="3">Perabot Kos</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="kondisiSelect">Kondisi</label>
-        <select class="form-select" id="kondisiSelect">
-          <option value="baru">Seperti baru</option>
-          <option value="baik" selected>Baik</option>
-          <option value="cukup">Cukup</option>
-          <option value="rusak">Perlu perbaikan</option>
-        </select>
-      </div>
+    <!-- Hidden compatibility type-chips -->
+    <div class="type-tabs" id="typeChips">
+      <button class="type-chip active" type="button" data-type="sewa">Sewa</button>
+      <button class="type-chip" type="button" data-type="jual">Beli</button>
+      <button class="type-chip" type="button" data-type="pinjam">Free</button>
     </div>
 
-    <!-- Jenis Transaksi -->
-    <div class="form-group">
-      <label class="form-label">Jenis Transaksi</label>
-      <div class="chips-row" id="typeChips">
-        <button type="button" class="type-chip" data-type="jual">Jual</button>
-        <button type="button" class="type-chip active" data-type="sewa">Sewa</button>
-        <button type="button" class="type-chip" data-type="pinjam">Pinjam</button>
+    <!-- Photos Section -->
+    <div>
+      <div class="section-label-row">
+        <span class="section-label">Foto produk</span>
+        <span class="section-sub" id="photoCountLabel">1 dari 5 foto</span>
       </div>
-    </div>
-
-    <!-- Smart Price Estimator Card -->
-    <div class="smart-price-card" id="smartPriceCard">
-      <div class="smart-top">
-        <div class="sparkle-badge">
-          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <input type="file" id="photoInput" accept="image/*" multiple style="display:none">
+      
+      <div class="photos-row" id="photoPreviewList">
+        <div class="photo-item-box" id="defaultSamplePhoto" style="cursor:pointer">
+          <img src="/img/unggah-sample-sewa.png" alt="Foto Produk" id="sampleImg">
+          <button class="photo-overlay-btn" type="button" id="btnChangePhoto" style="display:none">Ubah Foto</button>
         </div>
-        <div style="flex:1">
-          <div class="smart-title">Smart Price Estimator</div>
-          <div class="smart-sub" id="smartPriceSub">Rekomendasi harga sewa</div>
-        </div>
-        <button type="button" id="btnPakaiIdeal" style="background:rgba(255,255,255,0.22);border:none;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;cursor:pointer">Pakai Ideal</button>
-      </div>
-
-      <div class="smart-price-val" id="smartPriceRange">Rp4.000 – Rp6.000</div>
-      <div class="smart-subline" id="smartPriceIdeal">/ hari · harga ideal Rp5.000</div>
-
-      <div class="slider-box">
-        <div class="slider-bar-wrap">
-          <div class="slider-active-range"></div>
-          <div class="slider-thumb"></div>
-        </div>
-        <div class="slider-labels">
-          <span>Murah</span>
-          <span>Mahal</span>
+        <div class="upload-dashed-btn" id="uploadBox">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          <span class="upload-dashed-text" id="uploadText">+ Tambah foto</span>
         </div>
       </div>
+      <span class="photo-helper-text">.JPG, PNG. Maks. 5 MB per foto. Foto asli barang</span>
     </div>
 
-    <!-- Harga Input -->
-    <div class="form-group" id="hargaGroup">
-      <label class="form-label" id="hargaLabel">Harga Sewa Kamu (per hari)</label>
-      <input type="number" class="form-input price-input-custom" id="hargaInput" placeholder="Masukkan harga sewa (misal: 5000)">
-    </div>
-
-    <!-- Deskripsi Opsional -->
+    <!-- Nama Produk -->
     <div class="form-group">
-      <label class="form-label" for="deskripsiInput">Deskripsi (Opsional)</label>
-      <input type="text" class="form-input" id="deskripsiInput" placeholder="Jelaskan kondisi dan kelengkapan barang...">
+      <label class="form-label" for="namaBarang">Nama Produk</label>
+      <input class="form-input" id="namaBarang" type="text" placeholder="Contoh: Lampu Belajar LED" value="Lampu Belajar LED" required>
     </div>
 
-    <button type="button" class="submit-btn" id="submitBtn">Tayangkan Barang</button>
+    <!-- Deskripsi -->
+    <div class="form-group">
+      <label class="form-label" for="deskripsiInput">Deskripsi</label>
+      <textarea class="form-textarea" id="deskripsiInput" placeholder="Ceritakan kondisi, kelengkapan, dan spesifikasi barang...">Lampu LED 3 tingkat, kabel USB lengkap. Cocok untuk meja belajar di kos.</textarea>
+    </div>
+
+    <!-- Kategori -->
+    <div class="form-group">
+      <label class="form-label" for="kategoriSelect">Kategori</label>
+      <select class="form-select" id="kategoriSelect">
+        <option value="1" selected>Perlengkapan Kos</option>
+        <option value="2">Elektronik</option>
+        <option value="3">Buku & Alat Tulis</option>
+        <option value="4">Peralatan Kuliah</option>
+      </select>
+    </div>
+
+    <!-- Kondisi Barang -->
+    <div class="form-group">
+      <label class="form-label">Kondisi Barang</label>
+      <input type="hidden" id="kondisiSelect" value="baik">
+      <div class="chips-row" id="kondisiChips">
+        <button class="condition-chip" type="button" data-val="seperti-baru">Seperti Baru</button>
+        <button class="condition-chip active" type="button" data-val="baik">Baik</button>
+        <button class="condition-chip" type="button" data-val="cukup">Cukup</button>
+      </div>
+    </div>
+
+    <!-- Hidden compatibility fields for Harga & Lokasi -->
+    <div style="display:none;">
+      <label id="hargaLabel">Harga Sewa / hari</label>
+      <input id="hargaInput" type="text" value="Rp7.000">
+      <button id="btnOpenEstimator" type="button"></button>
+      <input id="lokasiBarang" type="text" value="Jl. Kampus Asri No. 8, Tarogong Kidul, Garut">
+      <button id="btnOpenLocation" type="button"></button>
+      <input id="lokasiLat" value="-7.2160">
+      <input id="lokasiLng" value="107.9020">
+      <div id="smartPriceCard">
+        <span id="smartPriceSub"></span>
+        <span id="smartPriceRange">Rp5.000 - Rp8.000</span>
+        <span id="smartPriceIdeal">Rp7.000</span>
+        <button id="btnPakaiIdeal" type="button"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fixed Bottom Bar -->
+  <div class="bottom-action-bar">
+    <button class="btn-kirim" id="submitBtn" type="button">Kirim Produk</button>
+    <div class="home-indicator"></div>
+  </div>
+
+  <!-- Screen 24 Sheet: Estimator Harga Cerdas -->
+  <div class="sheet-overlay" id="estimatorSheet">
+    <div class="sheet-card">
+      <div class="sheet-header-row">
+        <h2 class="sheet-title">Estimator Harga Cerdas</h2>
+        <button class="sheet-close-btn" id="closeEstimator" aria-label="Tutup">
+          <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="inner-card">
+        <div style="font-size: 13px; font-weight: 700; color: #0F172A;" id="estProdTitle">Lampu Belajar LED</div>
+        <div style="font-size: 11px; color: #64748B;" id="estProdSub">Perlengkapan Kos - Kondisi Baik</div>
+      </div>
+
+      <div class="inner-card">
+        <div class="inner-card-title">Estimator Harga Cerdas</div>
+        <p class="inner-card-sub">Saran sewa per hari berdasarkan kategori dan kondisi barang.</p>
+        <div class="highlight-range" id="estRangeText">Rp5.000 - Rp8.000</div>
+      </div>
+
+      <div class="inner-card">
+        <label class="inner-card-title" for="estChoiceInput">Harga sewa pilihanmu / hari</label>
+        <input class="form-input" id="estChoiceInput" type="text" value="Rp7.000" style="font-size: 16px; font-weight: 700; color: #008F83;">
+        <span class="inner-card-sub">Harga tetap bisa kamu ubah sebelum dikirim.</span>
+      </div>
+
+      <button class="sheet-btn-action" id="btnApplyEstPrice" type="button">Gunakan harga ini</button>
+    </div>
+  </div>
+
+  <!-- Screen 25 Sheet: Lokasi Pemilik -->
+  <div class="sheet-overlay" id="locationSheet">
+    <div class="sheet-card">
+      <div class="sheet-header-row">
+        <h2 class="sheet-title">Lokasi Pemilik</h2>
+        <button class="sheet-close-btn" id="closeLocation" aria-label="Tutup">
+          <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="inner-card">
+        <div class="inner-card-title">Tentukan titik pemilik.</div>
+        <p class="inner-card-sub">Titik ini dipakai untuk estimasi jarak. Alamat lengkap tidak ditampilkan di kartu publik.</p>
+        <button class="sheet-btn-action" id="btnGpsCurrent" type="button" style="width: fit-content; background: #DCFCE7; color: #166534;">
+          Gunakan Lokasi Saat Ini · GPS aktif
+        </button>
+      </div>
+
+      <div class="inner-card">
+        <label class="inner-card-title" for="locSearchInput">Cari alamat atau area</label>
+        <input class="form-input" id="locSearchInput" type="text" value="Jl. Kampus Asri, Garut">
+        
+        <div class="map-box">
+          <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div class="map-tag">Jl. Dago Asri · Pratinjau statis lokasi</div>
+        </div>
+
+        <div style="font-size: 12px; font-weight: 700; color: #0F172A; margin-top: 4px;">Alamat pratinjau</div>
+        <div style="font-size: 11px; color: #64748B;" id="locPreviewAddr">Jl. Kampus Asri No. 8, Tarogong Kidul, Garut</div>
+        <div style="font-size: 10px; color: #94A3B8; margin-top: 2px;">Koordinat contoh: -7.2160, 107.9020</div>
+      </div>
+
+      <button class="sheet-btn-action" id="btnApplyLocation" type="button">Gunakan titik ini</button>
+    </div>
+  </div>
+
+  <!-- Screen 26: Status Produk Success -->
+  <div class="success-overlay" id="statusProdukOverlay">
+    <div class="success-header-row">
+      <button class="back-btn" id="closeSuccess" aria-label="Tutup">
+        <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <h2 style="font-size: 16px; font-weight: 700; color: #0F172A;">Status Produk</h2>
+    </div>
+
+    <div class="success-badge-banner">
+      <div class="success-badge-title">
+        <svg style="width:16px;height:16px;stroke:#166534;fill:none;stroke-width:2.5;" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
+        Produk berhasil dikirim
+      </div>
+      <div class="success-badge-sub" id="succProdRef">PRO-031 · 30 Okt 2026 · 09.41</div>
+    </div>
+
+    <div class="inner-card" style="margin-bottom: 12px;">
+      <div style="font-size: 14px; font-weight: 700; color: #0F172A;" id="succProdName">Lampu Belajar LED</div>
+      <div style="display: inline-flex; align-items: center; background: #FFF1DE; color: #D97706; padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; width: fit-content; margin-top: 4px;">
+        Menunggu Moderasi Admin
+      </div>
+    </div>
+
+    <div class="inner-card" style="margin-bottom: 12px; gap: 10px;">
+      <div style="display:flex; justify-content:space-between; font-size:12px;">
+        <span style="color:#64748B;">Jenis transaksi</span>
+        <span style="font-weight:700; color:#0F172A;" id="succProdJenis">Sewa · Rp7.000/hari</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:12px;">
+        <span style="color:#64748B;">Status publikasi</span>
+        <span style="font-weight:700; color:#0F172A;">Belum tayang</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:12px;">
+        <span style="color:#64748B;">Tahap berikutnya</span>
+        <span style="font-weight:700; color:#0F172A;">Pemeriksaan foto dan informasi</span>
+      </div>
+    </div>
+
+    <div class="inner-card" style="background:#F1F5F9; border-color:#E2E8F0; margin-bottom: 16px;">
+      <p style="font-size: 11px; color: #64748B; line-height: 1.45;">
+        Kami akan mengabari setelah pemeriksaan selesai. Kamu tidak perlu mengirim ulang produk yang sama.
+      </p>
+    </div>
+
+    <button class="sheet-btn-action" id="btnLihatProdukSaya" type="button">Lihat Produk Saya</button>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toastMsg">
+    <span id="toastText">Pesan</span>
   </div>
 </div>
 
-<script src="/js/unggah.js"></script>
+<script type="module" src="/js/unggah.js"></script>
 </body>
 </html>

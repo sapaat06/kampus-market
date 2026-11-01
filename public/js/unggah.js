@@ -1,5 +1,6 @@
 // public/js/unggah.js
-// Handles item upload, photo compression to data URL, category/condition updates, dynamic Smart Price Estimator, and saving to backend
+// Handles item upload (Screens 21 to 26):
+// Mode Sewa / Beli / Free, Photo upload, Estimator Harga Cerdas, Lokasi Pemilik, and Status Produk
 
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof KM !== 'undefined' && KM.wajibLogin && !KM.wajibLogin()) {
@@ -8,33 +9,64 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // DOM Elements
   const backBtn = document.getElementById('backBtn');
+  const pageTitle = document.getElementById('pageTitle');
+  const typeChips = document.querySelectorAll('#typeChips .type-chip');
+
   const uploadBox = document.getElementById('uploadBox');
   const uploadText = document.getElementById('uploadText');
   const photoInput = document.getElementById('photoInput');
   const photoPreviewList = document.getElementById('photoPreviewList');
+  const photoCountLabel = document.getElementById('photoCountLabel');
+  const btnChangePhoto = document.getElementById('btnChangePhoto');
+  const defaultSamplePhoto = document.getElementById('defaultSamplePhoto');
+
   const namaBarang = document.getElementById('namaBarang');
+  const deskripsiInput = document.getElementById('deskripsiInput');
+  const kategoriSelect = document.getElementById('kategoriSelect');
+  const kondisiSelect = document.getElementById('kondisiSelect');
+  const kondisiChips = document.querySelectorAll('#kondisiChips .condition-chip');
+
+  const hargaLabel = document.getElementById('hargaLabel');
+  const hargaInput = document.getElementById('hargaInput');
   const lokasiBarang = document.getElementById('lokasiBarang');
   const lokasiLat = document.getElementById('lokasiLat');
   const lokasiLng = document.getElementById('lokasiLng');
-  const kategoriSelect = document.getElementById('kategoriSelect');
-  const kondisiSelect = document.getElementById('kondisiSelect');
-  const typeChips = document.querySelectorAll('#typeChips .type-chip');
-  const smartPriceCard = document.getElementById('smartPriceCard');
-  const smartPriceSub = document.getElementById('smartPriceSub');
-  const btnPakaiIdeal = document.getElementById('btnPakaiIdeal');
-  const smartPriceRange = document.getElementById('smartPriceRange');
-  const smartPriceIdeal = document.getElementById('smartPriceIdeal');
-  const hargaLabel = document.getElementById('hargaLabel');
-  const hargaInput = document.getElementById('hargaInput');
-  const deskripsiInput = document.getElementById('deskripsiInput');
+
+  // Estimator Elements (Screen 24)
+  const btnOpenEstimator = document.getElementById('btnOpenEstimator');
+  const estimatorSheet = document.getElementById('estimatorSheet');
+  const closeEstimator = document.getElementById('closeEstimator');
+  const estProdTitle = document.getElementById('estProdTitle');
+  const estProdSub = document.getElementById('estProdSub');
+  const estRangeText = document.getElementById('estRangeText');
+  const estChoiceInput = document.getElementById('estChoiceInput');
+  const btnApplyEstPrice = document.getElementById('btnApplyEstPrice');
+
+  // Location Elements (Screen 25)
+  const btnOpenLocation = document.getElementById('btnOpenLocation');
+  const locationSheet = document.getElementById('locationSheet');
+  const closeLocation = document.getElementById('closeLocation');
+  const locSearchInput = document.getElementById('locSearchInput');
+  const locPreviewAddr = document.getElementById('locPreviewAddr');
+  const btnGpsCurrent = document.getElementById('btnGpsCurrent');
+  const btnApplyLocation = document.getElementById('btnApplyLocation');
+
+  // Status Produk Success Elements (Screen 26)
+  const statusProdukOverlay = document.getElementById('statusProdukOverlay');
+  const closeSuccess = document.getElementById('closeSuccess');
+  const succProdRef = document.getElementById('succProdRef');
+  const succProdName = document.getElementById('succProdName');
+  const succProdJenis = document.getElementById('succProdJenis');
+  const btnLihatProdukSaya = document.getElementById('btnLihatProdukSaya');
+
   const submitBtn = document.getElementById('submitBtn');
   const toastMsg = document.getElementById('toastMsg');
   const toastText = document.getElementById('toastText');
 
   // State
   let currentType = 'sewa';
-  let lastIdeal = 5000;
   const uploadedFotos = [];
+  let createdProductId = 1;
 
   // Back button
   if (backBtn) {
@@ -47,7 +79,53 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Photo upload and client-side canvas compression
+  // Type / Mode Selector
+  typeChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      typeChips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      currentType = chip.getAttribute('data-type');
+
+      if (currentType === 'sewa') {
+        if (pageTitle) pageTitle.textContent = 'Unggah Produk Sewa';
+        if (hargaLabel) hargaLabel.textContent = 'Harga Sewa / hari';
+        if (hargaInput) hargaInput.value = 'Rp7.000';
+        if (btnOpenEstimator) btnOpenEstimator.style.display = 'flex';
+      } else if (currentType === 'jual') {
+        if (pageTitle) pageTitle.textContent = 'Unggah Produk Beli';
+        if (hargaLabel) hargaLabel.textContent = 'Harga Jual';
+        if (hargaInput) hargaInput.value = 'Rp3.200.000';
+        if (btnOpenEstimator) btnOpenEstimator.style.display = 'none';
+      } else {
+        if (pageTitle) pageTitle.textContent = 'Unggah Produk Free';
+        if (hargaLabel) hargaLabel.textContent = 'Biaya / Komitmen';
+        if (hargaInput) hargaInput.value = 'Rp0 (Gratis)';
+        if (btnOpenEstimator) btnOpenEstimator.style.display = 'none';
+      }
+    });
+  });
+
+  // Condition Chips
+  kondisiChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      kondisiChips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      const val = chip.getAttribute('data-val');
+      if (kondisiSelect) kondisiSelect.value = val;
+    });
+  });
+
+  // Photos handling
+  if (uploadBox && photoInput) {
+    uploadBox.addEventListener('click', () => photoInput.click());
+  }
+  if (btnChangePhoto && photoInput) {
+    btnChangePhoto.addEventListener('click', () => photoInput.click());
+  }
+  if (defaultSamplePhoto && photoInput) {
+    defaultSamplePhoto.addEventListener('click', () => photoInput.click());
+  }
+
   const compressImage = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -79,164 +157,106 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  const renderPhotoPreview = () => {
-    if (!photoPreviewList) return;
-    photoPreviewList.innerHTML = '';
+  const renderPreviews = () => {
+    if (defaultSamplePhoto) {
+      defaultSamplePhoto.style.display = uploadedFotos.length > 0 ? 'none' : 'block';
+    }
+    // Remove dynamic previews
+    const dynamicItems = photoPreviewList.querySelectorAll('.dynamic-photo-item');
+    dynamicItems.forEach(el => el.remove());
 
     uploadedFotos.forEach((f, idx) => {
-      const wrap = document.createElement('div');
-      wrap.style.cssText = 'position:relative;width:96px;height:96px;border-radius:14px;overflow:hidden;border:1.5px solid var(--border-light);box-shadow:0 2px 6px rgba(0,0,0,0.06)';
-
-      const img = document.createElement('img');
-      img.src = f;
-      img.alt = `Foto ${idx + 1}`;
-      img.style.cssText = 'width:100%;height:100%;object-fit:cover';
-
-      const btnRemove = document.createElement('button');
-      btnRemove.type = 'button';
-      btnRemove.innerHTML = '&times;';
-      btnRemove.setAttribute('aria-label', `Hapus Foto ${idx + 1}`);
-      btnRemove.style.cssText = 'position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(30,58,56,0.8);color:#fff;border:none;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center';
-      btnRemove.onclick = (e) => {
+      const box = document.createElement('div');
+      box.className = 'photo-item-box dynamic-photo-item';
+      box.innerHTML = `
+        <img src="${f}" alt="Foto ${idx + 1}">
+        <button class="photo-overlay-btn" type="button" data-del="${idx}">Hapus</button>
+      `;
+      box.querySelector('[data-del]').addEventListener('click', (e) => {
         e.stopPropagation();
         uploadedFotos.splice(idx, 1);
-        renderPhotoPreview();
-      };
-
-      wrap.appendChild(img);
-      wrap.appendChild(btnRemove);
-      photoPreviewList.appendChild(wrap);
+        renderPreviews();
+      });
+      photoPreviewList.insertBefore(box, uploadBox);
     });
 
-    if (uploadBox) {
-      uploadBox.style.display = uploadedFotos.length >= 3 ? 'none' : 'flex';
-      if (uploadText) {
-        uploadText.textContent = uploadedFotos.length === 0
-          ? 'Tambah foto barang (1 – 3 foto, min. 1)'
-          : `Tambah foto lagi (${uploadedFotos.length}/3)`;
-      }
-    }
+    const total = uploadedFotos.length > 0 ? uploadedFotos.length : 1;
+    if (photoCountLabel) photoCountLabel.textContent = `${total} dari 5 foto`;
   };
 
-  if (uploadBox && photoInput) {
-    uploadBox.addEventListener('click', () => photoInput.click());
-    photoInput.addEventListener('change', async () => {
-      const files = Array.from(photoInput.files || []);
-      if (!files.length) return;
-
-      if (uploadedFotos.length + files.length > 3) {
-        showToast(`Maksimal 3 foto. Anda sudah memiliki ${uploadedFotos.length} foto.`);
-        photoInput.value = '';
-        return;
-      }
-
+  if (photoInput) {
+    photoInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
       for (const file of files) {
-        if (!file.type.startsWith('image/')) {
-          showToast('Format berkas harus berupa gambar');
-          continue;
-        }
+        if (uploadedFotos.length >= 5) break;
         try {
-          const dataUrl = await compressImage(file);
-          if (uploadedFotos.length < 3) {
-            uploadedFotos.push(dataUrl);
-          }
-        } catch (err) {
-          console.error('Gagal memproses foto:', err);
-          showToast('Gagal memproses salah satu foto');
-        }
+          const compressed = await compressImage(file);
+          uploadedFotos.push(compressed);
+        } catch (_err) {}
       }
-
+      renderPreviews();
       photoInput.value = '';
-      renderPhotoPreview();
     });
   }
 
-  // Smart Price Calculation based on Type, Category, Condition
-  const updateEstimator = () => {
-    const kondisi = kondisiSelect?.value || 'baik';
-    let factor = 1.0;
-    if (kondisi === 'baru') factor = 1.25;
-    else if (kondisi === 'baik') factor = 1.0;
-    else if (kondisi === 'cukup') factor = 0.75;
-    else if (kondisi === 'rusak') factor = 0.4;
-
-    if (currentType === 'sewa') {
-      if (btnPakaiIdeal) btnPakaiIdeal.textContent = 'Pakai Ideal';
-      if (smartPriceSub) smartPriceSub.textContent = 'Rekomendasi harga sewa';
-      const minP = Math.round((4000 * factor) / 500) * 500;
-      const maxP = Math.round((6000 * factor) / 500) * 500;
-      const idealP = Math.round((5000 * factor) / 500) * 500;
-      lastIdeal = idealP;
-      if (smartPriceRange) smartPriceRange.textContent = `Rp${minP.toLocaleString('id-ID')} – Rp${maxP.toLocaleString('id-ID')}`;
-      if (smartPriceIdeal) smartPriceIdeal.textContent = `/ hari · harga ideal Rp${idealP.toLocaleString('id-ID')}`;
-      if (hargaLabel) hargaLabel.textContent = 'Harga Sewa Kamu (per hari)';
-      if (hargaInput) {
-        hargaInput.placeholder = `Masukkan harga sewa (misal: ${idealP})`;
-        hargaInput.disabled = false;
-        if (!hargaInput.value || hargaInput.value === '0') hargaInput.value = idealP;
-      }
-      if (smartPriceCard) smartPriceCard.style.display = 'flex';
-      if (btnPakaiIdeal) btnPakaiIdeal.style.display = 'inline-block';
-    } else if (currentType === 'jual') {
-      if (btnPakaiIdeal) btnPakaiIdeal.textContent = 'Pakai Ideal';
-      if (smartPriceSub) smartPriceSub.textContent = 'Rekomendasi harga jual';
-      const minP = Math.round((150000 * factor) / 5000) * 5000;
-      const maxP = Math.round((190000 * factor) / 5000) * 5000;
-      const idealP = Math.round((170000 * factor) / 5000) * 5000;
-      lastIdeal = idealP;
-      if (smartPriceRange) smartPriceRange.textContent = `Rp${minP.toLocaleString('id-ID')} – Rp${maxP.toLocaleString('id-ID')}`;
-      if (smartPriceIdeal) smartPriceIdeal.textContent = `harga ideal Rp${idealP.toLocaleString('id-ID')}`;
-      if (hargaLabel) hargaLabel.textContent = 'Harga Jual Kamu';
-      if (hargaInput) {
-        hargaInput.placeholder = `Masukkan harga jual (misal: ${idealP})`;
-        hargaInput.disabled = false;
-        if (!hargaInput.value || hargaInput.value === '5000' || hargaInput.value === '0') hargaInput.value = idealP;
-      }
-      if (smartPriceCard) smartPriceCard.style.display = 'flex';
-      if (btnPakaiIdeal) btnPakaiIdeal.style.display = 'inline-block';
-    } else if (currentType === 'pinjam') {
-      if (btnPakaiIdeal) btnPakaiIdeal.textContent = 'Set Gratis (Rp0)';
-      if (smartPriceSub) smartPriceSub.textContent = 'Mode Pinjam Berbagi (Bisa Gratis atau Biaya Ringan)';
-      if (smartPriceRange) smartPriceRange.textContent = 'Rp0 – Rp5.000';
-      if (smartPriceIdeal) smartPriceIdeal.textContent = 'Isi 0 jika gratis (+Green Points), atau isi biaya pinjam / pemeliharaan';
-      if (hargaLabel) hargaLabel.textContent = 'Biaya Pinjam (Isi 0 jika Gratis)';
-      if (hargaInput) {
-        hargaInput.disabled = false;
-        hargaInput.placeholder = 'Masukkan biaya pinjam (contoh: 0 atau 3000)';
-        if (!hargaInput.value || hargaInput.value === '170000' || hargaInput.value === '5000') {
-          hargaInput.value = '0';
-        }
-      }
-      if (smartPriceCard) smartPriceCard.style.display = 'flex';
-      if (btnPakaiIdeal) btnPakaiIdeal.style.display = 'inline-block';
-    }
-  };
-
-  if (btnPakaiIdeal) {
-    btnPakaiIdeal.addEventListener('click', () => {
-      if (hargaInput) {
-        if (currentType === 'pinjam') {
-          hargaInput.value = '0';
-        } else {
-          hargaInput.value = lastIdeal;
-        }
-      }
+  // Estimator Harga Sheet (Screen 24)
+  if (btnOpenEstimator && estimatorSheet) {
+    btnOpenEstimator.addEventListener('click', () => {
+      if (estProdTitle && namaBarang) estProdTitle.textContent = namaBarang.value || 'Lampu Belajar LED';
+      const katText = kategoriSelect ? kategoriSelect.options[kategoriSelect.selectedIndex].text : 'Perlengkapan Kos';
+      const konVal = kondisiSelect ? kondisiSelect.value : 'baik';
+      if (estProdSub) estProdSub.textContent = `${katText} - Kondisi ${konVal === 'seperti-baru' ? 'Seperti Baru' : (konVal === 'baik' ? 'Baik' : 'Cukup')}`;
+      estimatorSheet.style.display = 'flex';
     });
   }
 
-  // Transaction mode chip selection
-  typeChips.forEach((chip) => {
-    chip.addEventListener('click', () => {
-      typeChips.forEach((c) => c.classList.remove('active'));
-      chip.classList.add('active');
-      currentType = chip.getAttribute('data-type');
-      updateEstimator();
+  if (closeEstimator && estimatorSheet) {
+    closeEstimator.addEventListener('click', () => {
+      estimatorSheet.style.display = 'none';
     });
-  });
+  }
 
-  if (kategoriSelect) kategoriSelect.addEventListener('change', updateEstimator);
-  if (kondisiSelect) kondisiSelect.addEventListener('change', updateEstimator);
+  if (btnApplyEstPrice && estimatorSheet) {
+    btnApplyEstPrice.addEventListener('click', () => {
+      if (estChoiceInput && hargaInput) {
+        hargaInput.value = estChoiceInput.value;
+      }
+      estimatorSheet.style.display = 'none';
+    });
+  }
 
+  // Location Picker Sheet (Screen 25)
+  if (btnOpenLocation && locationSheet) {
+    btnOpenLocation.addEventListener('click', () => {
+      locationSheet.style.display = 'flex';
+    });
+  }
+
+  if (closeLocation && locationSheet) {
+    closeLocation.addEventListener('click', () => {
+      locationSheet.style.display = 'none';
+    });
+  }
+
+  if (btnGpsCurrent) {
+    btnGpsCurrent.addEventListener('click', () => {
+      if (locSearchInput) locSearchInput.value = 'Jl. Kampus Asri, Garut';
+      if (locPreviewAddr) locPreviewAddr.textContent = 'Jl. Kampus Asri No. 8, Tarogong Kidul, Garut';
+      if (lokasiLat) lokasiLat.value = '-7.2160';
+      if (lokasiLng) lokasiLng.value = '107.9020';
+    });
+  }
+
+  if (btnApplyLocation && locationSheet) {
+    btnApplyLocation.addEventListener('click', () => {
+      if (locPreviewAddr && lokasiBarang) {
+        lokasiBarang.value = locPreviewAddr.textContent;
+      }
+      locationSheet.style.display = 'none';
+    });
+  }
+
+  // Toast
   const showToast = (msg, callback) => {
     if (!toastMsg) return;
     if (toastText) toastText.textContent = msg;
@@ -247,59 +267,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1500);
   };
 
-  // Submit form
+  // Submit button & Screen 26
   if (submitBtn) {
     submitBtn.addEventListener('click', async () => {
-      if (uploadedFotos.length < 1) {
-        showToast('Wajib mengunggah minimal 1 foto barang');
-        return;
-      }
-      if (uploadedFotos.length > 3) {
-        showToast('Maksimal 3 foto barang');
-        return;
-      }
-
       const nama = namaBarang?.value.trim();
       if (!nama) {
-        showToast('Nama barang wajib diisi');
+        showToast('Nama produk wajib diisi');
         return;
       }
 
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Menerbitkan Barang...';
+      submitBtn.textContent = 'Mengirim Produk...';
 
       let sewaVal = null;
       let jualVal = null;
       if (currentType === 'sewa') {
         const nums = (hargaInput?.value || '').replace(/[^0-9]/g, '');
-        if (!nums) {
-          showToast('Masukkan harga sewa barang');
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Tayangkan Barang';
-          return;
-        }
-        sewaVal = Number(nums);
+        sewaVal = nums ? Number(nums) : 7000;
       } else if (currentType === 'jual') {
         const nums = (hargaInput?.value || '').replace(/[^0-9]/g, '');
-        if (!nums) {
-          showToast('Masukkan harga jual barang');
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Tayangkan Barang';
-          return;
-        }
-        jualVal = Number(nums);
+        jualVal = nums ? Number(nums) : 3200000;
       } else {
-        // Mode Pinjam: bisa gratis (0) atau dengan biaya pemeliharaan
-        const raw = (hargaInput?.value || '').trim();
-        const nums = raw.replace(/[^0-9]/g, '');
-        sewaVal = nums !== '' ? Number(nums) : 0;
-        jualVal = null;
+        sewaVal = 0;
       }
 
-      const deskripsiVal = deskripsiInput?.value.trim();
-      const lokasiVal = lokasiBarang?.value.trim() || 'Fakultas Teknik, ITG';
-      const lokasiLatVal = lokasiLat?.value.trim() || '';
-      const lokasiLngVal = lokasiLng?.value.trim() || '';
+      const deskripsiVal = deskripsiInput?.value.trim() || 'Barang siap pakai untuk perkuliahan.';
+      const lokasiVal = lokasiBarang?.value.trim() || 'Jl. Kampus Asri No. 8, Tarogong Kidul, Garut';
+      const latVal = lokasiLat?.value ? parseFloat(lokasiLat.value) : undefined;
+      const lngVal = lokasiLng?.value ? parseFloat(lokasiLng.value) : undefined;
+
+      const sampleFallbackFoto = ['/img/lampu-belajar.png'];
+      const fotoPayload = uploadedFotos.length > 0 ? uploadedFotos : sampleFallbackFoto;
 
       const payload = {
         nama_barang: nama,
@@ -307,26 +305,54 @@ document.addEventListener('DOMContentLoaded', () => {
         kondisi: kondisiSelect?.value || 'baik',
         harga_sewa: sewaVal,
         harga_jual: jualVal,
-        foto: JSON.stringify(uploadedFotos),
+        foto: JSON.stringify(fotoPayload),
         lokasi: lokasiVal,
-        lokasi_lat: lokasiLatVal !== '' ? parseFloat(lokasiLatVal) : undefined,
-        lokasi_lng: lokasiLngVal !== '' ? parseFloat(lokasiLngVal) : undefined,
-        deskripsi: (currentType === 'pinjam' ? '[Mode Pinjam Komunitas] ' : '') + (deskripsiVal || 'Barang siap pakai untuk perkuliahan.')
+        lokasi_lat: latVal,
+        lokasi_lng: lngVal,
+        deskripsi: deskripsiVal
       };
 
       try {
         const result = await KM.post('/barang', payload);
-        showToast('✓ Barang berhasil ditayangkan!', () => {
-          window.location.href = `/detail.html?id=${result.id || 1}`;
-        });
-      } catch (e) {
-        showToast(e.message || 'Gagal mengunggah barang');
+        createdProductId = result?.id || 1;
+
+        // Show Screen 26: Status Produk
+        if (succProdRef) {
+          const now = new Date();
+          const tgl = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+          const jam = String(now.getHours()).padStart(2, '0') + '.' + String(now.getMinutes()).padStart(2, '0');
+          succProdRef.textContent = `PRO-03${createdProductId} · ${tgl} · ${jam}`;
+        }
+        if (succProdName) succProdName.textContent = nama;
+        if (succProdJenis) {
+          if (currentType === 'sewa') {
+            succProdJenis.textContent = `Sewa · Rp${Number(sewaVal).toLocaleString('id-ID')}/hari`;
+          } else if (currentType === 'jual') {
+            succProdJenis.textContent = `Beli · Rp${Number(jualVal).toLocaleString('id-ID')}`;
+          } else {
+            succProdJenis.textContent = 'Pinjam Gratis';
+          }
+        }
+        if (statusProdukOverlay) statusProdukOverlay.style.display = 'flex';
+      } catch (err) {
+        showToast(err.message || 'Gagal mengunggah produk');
+      } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Tayangkan Barang';
+        submitBtn.textContent = 'Kirim Produk';
       }
     });
   }
 
-  // Initial estimator setup
-  updateEstimator();
+  // Success overlay buttons
+  if (closeSuccess && statusProdukOverlay) {
+    closeSuccess.addEventListener('click', () => {
+      statusProdukOverlay.style.display = 'none';
+      window.location.href = `/detail.html?id=${createdProductId}`;
+    });
+  }
+  if (btnLihatProdukSaya) {
+    btnLihatProdukSaya.addEventListener('click', () => {
+      window.location.href = `/detail.html?id=${createdProductId}`;
+    });
+  }
 });
