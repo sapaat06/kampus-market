@@ -5,157 +5,576 @@
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KampusCircle — Cari Kos</title>
+<link rel="stylesheet" href="/css/style.css">
 <style>
-  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif}
-  *{box-sizing:border-box;margin:0;padding:0}
-  .phone{width:100%;max-width:440px;height:100vh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow:hidden;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;box-shadow:0 0 24px rgba(0,0,0,0.08)}
-  .scroll{flex:1;overflow-y:auto;scrollbar-width:none}
-  .scroll::-webkit-scrollbar{display:none}
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #F1F5F9;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  .phone-frame {
+    width: 100%;
+    max-width: 360px;
+    height: 800px;
+    background: #F8FAFC;
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  }
+  .scroll-body {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: none;
+    display: flex;
+    flex-direction: column;
+  }
+  .scroll-body::-webkit-scrollbar { display: none; }
+
+  /* Top Status Bar */
+  .status-bar {
+    height: 26px;
+    background: #F8FAFC;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #0F172A;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .status-icons {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .status-icons svg {
+    width: 13px;
+    height: 13px;
+    fill: #0F172A;
+  }
 
   /* Header Teal */
-  .header{background:#00917C;border-bottom-left-radius:28px;border-bottom-right-radius:28px;padding:0 20px 16px}
-  .status{height:24px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fff}
-  .status .icons{display:flex;gap:6px;align-items:center}
-  .status svg{width:14px;height:14px;fill:#fff}
+  .header-teal {
+    background: #008F83;
+    border-bottom-left-radius: 28px;
+    border-bottom-right-radius: 28px;
+    padding: 0 16px 12px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .navrow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    height: 28px;
+  }
+  .navrow .back {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    color: #FFFFFF;
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
+  .navrow .back svg {
+    width: 22px;
+    height: 22px;
+    stroke: #FFFFFF;
+    fill: none;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .navrow .title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #FFFFFF;
+    line-height: 1.2;
+  }
 
-  .navrow{margin-top:16px;display:flex;align-items:center;gap:14px}
-  .navrow .back{display:flex;align-items:center;cursor:pointer;color:#fff;text-decoration:none}
-  .navrow .back svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-  .navrow .title{font-size:20px;font-weight:800;color:#fff}
+  .locrow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #FFFFFF;
+    font-weight: 500;
+    cursor: pointer;
+    height: 18px;
+    margin-top: 6px;
+  }
+  .locrow svg {
+    width: 15px;
+    height: 15px;
+    stroke: #FFFFFF;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
 
-  .locrow{margin-top:10px;display:flex;align-items:center;gap:6px;font-size:12px;color:#fff;font-weight:600;cursor:pointer}
-  .locrow svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .searchbox {
+    height: 42px;
+    background: #FFFFFF;
+    border-radius: 999px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    margin-top: 10px;
+  }
+  .searchbox svg {
+    width: 17px;
+    height: 17px;
+    stroke: #64748B;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .searchbox input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 13px;
+    color: #0F172A;
+    background: transparent;
+    font-family: inherit;
+  }
+  .searchbox input::placeholder {
+    color: #64748B;
+  }
 
-  .searchbox{margin-top:14px;height:46px;background:#fff;border-radius:999px;padding:0 16px;display:flex;align-items:center;gap:10px}
-  .searchbox svg{width:18px;height:18px;stroke:#7A8583;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-  .searchbox input{flex:1;border:none;outline:none;font-size:13px;color:#1E3A38;background:transparent;font-family:inherit}
-  .searchbox input::placeholder{color:#7A8583}
-
-  .chips{margin-top:14px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
-  .chips::-webkit-scrollbar{display:none}
-  .chip{height:32px;border-radius:999px;padding:0 14px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;white-space:nowrap;cursor:pointer;border:none}
-  .chip.white{background:#fff;color:#00917C}
-  .chip.orange{background:#F28C28;color:#fff}
-  .chip svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .chips {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    height: 30px;
+    margin-top: 8px;
+  }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    height: 30px;
+    border-radius: 999px;
+    padding: 0 13px;
+    font-size: 11.5px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+  }
+  .chip.white {
+    background: #FFFFFF;
+    color: #008F83;
+  }
+  .chip.orange {
+    background: #F7942D;
+    color: #FFFFFF;
+  }
+  .chip svg {
+    width: 13px;
+    height: 13px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+  }
 
   /* Content Area */
-  .content{padding:18px 18px 24px}
-  .toprow{display:flex;justify-content:space-between;align-items:center}
-  .toprow .h1{font-size:17px;font-weight:800;color:#1E3A38}
-  .toprow .sort{font-size:12px;font-weight:700;color:#00917C;display:flex;align-items:center;gap:4px;cursor:pointer;position:relative}
-  .toprow .sort svg{width:14px;height:14px;stroke:#00917C;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .content {
+    padding: 12px 16px 6px;
+    flex: 1;
+  }
+  .toprow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 24px;
+  }
+  .toprow .h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .toprow .sort {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #008F83;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+  }
+  .toprow .sort svg {
+    width: 14px;
+    height: 14px;
+    stroke: #008F83;
+    fill: none;
+    stroke-width: 2;
+  }
 
-  .subrow{margin-top:4px;display:flex;justify-content:space-between;align-items:center}
-  .subrow .count{font-size:12px;color:#7A8583}
-  .subrow .badge-listing{background:#FFF0DB;color:#A65A00;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px}
+  .subrow {
+    margin-top: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 20px;
+  }
+  .subrow .count {
+    font-size: 11.5px;
+    color: #64748B;
+  }
+  .subrow .badge-listing {
+    background: #FFF1DE;
+    color: #9A3412;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2.5px 9px;
+    border-radius: 999px;
+  }
 
   /* Cards */
-  .list{margin-top:14px;display:flex;flex-direction:column;gap:12px}
-  .card-kos{background:#fff;border:1px solid #E3E8E7;border-radius:18px;padding:10px;display:flex;gap:12px;align-items:center;transition:transform .15s,box-shadow .15s;cursor:pointer}
-  .card-kos:active{transform:scale(0.99)}
-  .card-kos .thumb{width:96px;height:108px;border-radius:14px;position:relative;overflow:hidden;flex-shrink:0;background:#EDEAF7;display:flex;align-items:center;justify-content:center}
-  .card-kos .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-  .card-kos .thumb .badge-gender{position:absolute;top:6px;left:6px;background:#FFF0DB;color:#A65A00;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px}
+  .list {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .card-kos {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 18px;
+    padding: 7px 10px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    height: 125px;
+    box-sizing: border-box;
+    transition: transform 0.15s ease;
+  }
+  .card-kos:active {
+    transform: scale(0.985);
+  }
+  .card-kos .thumb {
+    width: 94px;
+    height: 110px;
+    border-radius: 14px;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #EDEAF7;
+  }
+  .card-kos .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
   
-  .card-kos .info{flex:1;display:flex;flex-direction:column;gap:4px}
-  .card-kos .name{font-size:15px;font-weight:800;color:#1E3A38;line-height:1.2}
-  .card-kos .price{font-size:16px;font-weight:800;color:#00917C;margin-top:2px}
-  .card-kos .price .per{font-size:11px;color:#7A8583;font-weight:400}
-  .card-kos .dist{font-size:11px;color:#7A8583;display:flex;align-items:center;gap:4px;margin-top:2px}
-  .card-kos .dist svg{width:12px;height:12px;stroke:#7A8583;fill:none;stroke-width:1.8}
-  .card-kos .fac{font-size:11px;color:#7A8583}
-  .card-kos .avail{font-size:11px;font-weight:700;color:#00917C;margin-top:2px}
+  .card-kos .info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .card-kos .name {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #0F172A;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-kos .price {
+    font-size: 15.5px;
+    font-weight: 700;
+    color: #008F83;
+    margin-top: 1px;
+  }
+  .card-kos .price .per {
+    font-size: 11px;
+    color: #008F83;
+    font-weight: 500;
+  }
+  .card-kos .dist {
+    font-size: 11px;
+    color: #64748B;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+  }
+  .card-kos .dist svg {
+    width: 12px;
+    height: 12px;
+    stroke: #64748B;
+    fill: none;
+    stroke-width: 2;
+  }
+  .card-kos .fac {
+    font-size: 11px;
+    color: #64748B;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-kos .avail {
+    font-size: 11px;
+    font-weight: 700;
+    color: #008F83;
+    margin-top: 2px;
+  }
 
-  .fiktif{margin-top:16px;font-size:10px;color:#A3ACAA;text-align:center;line-height:1.4}
+  .fiktif {
+    margin-top: 9px;
+    font-size: 10px;
+    color: #94A3B8;
+    text-align: center;
+    line-height: 1.4;
+  }
 
   /* Bottom Nav */
-  .nav{height:72px;background:#fff;border-top:1px solid #E8ECEB;padding-top:8px;display:flex;justify-content:space-around;align-items:flex-start;flex-shrink:0}
-  .nav .item{display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;text-decoration:none}
-  .nav .item .box{width:64px;height:34px;display:flex;align-items:center;justify-content:center}
-  .nav .item .pill{width:64px;height:34px;border-radius:17px;background:#DDF1EC;display:flex;align-items:center;justify-content:center}
-  .nav .item svg{width:22px;height:22px;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;fill:none}
-  .nav .item.active svg{stroke:#00917C}
-  .nav .item svg.dark{stroke:#1E3A38}
-  .nav .item .lbl{font-size:11px}
-  .nav .item.active .lbl{font-weight:700;color:#00917C}
-  .nav .item .lbl.dark{color:#1E3A38}
-  .nav .center .circle{width:48px;height:48px;border-radius:50%;background:#F28C28;display:flex;align-items:center;justify-content:center;margin-top:-2px}
-  .nav .center .circle svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-  .homeind{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:130px;height:5px;background:#1E3A38;border-radius:999px}
+  .bottom-nav-bar {
+    height: 90px;
+    background: #FFFFFF;
+    border-top: 1px solid #E2E8F0;
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    padding-top: 10px;
+    padding-bottom: 24px;
+    position: relative;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+  .nav-tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    color: #64748B;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 4px 6px;
+    min-width: 48px;
+  }
+  .nav-tab-item svg {
+    width: 20px;
+    height: 20px;
+    stroke: #64748B;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .nav-tab-item.active {
+    color: #008F83;
+    font-weight: 700;
+  }
+  .nav-tab-item.active svg {
+    stroke: #008F83;
+  }
+  .nav-icon-pill {
+    width: 44px;
+    height: 26px;
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-tab-item.active .nav-icon-pill {
+    background: #E6F4F2;
+  }
+  .floating-plus-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #F7942D;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(247, 148, 45, 0.35);
+    margin-top: -12px;
+    text-decoration: none;
+  }
+  .floating-plus-btn svg {
+    width: 22px;
+    height: 22px;
+    stroke: #FFFFFF;
+    fill: none;
+    stroke-width: 2.5;
+  }
+  .home-indicator {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 130px;
+    height: 4px;
+    background: #0F172A;
+    border-radius: 2px;
+    pointer-events: none;
+  }
 
-  /* Detail Sheet Modal */
-  .modal-overlay{position:absolute;inset:0;background:rgba(30,58,56,0.48);z-index:50;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}
-  .modal-overlay.open{display:flex}
-  .modal-sheet{background:#fff;width:100%;border-top-left-radius:28px;border-top-right-radius:28px;padding:16px 20px 24px;display:flex;flex-direction:column;gap:12px;position:relative;box-shadow:0 -8px 28px rgba(0,0,0,0.18);max-height:85%;overflow-y:auto}
-  .modal-handle{width:36px;height:4px;background:#D5DCDA;border-radius:999px;margin:0 auto 2px}
-  .modal-head{display:flex;justify-content:space-between;align-items:center}
-  .modal-title{font-size:17px;font-weight:700;color:#1E3A38}
-  .modal-close{background:none;border:none;font-size:22px;color:#1E3A38;cursor:pointer}
-  .modal-btn{width:100%;height:46px;background:#00917C;border:none;border-radius:14px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;font-family:inherit}
-  .modal-btn.orange{background:#F28C28}
+  /* Modal Detail Kos (Bottom Sheet) */
+  .modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 200;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-sheet {
+    background: #FFFFFF;
+    width: 100%;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    padding: 14px 18px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    max-height: 88%;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .modal-sheet::-webkit-scrollbar { display: none; }
+  .modal-handle {
+    width: 36px;
+    height: 4px;
+    background: #CBD5E1;
+    border-radius: 2px;
+    margin: 0 auto 4px;
+  }
+  .modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: #64748B;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+  }
+  .modal-btn {
+    width: 100%;
+    height: 44px;
+    background: #008F83;
+    border: none;
+    border-radius: 14px;
+    color: #FFFFFF;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .modal-btn.outline {
+    background: #FFFFFF;
+    border: 1.5px solid #008F83;
+    color: #008F83;
+  }
 </style>
 </head>
 <body>
-<div class="phone">
-  <div class="scroll">
-    <div class="header">
-      <div class="status">
-        <span>09.41</span>
-        <div class="icons">
-          <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
-          <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.95 9.05 8.05 9.05 5 13z"/></svg>
-          <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
-        </div>
-      </div>
+<div class="phone-frame">
+  <!-- Top Status Bar -->
+  <div class="status-bar">
+    <span>09.41</span>
+    <div class="status-icons">
+      <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.95 9.05 8.05 9.05 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
 
+  <div class="scroll-body">
+    <!-- Header Teal -->
+    <div class="header-teal">
       <div class="navrow">
         <a class="back" href="/beranda.html" aria-label="Kembali">
           <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         </a>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span class="title">Cari Kos</span>
-          <span style="font-size:10px;font-weight:700;background:rgba(255,255,255,0.25);color:#fff;padding:2px 8px;border-radius:999px">Simulasi Demo</span>
-        </div>
+        <span class="title">Cari Kos</span>
       </div>
 
       <div class="locrow" id="locSelect">
         <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         <span id="campusName">Institut Teknologi Garut</span>
-        <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
 
       <div class="searchbox">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input id="qKos" placeholder="Cari nama kos atau area...">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="qKos" type="search" placeholder="Cari nama kos atau area...">
       </div>
 
       <div class="chips">
-        <div class="chip white" id="chipDist">Jarak ≤ 2 km</div>
-        <div class="chip white" id="chipPrice">≤ Rp1 jt/bulan</div>
-        <div class="chip orange" id="chipFilter">
-          <svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+        <button class="chip white" id="chipDist" type="button">Jarak ≤ 2 km</button>
+        <button class="chip white" id="chipPrice" type="button">≤ Rp1 jt/bulan</button>
+        <button class="chip orange" id="chipFilter" type="button">
+          <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
           Filter
-        </div>
+        </button>
       </div>
     </div>
 
-    <!-- Tab Pilihan: Barang vs Kos -->
-    <div style="display:flex;background:#F4F7F6;border-radius:12px;padding:3px;margin:12px 18px 0">
-      <a href="/cari.html" style="flex:1;text-align:center;padding:7px;font-size:12px;font-weight:700;border-radius:9px;text-decoration:none;color:#7A8583;display:flex;align-items:center;justify-content:center;gap:4px">
-        🎒 Barang Kuliah
-      </a>
-      <div style="flex:1;text-align:center;padding:7px;font-size:12px;font-weight:700;border-radius:9px;background:#fff;color:#00917C;box-shadow:0 2px 6px rgba(0,0,0,0.06)">
-        Kos Mahasiswa
-      </div>
-    </div>
-
+    <!-- Content Area -->
     <div class="content">
       <div class="toprow">
         <div class="h1">Kos terdekat</div>
         <div class="sort" id="sortKos">
-          <svg viewBox="0 0 24 24"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"/></svg>
+          <svg viewBox="0 0 24 24"><polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/></svg>
           <span id="sortLabel">Terdekat</span>
-          <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
       </div>
 
@@ -168,16 +587,7 @@
         <!-- Card 1 -->
         <div class="card-kos" data-id="1">
           <div class="thumb">
-            <span class="badge-gender">Putri</span>
-            <svg viewBox="0 0 96 108" width="96" height="108">
-              <rect width="96" height="108" fill="#EDEAF7"/>
-              <!-- Room illustration -->
-              <rect x="15" y="45" width="40" height="50" rx="4" fill="#C9E4DC"/>
-              <rect x="18" y="55" width="34" height="20" rx="2" fill="#fff"/>
-              <rect x="62" y="30" width="22" height="65" rx="3" fill="#B3A7DF"/>
-              <rect x="35" y="15" width="22" height="25" rx="2" fill="#FFF0DB" stroke="#1E3A38" stroke-width="1.5"/>
-              <circle cx="46" cy="27" r="4" fill="#F28C28"/>
-            </svg>
+            <img src="/img/kos-damar-asri.png" alt="Kos Damar Asri" />
           </div>
           <div class="info">
             <div class="name">Kos Damar Asri</div>
@@ -194,17 +604,7 @@
         <!-- Card 2 -->
         <div class="card-kos" data-id="2">
           <div class="thumb">
-            <span class="badge-gender">Putra</span>
-            <svg viewBox="0 0 96 108" width="96" height="108">
-              <rect width="96" height="108" fill="#DDF1EC"/>
-              <!-- Building illustration -->
-              <rect x="12" y="25" width="72" height="70" rx="4" fill="#fff" stroke="#1E3A38" stroke-width="1.5"/>
-              <rect x="18" y="32" width="16" height="18" rx="2" fill="#C9E4DC"/>
-              <rect x="42" y="32" width="16" height="18" rx="2" fill="#C9E4DC"/>
-              <rect x="66" y="32" width="12" height="18" rx="2" fill="#C9E4DC"/>
-              <rect x="25" y="62" width="18" height="33" rx="2" fill="#F28C28"/>
-              <rect x="52" y="62" width="18" height="22" rx="2" fill="#C9E4DC"/>
-            </svg>
+            <img src="/img/kos-teras-cendekia.png" alt="Kos Teras Cendekia" />
           </div>
           <div class="info">
             <div class="name">Kos Teras Cendekia</div>
@@ -221,15 +621,7 @@
         <!-- Card 3 -->
         <div class="card-kos" data-id="3">
           <div class="thumb">
-            <span class="badge-gender">Campur</span>
-            <svg viewBox="0 0 96 108" width="96" height="108">
-              <rect width="96" height="108" fill="#FFF0DB"/>
-              <!-- Room illustration -->
-              <rect x="14" y="40" width="45" height="55" rx="4" fill="#00917C"/>
-              <rect x="16" y="48" width="41" height="25" rx="2" fill="#fff"/>
-              <rect x="65" y="35" width="20" height="60" rx="3" fill="#1E3A38"/>
-              <rect x="30" y="15" width="24" height="20" rx="2" fill="#fff" stroke="#00917C" stroke-width="1.5"/>
-            </svg>
+            <img src="/img/kos-puri-mahasiswa.png" alt="Kos Puri Mahasiswa" />
           </div>
           <div class="info">
             <div class="name">Kos Puri Mahasiswa</div>
@@ -248,43 +640,54 @@
     </div>
   </div>
 
-  <!-- Bottom Nav -->
-  <div class="nav">
-    <a class="item" href="/beranda.html">
-      <div class="box"><svg class="dark" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
-      <div class="lbl dark">Beranda</div>
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav-bar" aria-label="Navigasi Bawah">
+    <a class="nav-tab-item" href="/beranda.html">
+      <div class="nav-icon-pill">
+        <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-4a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5z"/></svg>
+      </div>
+      <span>Beranda</span>
     </a>
-    <a class="item active" href="/cari.html">
-      <div class="pill"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
-      <div class="lbl">Cari</div>
-    </a>
-    <a class="item center" href="/unggah.html">
-      <div class="circle"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
-      <div class="lbl dark">Tambah</div>
-    </a>
-    <a class="item" href="/chat.html">
-      <div class="box"><svg class="dark" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-      <div class="lbl dark">Chat</div>
-    </a>
-    <a class="item" href="/profil.html">
-      <div class="box"><svg class="dark" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-      <div class="lbl dark">Profil</div>
-    </a>
-  </div>
 
-  <!-- Modal Detail Kos -->
+    <button class="nav-tab-item active" id="navCari" type="button">
+      <div class="nav-icon-pill">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </div>
+      <span>Cari</span>
+    </button>
+
+    <a class="floating-plus-btn" href="/unggah.html" id="navTambah" aria-label="Unggah Produk">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </a>
+
+    <a class="nav-tab-item" href="/chat.html" id="navChat">
+      <div class="nav-icon-pill">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <span>Chat</span>
+    </a>
+
+    <a class="nav-tab-item" href="/profil.html" id="navProfil">
+      <div class="nav-icon-pill">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <span>Profil</span>
+    </a>
+  </nav>
+
+  <div class="home-indicator"></div>
+
+  <!-- Modal Detail Kos (Bottom Sheet matching Screens 10, 11, 12) -->
   <div class="modal-overlay" id="modalKos">
     <div class="modal-sheet">
       <div class="modal-handle"></div>
       <div class="modal-head">
         <span class="modal-title" id="mKosNama">Detail Kos</span>
-        <button class="modal-close" id="mKosClose">&times;</button>
+        <button class="modal-close" id="mKosClose" type="button">&times;</button>
       </div>
       <div id="mKosContent"></div>
     </div>
   </div>
-
-  <div class="homeind"></div>
 </div>
 <script src="/js/kos.js"></script>
 </body>

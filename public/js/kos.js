@@ -9,6 +9,7 @@ const kosData = [
     distText: '350 m dari ITG',
     fac: 'Wi-Fi • KM dalam • Furnitur',
     avail: '2 kamar tersedia',
+    img: '/img/kos-damar-asri.png',
     desc: 'Kos khusus mahasiswi, lingkungan aman dan bersih, dekat minimarket dan kantin kampus. Dilengkapi kasur springbed, lemari pakaian, dan meja belajar.',
     wa: '6281234567891'
   },
@@ -22,6 +23,7 @@ const kosData = [
     distText: '650 m dari ITG',
     fac: 'Wi-Fi • Parkir • Dapur',
     avail: '3 kamar tersedia',
+    img: '/img/kos-teras-cendekia.png',
     desc: 'Kos khusus mahasiswa dengan halaman hijau asri dan ventilasi segar. Parkir motor luas di dalam pagar tertutup, fasilitas dapur bersama lengkap.',
     wa: '6281234567892'
   },
@@ -35,6 +37,7 @@ const kosData = [
     distText: '1,2 km dari ITG',
     fac: 'KM dalam • Furnitur • Parkir',
     avail: '1 kamar tersedia',
+    img: '/img/kos-puri-mahasiswa.png',
     desc: 'Kos bangunan baru dengan akses gerbang 24 jam. Kamar mandi dalam dengan shower, Wi-Fi kencang cocok untuk belajar dan praktikum online.',
     wa: '6281234567893'
   }
@@ -72,11 +75,13 @@ function renderKos() {
 
   if (countKos) countKos.textContent = `${items.length} kos • jarak dari kampus`;
 
+  if (!listKos) return;
+
   if (items.length === 0) {
     listKos.innerHTML = `
-      <div style="text-align:center;padding:30px 0;color:#7A8583">
-        <svg viewBox="0 0 24 24" width="36" height="36" stroke="#7A8583" fill="none" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <div style="font-weight:700;color:#1E3A38;margin-top:6px">Kos tidak ditemukan</div>
+      <div style="text-align:center;padding:30px 0;color:#64748B">
+        <svg viewBox="0 0 24 24" width="36" height="36" stroke="#64748B" fill="none" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <div style="font-weight:700;color:#0F172A;margin-top:6px">Kos tidak ditemukan</div>
         <div style="font-size:12px">Coba sesuaikan kata kunci atau filter jarak/harga.</div>
       </div>`;
     return;
@@ -85,14 +90,7 @@ function renderKos() {
   listKos.innerHTML = items.map(k => `
     <div class="card-kos" data-id="${k.id}">
       <div class="thumb">
-        <span class="badge-gender">${k.gender}</span>
-        <svg viewBox="0 0 96 108" width="96" height="108">
-          <rect width="96" height="108" fill="${k.gender==='Putri'?'#EDEAF7':(k.gender==='Putra'?'#DDF1EC':'#FFF0DB')}"/>
-          <rect x="15" y="40" width="45" height="55" rx="4" fill="#00917C"/>
-          <rect x="18" y="48" width="39" height="25" rx="2" fill="#fff"/>
-          <rect x="65" y="32" width="20" height="63" rx="3" fill="#1E3A38"/>
-          <circle cx="48" cy="24" r="5" fill="#F28C28"/>
-        </svg>
+        <img src="${k.img}" alt="${k.name}">
       </div>
       <div class="info">
         <div class="name">${k.name}</div>
@@ -120,35 +118,36 @@ function openDetailKos(k) {
   if (!modalKos) return;
   mKosNama.textContent = k.name;
   mKosContent.innerHTML = `
-    <div style="background:#F7F9F8;border-radius:14px;padding:12px;margin-top:4px">
+    <div style="border-radius:14px;overflow:hidden;height:140px;background:#EDEAF7">
+      <img src="${k.img}" alt="${k.name}" style="width:100%;height:100%;object-fit:cover;">
+    </div>
+    <div style="background:#F8FAFC;border-radius:14px;padding:12px;border:1px solid #E2E8F0">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="background:#FFF0DB;color:#A65A00;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px">Kos ${k.gender}</span>
-        <span style="font-size:12px;color:#7A8583">📍 ${k.distText}</span>
+        <span style="background:#FFF1DE;color:#9A3412;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px">Kos ${k.gender} • Terverifikasi</span>
+        <span style="font-size:12px;color:#64748B">📍 ${k.distText}</span>
       </div>
-      <div style="font-size:22px;font-weight:800;color:#00917C;margin-top:8px">${k.priceText} <span style="font-size:12px;color:#7A8583;font-weight:400">/bulan</span></div>
-      <div style="font-size:12px;color:#00917C;font-weight:700;margin-top:4px">✓ ${k.avail}</div>
+      <div style="font-size:20px;font-weight:800;color:#008F83;margin-top:8px">${k.priceText} <span style="font-size:12px;color:#64748B;font-weight:400">/bulan</span></div>
+      <div style="font-size:12px;color:#008F83;font-weight:700;margin-top:4px">✓ ${k.avail}</div>
     </div>
 
     <div>
-      <div style="font-size:13px;font-weight:700;color:#1E3A38;margin-bottom:4px">Fasilitas Kamar:</div>
-      <div style="font-size:12px;color:#7A8583;line-height:1.5">${k.fac}</div>
+      <div style="font-size:13px;font-weight:700;color:#0F172A;margin-bottom:4px">Fasilitas Kamar:</div>
+      <div style="font-size:12px;color:#64748B;line-height:1.5">${k.fac}</div>
     </div>
 
     <div>
-      <div style="font-size:13px;font-weight:700;color:#1E3A38;margin-bottom:4px">Deskripsi Kos:</div>
-      <div style="font-size:12px;color:#7A8583;line-height:1.5">${k.desc}</div>
+      <div style="font-size:13px;font-weight:700;color:#0F172A;margin-bottom:4px">Deskripsi Kos:</div>
+      <div style="font-size:12px;color:#64748B;line-height:1.5">${k.desc}</div>
     </div>
 
-    <button id="btnChatPemilik" class="modal-btn" style="background:#00917C;display:flex;align-items:center;justify-content:center;gap:8px">
-      <svg viewBox="0 0 24 24" width="18" height="18" stroke="#fff" fill="none" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      Chat Pemilik di Aplikasi
-    </button>
-    <button id="btnHubungiPemilik" class="modal-btn" style="background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px">
-      Hubungi via WhatsApp (+${k.wa})
-    </button>
-    <button id="btnSurveiKos" class="modal-btn orange">
-      Jadwalkan Survei / Booking Demo
-    </button>
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button id="btnChatPemilik" class="modal-btn outline" type="button">
+        Chat Pemilik
+      </button>
+      <button id="btnAjukanSewa" class="modal-btn" type="button">
+        Ajukan Sewa
+      </button>
+    </div>
   `;
 
   document.getElementById('btnChatPemilik')?.addEventListener('click', () => {
@@ -156,16 +155,97 @@ function openDetailKos(k) {
     window.location.href = chatUrl;
   });
 
-  document.getElementById('btnHubungiPemilik')?.addEventListener('click', () => {
-    alert(`Membuka kontak WhatsApp pemilik ${k.name} (+${k.wa})...\nPesan siap dikirim: "Halo, saya tertarik dengan kamar di ${k.name} dari KampusCircle."`);
-  });
-
-  document.getElementById('btnSurveiKos')?.addEventListener('click', () => {
-    alert(`Permintaan survei untuk ${k.name} telah dikirim ke pemilik kos. Notifikasi jadwal akan dikirim ke akun Anda.`);
-    modalKos.classList.remove('open');
+  document.getElementById('btnAjukanSewa')?.addEventListener('click', () => {
+    openAjukanSewa(k);
   });
 
   modalKos.classList.add('open');
+}
+
+function openAjukanSewa(k) {
+  if (!modalKos) return;
+  mKosNama.textContent = 'Ajukan Sewa Kost';
+  mKosContent.innerHTML = `
+    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:12px;display:flex;gap:12px;align-items:center">
+      <img src="${k.img}" alt="${k.name}" style="width:64px;height:64px;border-radius:10px;object-fit:cover;">
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700;color:#0F172A">${k.name}</div>
+        <div style="font-size:14px;font-weight:700;color:#008F83;margin-top:2px">${k.priceText} <span style="font-size:11px;color:#64748B;font-weight:400">/bulan</span></div>
+        <div style="font-size:11px;color:#64748B">📍 ${k.distText}</div>
+      </div>
+    </div>
+
+    <div>
+      <label style="font-size:12px;font-weight:700;color:#0F172A;display:block;margin-bottom:4px">Pilih kamar</label>
+      <div style="border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600;color:#0F172A">
+        A-09 • Standar • 3 × 3 m
+      </div>
+    </div>
+
+    <div>
+      <label style="font-size:12px;font-weight:700;color:#0F172A;display:block;margin-bottom:4px">Mulai sewa</label>
+      <div style="border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600;color:#0F172A">
+        1 November 2026
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px">
+      <button type="button" class="chip white" style="flex:1;justify-content:center;border:1.5px solid #E2E8F0;height:36px">1 bulan</button>
+      <button type="button" class="chip orange" style="flex:1;justify-content:center;height:36px">3 bulan</button>
+      <button type="button" class="chip white" style="flex:1;justify-content:center;border:1.5px solid #E2E8F0;height:36px">6 bulan</button>
+    </div>
+
+    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:12px">
+      <div style="font-size:13px;font-weight:700;color:#0F172A;margin-bottom:4px">Ringkasan biaya</div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#64748B">
+        <span>${k.priceText} × 3 bulan</span>
+        <span style="font-weight:700;color:#0F172A">Rp${(k.price * 3).toLocaleString('id-ID')}</span>
+      </div>
+    </div>
+
+    <button id="btnKonfirmasiAjukan" class="modal-btn" type="button" style="margin-top:6px">
+      Konfirmasi Pengajuan
+    </button>
+  `;
+
+  document.getElementById('btnKonfirmasiAjukan')?.addEventListener('click', () => {
+    openStatusPengajuan(k);
+  });
+}
+
+function openStatusPengajuan(k) {
+  if (!modalKos) return;
+  mKosNama.textContent = 'Status Pengajuan Kost';
+  mKosContent.innerHTML = `
+    <div style="background:#DCFCE7;border-radius:14px;padding:12px;display:flex;align-items:center;gap:10px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#166534">Pengajuan berhasil dikirim</div>
+        <div style="font-size:11px;color:#166534">KST-REQ-001 • 30 Okt 2026 • 09.30</div>
+      </div>
+    </div>
+
+    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:12px;display:flex;gap:12px;align-items:center">
+      <img src="${k.img}" alt="${k.name}" style="width:64px;height:64px;border-radius:10px;object-fit:cover;">
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700;color:#0F172A">${k.name}</div>
+        <div style="font-size:14px;font-weight:700;color:#008F83;margin-top:2px">${k.priceText} <span style="font-size:11px;color:#64748B;font-weight:400">/bulan</span></div>
+        <div style="font-size:11px;color:#64748B">📍 ${k.distText}</div>
+      </div>
+    </div>
+
+    <div style="background:#FFF1DE;border-radius:12px;padding:10px 12px;font-size:12px;font-weight:600;color:#9A3412">
+      Menunggu persetujuan pemilik kos
+    </div>
+
+    <button id="btnTutupStatus" class="modal-btn" type="button">
+      Kembali ke Cari Kos
+    </button>
+  `;
+
+  document.getElementById('btnTutupStatus')?.addEventListener('click', () => {
+    modalKos.classList.remove('open');
+  });
 }
 
 mKosClose?.addEventListener('click', () => {
@@ -181,15 +261,15 @@ qKos?.addEventListener('input', renderKos);
 // Chips toggling
 chipDist?.addEventListener('click', () => {
   distLimit = distLimit === 2000 ? 5000 : 2000;
-  chipDist.style.background = distLimit === 2000 ? '#00917C' : '#fff';
-  chipDist.style.color = distLimit === 2000 ? '#fff' : '#00917C';
+  chipDist.style.background = distLimit === 2000 ? '#008F83' : '#FFFFFF';
+  chipDist.style.color = distLimit === 2000 ? '#FFFFFF' : '#008F83';
   renderKos();
 });
 
 chipPrice?.addEventListener('click', () => {
   priceLimit = priceLimit === 1000000 ? 2000000 : 1000000;
-  chipPrice.style.background = priceLimit === 1000000 ? '#00917C' : '#fff';
-  chipPrice.style.color = priceLimit === 1000000 ? '#fff' : '#00917C';
+  chipPrice.style.background = priceLimit === 1000000 ? '#008F83' : '#FFFFFF';
+  chipPrice.style.color = priceLimit === 1000000 ? '#FFFFFF' : '#008F83';
   renderKos();
 });
 
