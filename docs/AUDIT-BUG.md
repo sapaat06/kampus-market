@@ -89,7 +89,8 @@ Pengujian dilakukan terhadap 20 halaman HTML, 18 skrip client-side JS, 6 file ru
 - **Bukti**: Query SQL pada `src/routes/barang.js:90-97` hanya membaca parameter `kategori` dan `q`. Parameter `req.query.tipe` dan `req.query.urut` tidak diproses sama sekali.
 - **Saran Perbaikan**: Tambahkan klausa `WHERE (? IS NULL OR b.tipe=?)` dan logika pengurutan `ORDER BY` dinamis pada query `GET /api/barang`.
 
-#### [BUG-05] Mismatch DOM Selector Modal Filter Pencarian pada Halaman Cari
+#### [BUG-05] [SELESAI] Mismatch DOM Selector Modal Filter Pencarian pada Halaman Cari
+- **Status**: SELESAI DIPERBAIKI (commit fix: BUG-05)
 - **Role**: Mahasiswa
 - **Halaman / Endpoint**: `public/cari.html`
 - **File & Baris**: [public/js/cari.js](file:///c:/Project/kampus-market/public/js/cari.js#L484-L525) & [public/cari.html](file:///c:/Project/kampus-market/public/cari.html#L640-L660)
@@ -101,6 +102,7 @@ Pengujian dilakukan terhadap 20 halaman HTML, 18 skrip client-side JS, 6 file ru
 - **Kenyataan**: Slider tidak merespons dan listener gagal diikat karena elemen tidak ada.
 - **Bukti**: `public/js/cari.js` mencari `#filterPriceSlider`, `#filterDistSlider`, `#filterCampusSelect`, sedangkan di `public/cari.html` elemennya berupa input teks `#filterMinPrice`, `#filterMaxPrice`, `#filterDistChips`.
 - **Saran Perbaikan**: Selaraskan ID elemen HTML di `cari.html` agar sesuai dengan variabel target di `cari.js`.
+- **Hasil Verifikasi Ulang**: `public/js/cari.js` telah disesuaikan mengikuti elemen baru `public/cari.html` (`#filterMinPrice`, `#filterMaxPrice`, `#filterDistChips`, `#filterModeChips`, `#filterCondChips`). Kontrol filter dan tombol reset berfungsi sempurna memfilter data.
 
 #### [BUG-06] [SELESAI] Rendering Riwayat Transaksi Profil Dinonaktifkan Manual (`&& false`)
 - **Status**: SELESAI DIPERBAIKI (commit fix: BUG-06)

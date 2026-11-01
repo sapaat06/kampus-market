@@ -209,15 +209,14 @@ async function syncFromApi() {
   }
 }
 
-// Current filter state (default values matching figma7-0.png)
+// Current filter state (default values matching figma)
 let sortMode = 'near';
 let filterActive = true;
-let selectedMode = 'semua';
+let selectedMode = 'sewa';
+let minPriceVal = 0;
 let maxPriceVal = 100000;
 let maxDistVal = 2000;
 let selectedCond = 'all';
-let selectedCampus = 'all';
-let verifiedOnly = false;
 
 // DOM Elements
 const q = document.getElementById('q');
@@ -228,17 +227,17 @@ const filterModal = document.getElementById('filterModal');
 const filterChip = document.getElementById('filterChip');
 const filterResetBtn = document.getElementById('filterResetBtn');
 const filterApplyBtn = document.getElementById('filterApplyBtn');
-const filterPriceSlider = document.getElementById('filterPriceSlider');
-const filterPriceVal = document.getElementById('filterPriceVal');
-const filterDistSlider = document.getElementById('filterDistSlider');
-const filterDistVal = document.getElementById('filterDistVal');
-const filterCampusSelect = document.getElementById('filterCampusSelect');
-const filterVerifiedToggle = document.getElementById('filterVerifiedToggle');
-const chipMode = document.getElementById('chipMode');
+const filterMinPrice = document.getElementById('filterMinPrice');
+const filterMaxPrice = document.getElementById('filterMaxPrice');
+const filterKategori = document.getElementById('filterKategori');
+const filterLokasi = document.getElementById('filterLokasi');
+const filterSort = document.getElementById('filterSort');
+const filterModeChips = document.getElementById('filterModeChips');
+const filterDistChips = document.getElementById('filterDistChips');
+const filterCondChips = document.getElementById('filterCondChips');
 const chipPrice = document.getElementById('chipPrice');
 const chipDist = document.getElementById('chipDist');
 const sortBtn = document.getElementById('sortBtn');
-const sortDrop = document.getElementById('sortDrop');
 const sortLabel = document.getElementById('sortLabel');
 
 function formatKm(meters) {
@@ -249,13 +248,34 @@ function formatKm(meters) {
   return meters + ' m';
 }
 
-function updateSliderBackground(slider, val, min, max) {
-  const pct = Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
-  slider.style.background = `linear-gradient(to right, #007A68 0%, #007A68 ${pct}%, #DDF1EC ${pct}%, #DDF1EC 100%)`;
+function parseRupiah(str) {
+  if (typeof str === 'number') return str;
+  if (!str) return 0;
+  const num = parseInt(String(str).replace(/[^\d]/g, ''), 10);
+  return isNaN(num) ? 0 : num;
+}
+
+function getActiveMode() {
+  const active = document.querySelector('#filterModeChips .f-pill-opt.active');
+  return active?.dataset.mode || 'sewa';
+}
+
+function getActiveDist() {
+  const active = document.querySelector('#filterDistChips .f-pill-opt.active');
+  const d = active?.dataset.dist;
+  if (d === '1') return 1000;
+  if (d === '2') return 2000;
+  if (d === '5') return 5000;
+  return 0; // all
+}
+
+function getActiveCond() {
+  const active = document.querySelector('#filterCondChips .f-pill-opt.active');
+  return active?.dataset.cond || 'all';
 }
 
 // Check which items match the filter state
-function getFilteredItems(tempMode = selectedMode, tempPrice = maxPriceVal, tempDist = maxDistVal, tempCond = selectedCond, tempCampus = selectedCampus, tempVerified = verifiedOnly) {
+function getFilteredItems(tempMode = selectedMode, tempMinPrice = minPriceVal, tempMaxPrice = maxPriceVal, tempDist = maxDistVal, tempCond = selectedCond) {
   const term = (q?.value || '').trim().toLowerCase();
 
   return data.filter(d => {
@@ -264,12 +284,22 @@ function getFilteredItems(tempMode = selectedMode, tempPrice = maxPriceVal, temp
     if (!matchText) return false;
 
     // Mode match
-    if (tempMode !== 'semua' && d.badge.toLowerCase() !== tempMode.toLowerCase()) {
-      return false;
+    if (tempMode && tempMode !== 'semua' && tempMode !== 'all') {
+      const modeLower = tempMode.toLowerCase();
+      const badgeLower = (d.badge || '').toLowerCase();
+      if (modeLower === 'pinjam') {
+        if (!badgeLower.includes('pinjam') && !badgeLower.includes('free')) return false;
+      } else if (badgeLower !== modeLower) {
+        return false;
+      }
     }
 
-    // Price match (only for Sewa/Beli when tempPrice > 0)
-    if (tempMode === 'sewa' && d.priceNum > tempPrice) {
+    // Min & Max Price match
+    const price = Number(d.priceNum ?? 0);
+    if (tempMinPrice > 0 && price < tempMinPrice) {
+      return false;
+    }
+    if (tempMaxPrice > 0 && price > tempMaxPrice) {
       return false;
     }
 
@@ -279,18 +309,10 @@ function getFilteredItems(tempMode = selectedMode, tempPrice = maxPriceVal, temp
     }
 
     // Condition match
-    if (tempCond && tempCond !== 'semua' && tempCond !== 'all' && d.kondisi !== tempCond) {
-      return false;
-    }
-
-    // Campus location match
-    if (tempCampus && tempCampus !== 'semua' && tempCampus !== 'all' && d.campus && d.campus !== tempCampus) {
-      return false;
-    }
-
-    // Verified owner match
-    if (tempVerified && !d.verified) {
-      return false;
+    if (tempCond && tempCond !== 'semua' && tempCond !== 'all') {
+      if ((d.kondisi || '').toLowerCase() !== tempCond.toLowerCase()) {
+        return false;
+      }
     }
 
     return true;
@@ -299,14 +321,13 @@ function getFilteredItems(tempMode = selectedMode, tempPrice = maxPriceVal, temp
 
 // Update the count shown on "Terapkan (X barang)" button in real-time
 function updateFilterPreview() {
-  const currentMode = document.querySelector('#modeChips .f-chip.active')?.dataset.mode || 'semua';
-  const currentCond = document.querySelector('#condChips .f-cond-chip.active')?.dataset.cond || 'baik';
-  const currentPrice = parseInt(filterPriceSlider?.value || 15000, 10);
-  const currentDist = parseInt(filterDistSlider?.value || 1000, 10);
-  const currentCampus = filterCampusSelect?.value || 'teknik';
-  const currentVerified = filterVerifiedToggle?.checked ?? true;
+  const currentMode = getActiveMode();
+  const currentCond = getActiveCond();
+  const currentMinPrice = parseRupiah(filterMinPrice?.value);
+  const currentMaxPrice = parseRupiah(filterMaxPrice?.value) || 100000;
+  const currentDist = getActiveDist();
 
-  const matches = getFilteredItems(currentMode, currentPrice, currentDist, currentCond, currentCampus, currentVerified);
+  const matches = getFilteredItems(currentMode, currentMinPrice, currentMaxPrice, currentDist, currentCond);
   if (filterApplyBtn) {
     filterApplyBtn.textContent = `Terapkan (${matches.length} barang)`;
   }
@@ -398,7 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Open modal from chips
+  // Open & Close modal
   const openModal = () => {
     if (filterModal) {
       filterModal.classList.add('open');
@@ -410,7 +431,6 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   filterChip?.addEventListener('click', openModal);
-  chipMode?.addEventListener('click', openModal);
   chipPrice?.addEventListener('click', openModal);
   chipDist?.addEventListener('click', openModal);
   document.getElementById('closeFilterBtn')?.addEventListener('click', closeModal);
@@ -424,153 +444,99 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Mode chips in modal
-  document.querySelectorAll('#filterModeChips .f-pill-opt, #modeChips .f-chip').forEach(chip => {
+  document.querySelectorAll('#filterModeChips .f-pill-opt').forEach(chip => {
     chip.addEventListener('click', function() {
-      chip.parentElement.querySelectorAll('.f-pill-opt, .f-chip').forEach(c => c.classList.remove('active'));
+      chip.parentElement.querySelectorAll('.f-pill-opt').forEach(c => c.classList.remove('active'));
       this.classList.add('active');
-      selectedMode = this.dataset.mode || 'sewa';
-      render();
+      updateFilterPreview();
     });
   });
 
-  // Dist chips in modal
+  // Distance chips in modal
   document.querySelectorAll('#filterDistChips .f-pill-opt').forEach(chip => {
     chip.addEventListener('click', function() {
       chip.parentElement.querySelectorAll('.f-pill-opt').forEach(c => c.classList.remove('active'));
       this.classList.add('active');
+      updateFilterPreview();
     });
   });
 
-  // Cond chips in modal
+  // Condition chips in modal
   document.querySelectorAll('#filterCondChips .f-pill-opt').forEach(chip => {
     chip.addEventListener('click', function() {
       chip.parentElement.querySelectorAll('.f-pill-opt').forEach(c => c.classList.remove('active'));
       this.classList.add('active');
+      updateFilterPreview();
     });
   });
 
-  filterApplyBtn?.addEventListener('click', () => {
-    closeModal();
-    render();
-  });
+  // Input price listeners
+  filterMinPrice?.addEventListener('input', updateFilterPreview);
+  filterMaxPrice?.addEventListener('input', updateFilterPreview);
+
+  // Reset button in modal
   filterResetBtn?.addEventListener('click', () => {
-    closeModal();
-    render();
-  });
-
-  // Condition chips in modal
-  document.querySelectorAll('#condChips .f-cond-chip').forEach(chip => {
-    chip.addEventListener('click', function() {
-      document.querySelectorAll('#condChips .f-cond-chip').forEach(c => c.classList.remove('active'));
-      this.classList.add('active');
-      updateFilterPreview();
+    document.querySelectorAll('#filterModeChips .f-pill-opt').forEach(c => {
+      c.classList.toggle('active', c.dataset.mode === 'sewa');
     });
-  });
-
-  // Price Slider in modal
-  if (filterPriceSlider) {
-    filterPriceSlider.addEventListener('input', function() {
-      const val = parseInt(this.value, 10);
-      if (filterPriceVal) {
-        filterPriceVal.textContent = `Rp0 – Rp${val.toLocaleString('id-ID')}/hari`;
-      }
-      updateSliderBackground(this, val, 0, 100000);
-      updateFilterPreview();
+    document.querySelectorAll('#filterDistChips .f-pill-opt').forEach(c => {
+      c.classList.toggle('active', c.dataset.dist === 'all');
     });
-    updateSliderBackground(filterPriceSlider, 15000, 0, 100000);
-  }
-
-  // Distance Slider in modal
-  if (filterDistSlider) {
-    filterDistSlider.addEventListener('input', function() {
-      const val = parseInt(this.value, 10);
-      if (filterDistVal) {
-        filterDistVal.textContent = `Maks. ${formatKm(val)}`;
-      }
-      updateSliderBackground(this, val, 100, 5000);
-      updateFilterPreview();
-    });
-    updateSliderBackground(filterDistSlider, 1000, 100, 5000);
-  }
-
-  // Campus Select & Verified toggle listeners
-  filterCampusSelect?.addEventListener('change', updateFilterPreview);
-  filterVerifiedToggle?.addEventListener('change', updateFilterPreview);
-
-  // Reset button in modal (matching Figma Reset)
-  filterResetBtn?.addEventListener('click', () => {
-    selectedMode = 'semua';
-    document.querySelectorAll('#modeChips .f-chip').forEach(c => {
-      c.classList.toggle('active', c.dataset.mode === 'semua');
+    document.querySelectorAll('#filterCondChips .f-pill-opt').forEach(c => {
+      c.classList.toggle('active', c.dataset.cond === 'all');
     });
 
-    selectedCond = 'semua';
-    document.querySelectorAll('#condChips .f-cond-chip').forEach(c => c.classList.remove('active'));
+    if (filterMinPrice) filterMinPrice.value = 'Rp0';
+    if (filterMaxPrice) filterMaxPrice.value = 'Rp100.000';
 
+    selectedMode = 'sewa';
+    selectedCond = 'all';
+    minPriceVal = 0;
     maxPriceVal = 100000;
-    if (filterPriceSlider) {
-      filterPriceSlider.value = 100000;
-      updateSliderBackground(filterPriceSlider, 100000, 0, 100000);
-    }
-    if (filterPriceVal) filterPriceVal.textContent = 'Semua Rentang Harga';
-
-    maxDistVal = 5000;
-    if (filterDistSlider) {
-      filterDistSlider.value = 5000;
-      updateSliderBackground(filterDistSlider, 5000, 100, 5000);
-    }
-    if (filterDistVal) filterDistVal.textContent = 'Maks. 5 km';
-
-    if (filterCampusSelect) filterCampusSelect.value = 'all';
-    if (filterVerifiedToggle) filterVerifiedToggle.checked = false;
-
-    updateFilterPreview();
-  });
-
-  // Apply button in modal (matching Figma Terapkan (X barang))
-  filterApplyBtn?.addEventListener('click', () => {
-    selectedMode = document.querySelector('#modeChips .f-chip.active')?.dataset.mode || 'semua';
-    selectedCond = document.querySelector('#condChips .f-cond-chip.active')?.dataset.cond || 'semua';
-    maxPriceVal = parseInt(filterPriceSlider?.value || 100000, 10);
-    maxDistVal = parseInt(filterDistSlider?.value || 5000, 10);
-    selectedCampus = filterCampusSelect?.value || 'all';
-    verifiedOnly = filterVerifiedToggle?.checked ?? false;
-
+    maxDistVal = 0;
     filterActive = true;
 
-    // Update quick chips
-    if (chipMode) {
-      chipMode.textContent = `Mode: ${selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1)}`;
-      chipMode.classList.toggle('active', selectedMode !== 'semua');
-    }
+    if (chipPrice) chipPrice.textContent = '≤ Rp100.000';
+    if (chipDist) chipDist.textContent = 'Semua jarak';
+
+    updateFilterPreview();
+    render();
+    closeModal();
+  });
+
+  // Apply button in modal
+  filterApplyBtn?.addEventListener('click', () => {
+    selectedMode = getActiveMode();
+    selectedCond = getActiveCond();
+    minPriceVal = parseRupiah(filterMinPrice?.value);
+    maxPriceVal = parseRupiah(filterMaxPrice?.value) || 100000;
+    maxDistVal = getActiveDist();
+    filterActive = true;
+
     if (chipPrice) {
-      chipPrice.textContent = `≤ Rp${maxPriceVal.toLocaleString('id-ID')}/hari`;
-      chipPrice.classList.add('active');
+      chipPrice.textContent = `≤ Rp${maxPriceVal.toLocaleString('id-ID')}`;
     }
     if (chipDist) {
-      chipDist.textContent = `Maks. ${formatKm(maxDistVal)}`;
-      chipDist.classList.add('active');
+      chipDist.textContent = maxDistVal > 0 ? `≤ ${formatKm(maxDistVal)}` : 'Semua jarak';
     }
 
     render();
     closeModal();
   });
 
-  // Sort dropdown
-  sortBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    sortDrop?.classList.toggle('open');
-  });
-  document.addEventListener('click', () => {
-    sortDrop?.classList.remove('open');
-  });
-  sortDrop?.querySelectorAll('.opt').forEach(opt => {
-    opt.addEventListener('click', function() {
-      sortMode = this.dataset.val;
-      if (sortLabel) sortLabel.textContent = this.textContent;
-      sortDrop.classList.remove('open');
-      render();
-    });
+  // Sort cycle button
+  const sortOptions = [
+    { val: 'near', label: 'Terdekat' },
+    { val: 'cheap', label: 'Termurah' },
+    { val: 'new', label: 'Terbaru' }
+  ];
+  let sortIdx = 0;
+  sortBtn?.addEventListener('click', () => {
+    sortIdx = (sortIdx + 1) % sortOptions.length;
+    sortMode = sortOptions[sortIdx].val;
+    if (sortLabel) sortLabel.textContent = sortOptions[sortIdx].label;
+    if (filterSort) filterSort.value = sortOptions[sortIdx].label;
+    render();
   });
 
   // Check URL query parameters
@@ -585,6 +551,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filterParam === 'open' || filterParam === '1') {
     openModal();
   }
+
+  // Back button
+  document.getElementById('backBtn')?.addEventListener('click', () => {
+    if (window.history.length > 1) window.history.back();
+    else location.href = '/beranda.html';
+  });
 
   // Initial render
   updateFilterPreview();
