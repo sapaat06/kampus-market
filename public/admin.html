@@ -2,23 +2,1886 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<script src="/vendor/sweetalert2.all.min.js"></script>
 <script src="/js/api.js"></script>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#1f5a41">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#007A68">
 <meta name="robots" content="noindex">
-<title>Admin · Kampus Market</title>
+<title>Admin Dashboard · KampusCircle</title>
 <link rel="stylesheet" href="/css/style.css">
+<style>
+  /* Scoped Admin Mobile Styling */
+  body {
+    background: #EAEFEF;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    color: #1E293B;
+  }
+  .phone {
+    width: 100%;
+    max-width: 360px;
+    height: 800px;
+    background: #F8FAFC;
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.12);
+  }
+
+  /* Status Bar */
+  .status-bar {
+    height: 28px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+    color: #0F172A;
+    background: #F8FAFC;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .status-bar .icons { display: flex; gap: 6px; align-items: center; }
+  .status-bar svg { width: 14px; height: 14px; fill: #0F172A; }
+
+  /* App Views Container */
+  .app-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 84px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .app-scroll::-webkit-scrollbar { display: none; }
+
+  /* Top App Bar */
+  .admin-top-bar {
+    padding: 8px 16px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #F8FAFC;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+  }
+  .brand-logo img {
+    height: 26px;
+    object-fit: contain;
+  }
+  .top-action-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.15s;
+  }
+  .top-action-btn:hover { background: #F1F5F9; }
+  .top-action-btn svg { width: 18px; height: 18px; fill: #1E293B; }
+  .notif-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #F28C28;
+    border: 1.5px solid #FFFFFF;
+  }
+
+  /* Admin Header */
+  .admin-profile-header {
+    padding: 0 16px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .admin-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #FFFFFF;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    background: #E2E8F0;
+  }
+  .admin-profile-info { flex: 1; }
+  .admin-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0F172A;
+    line-height: 1.2;
+  }
+  .admin-greeting {
+    font-size: 11px;
+    color: #64748B;
+    margin-top: 2px;
+  }
+  .admin-role-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #E8F8F5;
+    color: #007A68;
+    font-size: 10px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+
+  /* Big Headline */
+  .hero-headline {
+    padding: 6px 16px 16px;
+    font-size: 21px;
+    font-weight: 800;
+    color: #0F172A;
+    line-height: 1.25;
+    letter-spacing: -0.3px;
+  }
+
+  /* 2x2 Metric Grid */
+  .metric-grid {
+    padding: 0 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .metric-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  }
+  .metric-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #E8F8F5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #007A68;
+  }
+  .metric-icon svg { width: 16px; height: 16px; fill: currentColor; }
+  .metric-val {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0F172A;
+    line-height: 1;
+  }
+  .metric-lbl {
+    font-size: 11px;
+    color: #64748B;
+    line-height: 1.3;
+    font-weight: 500;
+  }
+
+  /* Green Point Highlight Card */
+  .gp-hero-card {
+    margin: 14px 16px 0;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  }
+  .gp-hero-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #007A68;
+  }
+  .gp-hero-title svg { width: 18px; height: 18px; fill: #007A68; }
+  .gp-hero-desc {
+    font-size: 11px;
+    color: #64748B;
+    margin: 4px 0 12px;
+  }
+  .gp-btn-outline {
+    width: 100%;
+    height: 38px;
+    border-radius: 12px;
+    border: 1.5px solid #007A68;
+    background: transparent;
+    color: #007A68;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .gp-btn-outline:hover {
+    background: #E8F8F5;
+  }
+
+  /* Section Title with Action */
+  .section-header {
+    padding: 20px 16px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .section-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0F172A;
+  }
+  .section-link {
+    font-size: 11px;
+    font-weight: 600;
+    color: #007A68;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  /* Action Cards List */
+  .action-list {
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .action-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  }
+  .action-card-header {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .action-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #E2E8F0;
+  }
+  .action-info { flex: 1; }
+  .action-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .action-sub {
+    font-size: 11px;
+    color: #64748B;
+  }
+  .status-badge {
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+  .status-badge.pending { background: #E8F8F5; color: #007A68; }
+  .status-badge.terverifikasi, .status-badge.selesai { background: #D1FAE5; color: #065F46; }
+  .status-badge.ditolak, .status-badge.batal { background: #FEE2E2; color: #B91C1C; }
+  .status-badge.berjalan { background: #FFF7ED; color: #C2410C; }
+
+  /* Pill Buttons */
+  .btn-action-outline {
+    width: 100%;
+    height: 36px;
+    border-radius: 10px;
+    border: 1.5px solid #007A68;
+    background: transparent;
+    color: #007A68;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .btn-action-outline:hover { background: #E8F8F5; }
+
+  /* Tab Navigation Controls (Sub-tabs) */
+  .subtab-bar {
+    padding: 0 16px;
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .subtab-btn {
+    padding: 6px 16px;
+    border-radius: 999px;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    color: #64748B;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .subtab-btn.active-orange {
+    background: #F28C28;
+    color: #FFFFFF;
+    border-color: #F28C28;
+  }
+  .subtab-btn.active-teal {
+    background: #007A68;
+    color: #FFFFFF;
+    border-color: #007A68;
+  }
+
+  /* Search & Filter Bar */
+  .search-box-row {
+    padding: 0 16px 12px;
+    display: flex;
+    gap: 8px;
+  }
+  .search-input-wrap {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .search-input-wrap svg {
+    position: absolute;
+    left: 12px;
+    width: 16px;
+    height: 16px;
+    fill: #94A3B8;
+  }
+  .search-input-wrap input {
+    width: 100%;
+    height: 38px;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    padding: 0 12px 0 36px;
+    font-size: 12px;
+    font-family: inherit;
+    color: #0F172A;
+    outline: none;
+  }
+  .search-input-wrap input:focus {
+    border-color: #007A68;
+  }
+  .filter-btn-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #007A68;
+  }
+  .filter-btn-icon svg { width: 16px; height: 16px; fill: currentColor; }
+
+  /* Filter Chips */
+  .filter-chips-row {
+    padding: 0 16px 14px;
+    display: flex;
+    gap: 8px;
+  }
+  .chip-pill {
+    padding: 5px 14px;
+    border-radius: 999px;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748B;
+    cursor: pointer;
+  }
+  .chip-pill.active {
+    background: #F28C28;
+    color: #FFFFFF;
+    border-color: #F28C28;
+  }
+  .chip-pill.active-teal {
+    background: #007A68;
+    color: #FFFFFF;
+    border-color: #007A68;
+  }
+
+  /* List Counter */
+  .list-counter-title {
+    padding: 0 16px 10px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0F172A;
+  }
+
+  /* Kost Property Card */
+  .kost-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .kost-img {
+    width: 100%;
+    height: 140px;
+    border-radius: 12px;
+    object-fit: cover;
+    background: #E2E8F0;
+  }
+  .kost-badges {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .kost-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .kost-price {
+    font-size: 13px;
+    font-weight: 800;
+    color: #007A68;
+  }
+  .kost-loc {
+    font-size: 11px;
+    color: #64748B;
+  }
+  .kost-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  /* Green Point Settings Form */
+  .form-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 16px;
+    margin: 0 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 6px;
+  }
+  .form-group input[type="number"], .form-group input[type="text"] {
+    width: 100%;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid #E2E8F0;
+    padding: 0 12px;
+    font-size: 13px;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+  .switch-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .switch-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .switch-sub {
+    font-size: 10px;
+    color: #64748B;
+    margin-top: 2px;
+  }
+  .toggle-switch {
+    width: 44px;
+    height: 24px;
+    background: #CBD5E1;
+    border-radius: 999px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle-switch.on { background: #007A68; }
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: #FFFFFF;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle-switch.on::after {
+    transform: translateX(20px);
+  }
+
+  /* Bottom Navigation Bar */
+  .admin-bottom-nav {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: #FFFFFF;
+    border-top: 1px solid #E2E8F0;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 6px 4px;
+    z-index: 30;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    color: #64748B;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 12px;
+    transition: all 0.15s;
+  }
+  .nav-item svg { width: 20px; height: 20px; fill: currentColor; }
+  .nav-item.active {
+    color: #007A68;
+  }
+  .nav-item.active .nav-icon-pill {
+    background: #E8F8F5;
+    padding: 3px 12px;
+    border-radius: 999px;
+  }
+
+  /* Bottom Sheet Modals */
+  .modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.5);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .bottom-sheet {
+    background: #FFFFFF;
+    border-radius: 24px 24px 0 0;
+    padding: 16px 20px 24px;
+    max-height: 85%;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+  }
+  .modal-overlay.open .bottom-sheet {
+    transform: translateY(0);
+  }
+  .sheet-handle {
+    width: 36px;
+    height: 4px;
+    border-radius: 999px;
+    background: #CBD5E1;
+    margin: 0 auto 14px;
+  }
+  .sheet-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0F172A;
+    margin-bottom: 6px;
+  }
+  .sheet-desc {
+    font-size: 12px;
+    color: #64748B;
+    margin-bottom: 14px;
+    line-height: 1.4;
+  }
+
+  /* Full Screen View / Overlay (e.g. Detail Mahasiswa) */
+  .fullscreen-view {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #F8FAFC;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+  }
+  .fullscreen-view.open {
+    transform: translateX(0);
+  }
+  .fullscreen-header {
+    height: 52px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #F8FAFC;
+    border-bottom: 1px solid #E2E8F0;
+    flex-shrink: 0;
+  }
+  .fullscreen-header h2 {
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .fullscreen-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 16px 80px;
+  }
+  .fullscreen-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 16px;
+    background: #FFFFFF;
+    border-top: 1px solid #E2E8F0;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+  }
+
+  /* Buttons */
+  .btn-solid-teal {
+    flex: 1;
+    height: 42px;
+    border-radius: 12px;
+    background: #007A68;
+    color: #FFFFFF;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-solid-teal:hover { background: #006354; }
+  .btn-outline-red {
+    flex: 1;
+    height: 42px;
+    border-radius: 12px;
+    background: transparent;
+    color: #D64545;
+    border: 1.5px solid #D64545;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-outline-red:hover { background: #FDE8E8; }
+  .btn-ghost-cancel {
+    width: 100%;
+    height: 40px;
+    border-radius: 12px;
+    background: transparent;
+    border: 1px solid #E2E8F0;
+    color: #64748B;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+
+  /* Login / Lock View */
+  .auth-lock-card {
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-top: 60px;
+  }
+  .auth-lock-logo {
+    height: 44px;
+    margin-bottom: 20px;
+  }
+  .auth-lock-title {
+    font-size: 19px;
+    font-weight: 800;
+    color: #0F172A;
+  }
+  .auth-lock-desc {
+    font-size: 12px;
+    color: #64748B;
+    margin: 8px 0 24px;
+    line-height: 1.4;
+  }
+  .auth-lock-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .auth-lock-form input {
+    height: 44px;
+    border-radius: 12px;
+    border: 1.5px solid #CBD5E1;
+    padding: 0 14px;
+    font-size: 14px;
+    font-family: inherit;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+  .auth-lock-form input:focus {
+    border-color: #007A68;
+    outline: none;
+  }
+
+  /* Toast Notification */
+  .admin-toast {
+    position: absolute;
+    top: 40px;
+    left: 20px;
+    right: 20px;
+    background: #007A68;
+    color: #FFFFFF;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: all 0.25s ease;
+  }
+  .admin-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  /* Responsive Desktop & Tablet Dashboard */
+  @media (min-width: 768px) {
+    body {
+      background: #E2E8F0;
+      padding: 16px 0;
+    }
+    .phone {
+      max-width: 1040px;
+      height: 94vh;
+      border-radius: 20px;
+    }
+    .metric-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  /* Responsive Table Styling */
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 14px;
+    margin: 8px 0 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  }
+  .admin-data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    text-align: left;
+    min-width: 680px;
+  }
+  .admin-data-table th {
+    background: #F8FAFC;
+    color: #475569;
+    font-weight: 700;
+    padding: 11px 14px;
+    border-bottom: 1px solid #E2E8F0;
+    white-space: nowrap;
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+  }
+  .admin-data-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #F1F5F9;
+    color: #1E293B;
+    vertical-align: middle;
+  }
+  .admin-data-table tr:hover {
+    background: #F8FAFC;
+  }
+  .admin-data-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Table Action Buttons */
+  .table-actions-cell {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .btn-table-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .btn-table-action svg {
+    width: 13px;
+    height: 13px;
+    fill: currentColor;
+  }
+  .btn-table-view {
+    background: #E8F8F5;
+    color: #007A68;
+    border-color: #A7F3D0;
+  }
+  .btn-table-view:hover {
+    background: #007A68;
+    color: #FFFFFF;
+  }
+  .btn-table-block {
+    background: #FEE2E2;
+    color: #DC2626;
+    border-color: #FECACA;
+  }
+  .btn-table-block:hover {
+    background: #DC2626;
+    color: #FFFFFF;
+  }
+  .btn-table-unblock {
+    background: #ECFDF5;
+    color: #059669;
+    border-color: #A7F3D0;
+  }
+  .btn-table-unblock:hover {
+    background: #059669;
+    color: #FFFFFF;
+  }
+  .btn-table-approve {
+    background: #007A68;
+    color: #FFFFFF;
+    border-color: #007A68;
+  }
+  .btn-table-approve:hover {
+    background: #006354;
+  }
+  .btn-table-reject {
+    background: #FFFFFF;
+    color: #DC2626;
+    border-color: #FECACA;
+  }
+  .btn-table-reject:hover {
+    background: #FEE2E2;
+  }
+  .btn-table-takedown {
+    background: #FFF7ED;
+    color: #C2410C;
+    border-color: #FFEDD5;
+  }
+  .btn-table-takedown:hover {
+    background: #EA580C;
+    color: #FFFFFF;
+  }
+
+  .status-badge.aktif {
+    background: #D1FAE5;
+    color: #065F46;
+  }
+  .status-badge.banned {
+    background: #FEE2E2;
+    color: #991B1B;
+    font-weight: 700;
+  }
+  .status-badge.menunggu {
+    background: #FFF9EB;
+    color: #92400E;
+    font-weight: 700;
+  }
+  .status-badge.ditindaklanjuti {
+    background: #E0F2FE;
+    color: #0369A1;
+  }
+</style>
 </head>
 <body>
-<header class="top" id="top"></header>
-<main class="wrap">
-  <h1>Admin</h1>
-  <div class="panel">
-    <form id="kunci"><label>Kunci admin<input name="k" type="password" required autocomplete="off"></label><button class="btn">Buka</button></form>
-    <p class="msg" id="msg" role="alert"></p>
+
+<div class="phone">
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span>09.41</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.28 19.58 10.59 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M17 4h-3V2h-4v2H7v18h10V4z"/></svg>
+    </div>
   </div>
-  <div class="panel wide scroll" id="tabel" hidden style="margin-top:1.5rem"></div>
-</main>
+
+  <!-- Toast Notification -->
+  <div id="admin-toast" class="admin-toast">
+    <span id="toast-text">Berhasil disimpan</span>
+  </div>
+
+  <!-- VIEW 0: KUNCI ADMIN (LOCK SCREEN) -->
+  <div id="view-lock" class="app-scroll">
+    <div class="auth-lock-card">
+      <img src="/img/logo-campuscircle.png" alt="KampusCircle" class="auth-lock-logo">
+      <h1 class="auth-lock-title">Portal Administrator</h1>
+      <p class="auth-lock-desc">Masukkan Kunci Admin untuk membuka hak akses verifikasi, moderasi produk, dan pengaturan Green Point.</p>
+      
+      <form id="form-auth-lock" class="auth-lock-form">
+        <input type="password" id="input-kunci" name="k" placeholder="••••••••••••••••" required autocomplete="off">
+        <button type="submit" class="btn-solid-teal" style="height:44px">Buka Akses Admin</button>
+      </form>
+      <p id="lock-msg" style="font-size:11px;color:#D64545;margin-top:10px;min-height:16px"></p>
+      <div style="margin-top:20px;padding:10px 14px;background:#FFFFFF;border:1px dashed #CBD5E1;border-radius:10px;font-size:10px;color:#64748B;text-align:left">
+        <strong>Pengembang:</strong> Kunci admin terdapat di file <code>.env</code> dengan nama <code>ADMIN_KEY</code>.
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTHENTICATED APP SHELL -->
+  <div id="view-app" style="display:none;flex:1;flex-direction:column;height:100%;overflow:hidden">
+    <!-- Top Bar -->
+    <header class="admin-top-bar">
+      <a href="/admin.html" class="brand-logo">
+        <img src="/img/logo-campuscircle.png" alt="KampusCircle">
+      </a>
+      <button id="btn-open-notif" class="top-action-btn" aria-label="Notifikasi">
+        <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        <div class="notif-badge"></div>
+      </button>
+    </header>
+
+    <!-- TAB 1: BERANDA ADMIN -->
+    <main id="tab-beranda" class="app-scroll">
+      <!-- Admin Profile Box -->
+      <div class="admin-profile-header">
+        <img src="/img/avatar-ayu-pratama.png" alt="Ayu Pratama" class="admin-avatar">
+        <div class="admin-profile-info">
+          <div class="admin-name">Ayu Pratama</div>
+          <div class="admin-greeting">Selamat pagi, Administrator</div>
+          <span class="admin-role-badge">Akses administratif</span>
+        </div>
+      </div>
+
+      <!-- Hero Headline -->
+      <h2 class="hero-headline">Lingkaran yang aman,<br>dimulai dari sini.</h2>
+
+      <!-- 2x2 Metric Grid -->
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div class="metric-icon">
+            <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+          </div>
+          <div id="stat-total-mhs" class="metric-val"><span id="totalUsersCount">0</span></div>
+          <div class="metric-lbl">Total Pengguna</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">
+            <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+          </div>
+          <div id="stat-verified-mhs" class="metric-val"><span id="verifiedUsersCount">0</span></div>
+          <div class="metric-lbl">Mahasiswa Terverifikasi</div>
+        </div>
+
+        <div class="metric-card" id="card-goto-mod-prod" style="cursor:pointer">
+          <div class="metric-icon">
+            <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+          </div>
+          <div id="stat-pending-prod" class="metric-val"><span id="pendingProductsCount">0</span></div>
+          <div class="metric-lbl">Produk Menunggu Moderasi</div>
+        </div>
+
+        <div class="metric-card" id="card-goto-mod-kos" style="cursor:pointer">
+          <div class="metric-icon">
+            <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+          </div>
+          <div id="stat-pending-kos" class="metric-val"><span id="pendingKostCount">0</span></div>
+          <div class="metric-lbl">Properti Kost Menunggu Verifikasi</div>
+        </div>
+      </div>
+
+      <!-- Green Point Highlight Card -->
+      <div class="gp-hero-card">
+        <div class="gp-hero-title">
+          <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.75V8c3.35-.75 6.65-1.5 8-2z"/></svg>
+          <span id="hero-total-gp">42.850 Green Point</span>
+        </div>
+        <div id="hero-total-trans" class="gp-hero-desc">1.286 transaksi ramah lingkungan</div>
+        <button id="btn-goto-gp" class="gp-btn-outline">Kelola Green Point</button>
+      </div>
+
+      <!-- Butuh Tindakan -->
+      <div class="section-header">
+        <span class="section-title">Butuh tindakan</span>
+        <a id="btn-see-all-actions" class="section-link">Lihat semua</a>
+      </div>
+
+      <div id="list-butuh-tindakan" class="action-list">
+        <!-- Dynamic Quick Action Items -->
+      </div>
+    </main>
+
+    <!-- TAB 2: KELOLA PENGGUNA & VERIFIKASI -->
+    <main id="tab-verifikasi" class="app-scroll" style="display:none">
+      <div class="section-header" style="padding-top:6px">
+        <span class="section-title" style="font-size:18px">Kelola Pengguna</span>
+      </div>
+
+      <!-- Sub-tabs: Daftar Pengguna vs Verifikasi KTM vs Kost -->
+      <div class="subtab-bar">
+        <button id="subtab-users-all" class="subtab-btn active-orange">Daftar Pengguna (<span id="badge-count-users-all">0</span>)</button>
+        <button id="subtab-mhs" class="subtab-btn">Verifikasi KTM (<span id="badge-count-mhs">0</span>)</button>
+        <button id="subtab-kost" class="subtab-btn">Kost (<span id="badge-count-kost">0</span>)</button>
+      </div>
+
+      <!-- SECTION: DAFTAR PENGGUNA KOMPREHENSIF (TABEL) -->
+      <div id="section-users-all">
+        <!-- Search & Filter Bar -->
+        <div class="search-box-row">
+          <div class="search-input-wrap">
+            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            <input type="text" id="input-search-users" placeholder="Cari nama, NIM, atau email pengguna...">
+          </div>
+          <button class="filter-btn-icon" aria-label="Filter">
+            <svg viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
+          </button>
+        </div>
+
+        <!-- Filter Chips for Users -->
+        <div id="user-filter-chips" class="filter-chips-row">
+          <button class="chip-pill active chip-user-filter" data-user-filter="all">Semua Pengguna</button>
+          <button class="chip-pill chip-user-filter" data-user-filter="active">Akun Aktif</button>
+          <button class="chip-pill chip-user-filter" data-user-filter="banned">Diblokir (Banned)</button>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px;margin:8px 0">
+          <div id="users-counter-label" class="list-counter-title" style="margin:0;padding:0;font-size:13px">0 pengguna terdaftar</div>
+          <button id="btn-export-mhs" class="btn-action-outline" style="height:32px;font-size:11px;font-weight:700;padding:0 12px;gap:6px;display:inline-flex;align-items:center;background:#FFFFFF;border-color:#007A68;color:#007A68;border-radius:8px;cursor:pointer">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:#007A68"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            Export Data (CSV)
+          </button>
+        </div>
+
+        <!-- User Management Table -->
+        <div style="padding:0 16px">
+          <div class="table-responsive">
+            <table class="admin-data-table" id="table-users">
+              <thead>
+                <tr>
+                  <th>Nama</th>
+                  <th>NIM / Identitas</th>
+                  <th>Email / WA</th>
+                  <th>Status</th>
+                  <th style="text-align:right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-users">
+                <!-- Rendered by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: VERIFIKASI KTM (hidden initially) -->
+      <div id="section-verif-mhs" style="display:none">
+        <div class="search-box-row">
+          <div class="search-input-wrap">
+            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            <input type="text" id="input-search-verif" placeholder="Cari nama, NIM, atau kampus">
+          </div>
+        </div>
+
+        <!-- Status Chips for Mahasiswa -->
+        <div id="verif-chips-mhs" class="filter-chips-row">
+          <button class="chip-pill active" data-verif-status="pending">Pending</button>
+          <button class="chip-pill" data-verif-status="terverifikasi">Verified</button>
+          <button class="chip-pill" data-verif-status="ditolak">Ditolak</button>
+        </div>
+
+        <div id="verif-counter-label" class="list-counter-title" style="padding:0 16px 8px;font-size:13px">0 pengajuan mahasiswa</div>
+
+        <!-- Mahasiswa Cards Container -->
+        <div id="list-verif-mhs" class="action-list">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- SECTION: VERIFIKASI KOST (hidden initially) -->
+      <div id="section-verif-kost" style="display:none">
+        <!-- Kost Cards Container -->
+        <div id="list-verif-kost" class="action-list">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </main>
+
+    <!-- TAB 3: MODERASI BARANG & KOS (LISTING MANAGEMENT) -->
+    <main id="tab-moderasi" class="app-scroll" style="display:none">
+      <div class="section-header" style="padding-top:6px">
+        <span class="section-title" style="font-size:18px">Moderasi Postingan & Listing</span>
+      </div>
+
+      <!-- Sub-tabs: Antrean Moderasi vs Produk vs Kost -->
+      <div class="subtab-bar" style="margin-bottom:10px">
+        <button id="subtab-mod-antrean" class="subtab-btn active-teal" style="font-size:11px;padding:8px 12px">Antrean Moderasi (<span id="count-mod-antrean">0</span>)</button>
+        <button id="subtab-mod-prod" class="subtab-btn" style="font-size:11px;padding:8px 12px">Produk (<span id="count-mod-prod">0</span>)</button>
+        <button id="subtab-mod-kos" class="subtab-btn" style="font-size:11px;padding:8px 12px">Kost (<span id="count-mod-kos">0</span>)</button>
+      </div>
+
+      <!-- Search Input -->
+      <div class="search-box-row">
+        <div class="search-input-wrap">
+          <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input type="text" id="input-search-moderasi" placeholder="Cari nama listing barang atau kos...">
+        </div>
+      </div>
+
+      <!-- SECTION 1: TABEL ANTREAN MODERASI (BARANG & KOS PENDING) -->
+      <div id="section-moderasi-antrean">
+        <div style="padding:0 16px 8px;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:13px;font-weight:700;color:#0F172A">Antrean Menunggu Persetujuan</div>
+          <span class="status-badge pending" id="badge-total-antrean">0 pending</span>
+        </div>
+
+        <div style="padding:0 16px">
+          <div class="table-responsive">
+            <table class="admin-data-table" id="table-moderasi-antrean">
+              <thead>
+                <tr>
+                  <th style="width:50px">Foto</th>
+                  <th>Nama Listing</th>
+                  <th>Harga</th>
+                  <th>Tipe Transaksi</th>
+                  <th>Nama Pemilik</th>
+                  <th style="text-align:right">Aksi Moderasi</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-moderasi-antrean">
+                <!-- Rendered by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: LIST PRODUK -->
+      <div id="section-moderasi-prod" style="display:none">
+        <div id="moderasi-chips" class="filter-chips-row">
+          <button class="chip-pill active-teal" data-mod-status="pending">Pending</button>
+          <button class="chip-pill" data-mod-status="selesai">Disetujui</button>
+          <button class="chip-pill" data-mod-status="batal">Ditolak</button>
+        </div>
+        <div id="list-moderasi-prod" class="action-list">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- SECTION 3: LIST KOST -->
+      <div id="section-moderasi-kos" style="display:none">
+        <div class="filter-chips-row">
+          <button class="chip-pill active-teal" data-mod-kos-status="pending">Pending</button>
+          <button class="chip-pill" data-mod-kos-status="selesai">Terverifikasi</button>
+          <button class="chip-pill" data-mod-kos-status="batal">Ditolak</button>
+        </div>
+        <div id="list-moderasi-kos" class="action-list">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </main>
+
+    <!-- TAB 4: SISTEM PELAPORAN MASUK (REPORT MANAGEMENT) -->
+    <main id="tab-laporan" class="app-scroll" style="display:none">
+      <div class="section-header" style="padding-top:6px">
+        <span class="section-title" style="font-size:18px">Sistem Pelaporan & Aduan</span>
+      </div>
+
+      <!-- Filter Chips Laporan -->
+      <div class="filter-chips-row">
+        <button class="chip-pill active-teal chip-lap-filter" data-lap-status="all">Semua Aduan (<span id="count-lap-all">0</span>)</button>
+        <button class="chip-pill chip-lap-filter" data-lap-status="menunggu">Menunggu Tindakan (<span id="count-lap-pending">0</span>)</button>
+        <button class="chip-pill chip-lap-filter" data-lap-status="ditindaklanjuti">Ditindaklanjuti</button>
+        <button class="chip-pill chip-lap-filter" data-lap-status="ditolak">Diabaikan / Selesai</button>
+      </div>
+
+      <!-- Search Laporan -->
+      <div class="search-box-row">
+        <div class="search-input-wrap">
+          <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input type="text" id="input-search-laporan" placeholder="Cari nama pelapor, terlapor, atau isi laporan...">
+        </div>
+      </div>
+
+      <div style="padding:0 16px">
+        <div class="table-responsive">
+          <table class="admin-data-table" id="table-laporan">
+            <thead>
+              <tr>
+                <th>Pelapor</th>
+                <th>Terlapor / Listing</th>
+                <th>Isi Aduan & Keterangan</th>
+                <th>Status</th>
+                <th style="text-align:right">Aksi Cepat</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-laporan">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <!-- TAB 5: PENGATURAN GREEN POINT -->
+    <main id="tab-greenpoint" class="app-scroll" style="display:none">
+      <div class="section-header" style="padding-top:6px">
+        <span class="section-title" style="font-size:18px">Pengaturan Green Point</span>
+      </div>
+
+      <!-- Metric Grid for Green Point -->
+      <div class="metric-grid" style="margin-bottom:14px">
+        <div class="metric-card">
+          <div class="metric-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.75V8c3.35-.75 6.65-1.5 8-2z"/></svg>
+          </div>
+          <div id="gp-stat-total" class="metric-val">42.850</div>
+          <div class="metric-lbl">Total Poin Beredar</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">
+            <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+          </div>
+          <div class="metric-val" id="gp-stat-user-top" style="font-size:18px">Dimas</div>
+          <div class="metric-lbl">User Paling Aktif</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">
+            <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+          </div>
+          <div id="gp-stat-trans" class="metric-val">1.286</div>
+          <div class="metric-lbl">Total Transaksi Ramah Lingkungan</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">
+            <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+          </div>
+          <div id="gp-stat-mhs" class="metric-val">986</div>
+          <div class="metric-lbl">Total Mahasiswa Terverifikasi</div>
+        </div>
+      </div>
+
+      <!-- Action Bar Riwayat & Manual Point -->
+      <div style="padding:0 16px;margin-bottom:10px;display:flex;gap:10px;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:14px;font-weight:800;color:#0F172A">Riwayat Pemberian Green Point</div>
+          <div style="font-size:11px;color:#64748B">Audit log dan mutasi poin pengguna</div>
+        </div>
+        <button id="btn-open-adjust-gp" class="btn-solid-teal" style="flex:none;height:36px;font-size:11px;padding:0 14px;display:inline-flex;align-items:center;gap:6px">
+          <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          Atur Poin Manual
+        </button>
+      </div>
+
+      <!-- Table Riwayat Green Point -->
+      <div style="padding:0 16px">
+        <div class="table-responsive">
+          <table class="admin-data-table" id="table-green-point">
+            <thead>
+              <tr>
+                <th>Mahasiswa</th>
+                <th>Kategori / Aktivitas</th>
+                <th>Jumlah Poin</th>
+                <th>Keterangan</th>
+                <th>Tanggal</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-green-point">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-header" style="margin-top:10px">
+        <span class="section-title">Aturan Otomatis Green Point</span>
+      </div>
+
+      <form id="form-rules-gp" class="form-card">
+        <div class="form-group">
+          <label for="rule-sewa">Poin per Transaksi Sewa</label>
+          <input type="number" id="rule-sewa" value="30" min="1" max="1000">
+        </div>
+
+        <div class="form-group">
+          <label for="rule-pinjam">Poin per Pinjam Barang Free</label>
+          <input type="number" id="rule-pinjam" value="20" min="1" max="1000">
+        </div>
+
+        <div class="form-group">
+          <label for="rule-bonus">Bonus Verifikasi Mahasiswa</label>
+          <input type="number" id="rule-bonus" value="15" min="1" max="1000">
+        </div>
+
+        <div class="switch-row" style="margin-top:4px">
+          <div>
+            <div class="switch-label">Auto-Credit</div>
+            <div class="switch-sub">Hanya untuk aktivitas berhasil dan belum pernah dikreditkan.</div>
+          </div>
+          <div id="toggle-autocredit" class="toggle-switch on"></div>
+        </div>
+
+        <button type="submit" class="btn-solid-teal" style="margin-top:8px">Simpan Aturan</button>
+      </form>
+    </main>
+
+    <!-- TAB 6: AKUN ADMIN -->
+    <main id="tab-akun" class="app-scroll" style="display:none">
+      <div class="section-header" style="padding-top:6px">
+        <span class="section-title" style="font-size:18px">Akun Admin</span>
+      </div>
+
+      <!-- Admin Identity Box -->
+      <div class="admin-profile-header" style="margin-bottom:12px">
+        <img src="/img/avatar-ayu-pratama.png" alt="Ayu Pratama" class="admin-avatar" style="width:54px;height:54px">
+        <div class="admin-profile-info">
+          <div class="admin-name" style="font-size:16px">Ayu Pratama</div>
+          <div class="admin-greeting" style="font-size:12px">ADM-001 · admin@kampuscircle.id</div>
+          <span class="admin-role-badge">Administrator · Ditugaskan</span>
+        </div>
+      </div>
+
+      <!-- Server Access Alert Box -->
+      <div style="margin:0 16px 14px;padding:12px 14px;background:#E8F8F5;border:1px solid #A7F3D0;border-radius:14px;display:flex;gap:10px;align-items:flex-start">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#007A68;flex-shrink:0;margin-top:2px"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#007A68">Akses ditetapkan server</div>
+          <div style="font-size:10px;color:#065F46;margin-top:2px;line-height:1.4">Tidak tersedia peningkatan role melalui pilihan mode publik.</div>
+        </div>
+      </div>
+
+      <!-- Details Card -->
+      <div class="action-card" style="margin:0 16px 14px">
+        <div>
+          <div style="font-size:10px;color:#64748B;font-weight:600">Hak akses</div>
+          <div style="font-size:12px;font-weight:700;color:#0F172A">Kelola pengguna, moderasi postingan, laporan aduan, aturan poin</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:#64748B;font-weight:600">Universitas</div>
+          <div style="font-size:12px;font-weight:700;color:#0F172A">Semua kampus terdaftar</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:#64748B;font-weight:600">Sesi terakhir</div>
+          <div style="font-size:12px;font-weight:700;color:#0F172A">30 Okt 2026 · 09.41</div>
+        </div>
+      </div>
+
+      <!-- Navigation Action Buttons -->
+      <div style="padding:0 16px;display:flex;flex-direction:column;gap:8px">
+        <button class="btn-action-outline" style="background:#FFFFFF;border-color:#E2E8F0;color:#1E293B">Informasi akun</button>
+        <button class="btn-action-outline" style="background:#FFFFFF;border-color:#E2E8F0;color:#1E293B">Kata sandi & keamanan</button>
+        <button class="btn-action-outline" style="background:#FFFFFF;border-color:#E2E8F0;color:#1E293B">Preferensi notifikasi</button>
+        <button class="btn-action-outline" style="background:#FFFFFF;border-color:#E2E8F0;color:#1E293B">Privasi & bantuan</button>
+        <button id="btn-admin-logout" class="btn-outline-red" style="margin-top:8px">Kunci Akses Admin (Keluar)</button>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="admin-bottom-nav">
+      <button class="nav-item active" data-tab="beranda">
+        <span class="nav-icon-pill">
+          <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        </span>
+        <span>Beranda</span>
+      </button>
+
+      <button class="nav-item" data-tab="verifikasi">
+        <span class="nav-icon-pill">
+          <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        </span>
+        <span>Pengguna</span>
+      </button>
+
+      <button class="nav-item" data-tab="moderasi">
+        <span class="nav-icon-pill">
+          <svg viewBox="0 0 24 24"><path d="M12 2l-5.5 9h11L12 2zm0 3.84L13.93 9h-3.87L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5zm0 7c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z"/></svg>
+        </span>
+        <span>Moderasi</span>
+      </button>
+
+      <button class="nav-item" data-tab="laporan">
+        <span class="nav-icon-pill">
+          <svg viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+        </span>
+        <span>Laporan</span>
+      </button>
+
+      <button class="nav-item" data-tab="greenpoint">
+        <span class="nav-icon-pill">
+          <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.75V8c3.35-.75 6.65-1.5 8-2z"/></svg>
+        </span>
+        <span>Green Point</span>
+      </button>
+
+      <button class="nav-item" data-tab="akun">
+        <span class="nav-icon-pill">
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        </span>
+        <span>Akun</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- FULLSCREEN VIEW: DETAIL MAHASISWA & KTM -->
+  <div id="view-detail-mhs" class="fullscreen-view">
+    <div class="fullscreen-header">
+      <button id="btn-close-detail-mhs" class="top-action-btn" style="border:none;background:transparent">
+        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      </button>
+      <h2>Detail Mahasiswa</h2>
+      <div style="width:38px"></div>
+    </div>
+
+    <div class="fullscreen-body">
+      <!-- Status Banner -->
+      <div id="detail-mhs-banner" style="background:#FFF9EB;border:1px solid #FED7AA;border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;margin-bottom:14px">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#D97706;flex-shrink:0"><path d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z"/></svg>
+        <div>
+          <div id="detail-mhs-banner-title" style="font-size:12px;font-weight:700;color:#92400E">Menunggu pemeriksaan</div>
+          <div id="detail-mhs-banner-sub" style="font-size:10px;color:#B45309;margin-top:2px">-</div>
+        </div>
+      </div>
+
+      <!-- Banned Alert -->
+      <div id="detail-mhs-banned-alert" style="display:none;background:#FEE2E2;border:1px solid #FECACA;border-radius:12px;padding:12px 14px;color:#991B1B;font-size:12px;font-weight:700;margin-bottom:14px;align-items:center;gap:10px">
+        <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#DC2626;flex-shrink:0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20zm6.31-3.1L7.1 5.69C8.45 4.63 10.15 4 12 4c4.42 0 8 3.58 8 8 0 1.85-.63 3.55-1.69 4.9z"/></svg>
+        <div>
+          <div>Pengguna Sedang Diblokir (Banned)</div>
+          <div style="font-size:10px;font-weight:400;color:#B91C1C;margin-top:2px">Akun ini tidak dapat login ke aplikasi KampusCircle.</div>
+        </div>
+      </div>
+
+      <!-- Alasan Penolakan Alert -->
+      <div id="detail-mhs-alasan-alert" style="display:none;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:12px;padding:12px 14px;color:#991B1B;font-size:11px;margin-bottom:14px">
+        <div style="font-weight:700;font-size:12px;color:#B91C1C;margin-bottom:2px">Alasan Penolakan:</div>
+        <div id="detail-mhs-alasan-text" style="color:#7F1D1D">-</div>
+      </div>
+
+      <!-- Identity Card -->
+      <div class="action-card" style="margin-bottom:14px">
+        <div style="display:flex;gap:12px;align-items:center;padding-bottom:10px;border-bottom:1px solid #E2E8F0">
+          <img id="detail-mhs-avatar" src="/img/avatar-rina-figma.png" alt="Mahasiswa" class="action-avatar" style="width:46px;height:46px">
+          <div>
+            <div id="detail-mhs-nama" style="font-size:15px;font-weight:700;color:#0F172A">Rina Maharani</div>
+            <div id="detail-mhs-id" style="font-size:11px;color:#64748B">USR-001 · Akun Mahasiswa</div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:12px">
+          <div>
+            <div style="font-size:10px;color:#64748B;font-weight:600">Nama lengkap</div>
+            <div id="detail-mhs-f-nama" style="font-weight:700;color:#0F172A">-</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:#64748B;font-weight:600">NIM / No Identitas</div>
+            <div id="detail-mhs-f-nim" style="font-weight:700;color:#0F172A">-</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:#64748B;font-weight:600">Universitas / Kampus</div>
+            <div id="detail-mhs-f-kampus" style="font-weight:700;color:#0F172A">-</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:#64748B;font-weight:600">Email kampus</div>
+            <div id="detail-mhs-f-email" style="font-weight:700;color:#0F172A">-</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:#64748B;font-weight:600">No. WhatsApp / HP</div>
+            <div id="detail-mhs-f-hp" style="font-weight:700;color:#0F172A">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Document Section -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:14px;font-weight:800;color:#0F172A">Dokumen mahasiswa</span>
+        <button id="btn-zoom-ktm" style="background:none;border:none;color:#007A68;font-size:11px;font-weight:700;cursor:pointer">Perbesar ↗</button>
+      </div>
+
+      <div style="background:#FFFFFF;border:1.5px solid #007A68;border-radius:14px;padding:14px;position:relative;overflow:hidden">
+        <div style="font-size:9px;font-weight:800;color:#DC2626;letter-spacing:0.5px;margin-bottom:4px">KARTU TANDA MAHASISWA RESMI</div>
+        <div id="detail-ktm-container" style="min-height:120px;display:flex;align-items:center;justify-content:center;background:#F8FAFC;border-radius:8px;border:1px dashed #CBD5E1">
+          <!-- KTM Image or Synthetic Card preview -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Sticky Action Footer -->
+    <div class="fullscreen-footer" style="display:flex;gap:8px">
+      <button id="btn-act-setujui" class="btn-solid-teal" style="flex:1">Verifikasi</button>
+      <button id="btn-act-tolak" class="btn-outline-red" style="flex:1">Tolak</button>
+      <button id="btn-act-ban-toggle" class="btn-outline-red" style="flex:1;background:#FFF1F2;border-color:#F43F5E;color:#E11D48;font-size:11px">Blokir Pengguna</button>
+    </div>
+  </div>
+
+  <!-- MODAL: SETUJUI MAHASISWA (+15 GREEN POINT) -->
+  <div id="modal-approve-mhs" class="modal-overlay">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <h3 class="sheet-title">Setujui mahasiswa</h3>
+      <p class="sheet-desc">User berhasil diverifikasi sebagai Mahasiswa Aktif. Berikan <strong>+15 Green Point Bonus</strong>?</p>
+
+      <div style="background:#E8F8F5;border:1px solid #A7F3D0;border-radius:12px;padding:12px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#007A68;flex-shrink:0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#007A68">Bonus hanya satu kali</div>
+          <div style="font-size:10px;color:#065F46;margin-top:2px">Konfirmasi ulang di masa depan tidak akan menambah poin dobel.</div>
+        </div>
+      </div>
+
+      <button id="btn-confirm-approve-mhs" class="btn-solid-teal" style="width:100%;height:44px">Konfirmasi</button>
+      <button id="btn-cancel-approve-mhs" class="btn-ghost-cancel">Batal</button>
+    </div>
+  </div>
+
+  <!-- MODAL: PENOLAKAN MAHASISWA -->
+  <div id="modal-reject-mhs" class="modal-overlay">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <h3 class="sheet-title">Alasan penolakan</h3>
+      <p class="sheet-desc">Pilih alasan penolakan yang akan dikirimkan kepada mahasiswa:</p>
+
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E2E8F0;border-radius:10px;font-size:12px;cursor:pointer">
+          <input type="radio" name="reject_reason" value="Foto KTM Buram" checked>
+          <span>Foto KTM Buram / Tidak Terbaca</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E2E8F0;border-radius:10px;font-size:12px;cursor:pointer">
+          <input type="radio" name="reject_reason" value="Identitas Tidak Sesuai">
+          <span>Identitas Data Tidak Sesuai</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E2E8F0;border-radius:10px;font-size:12px;cursor:pointer">
+          <input type="radio" name="reject_reason" value="Dokumen Tidak Valid">
+          <span>Dokumen Bukan Kartu Tanda Mahasiswa</span>
+        </label>
+      </div>
+
+      <div class="form-group" style="margin-bottom:14px">
+        <label style="font-size:11px">Catatan tambahan (opsional):</label>
+        <input type="text" id="reject-notes" placeholder="Pastikan seluruh teks dan foto KTM terbaca jelas.">
+      </div>
+
+      <button id="btn-confirm-reject-mhs" class="btn-outline-red" style="width:100%;height:44px">Kirim Penolakan</button>
+      <button id="btn-cancel-reject-mhs" class="btn-ghost-cancel">Batal</button>
+    </div>
+  </div>
+
+  <!-- MODAL: TOLAK / BATALKAN TRANSAKSI / PRODUK -->
+  <div id="modal-reject-prod" class="modal-overlay">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <h3 class="sheet-title">Alasan Pembatalan / Penolakan</h3>
+      <p class="sheet-desc">Pilih alasan penolakan transaksi atau produk:</p>
+
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E2E8F0;border-radius:10px;font-size:12px;cursor:pointer">
+          <input type="radio" name="prod_reason" value="Barang Tidak Sesuai" checked>
+          <span>Barang Rusak / Tidak Sesuai</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E2E8F0;border-radius:10px;font-size:12px;cursor:pointer">
+          <input type="radio" name="prod_reason" value="Lokasi Tidak Valid">
+          <span>Titik Lokasi / Temu Tidak Valid</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E2E8F0;border-radius:10px;font-size:12px;cursor:pointer">
+          <input type="radio" name="prod_reason" value="Informasi Tidak Lengkap">
+          <span>Informasi / Foto Tidak Lengkap</span>
+        </label>
+      </div>
+
+      <button id="btn-confirm-reject-prod" class="btn-outline-red" style="width:100%;height:44px">Konfirmasi Pembatalan</button>
+      <button id="btn-cancel-reject-prod" class="btn-ghost-cancel">Batal</button>
+    </div>
+  </div>
+
+  <!-- MODAL: SHEET NOTIFIKASI ADMIN -->
+  <div id="modal-notif-sheet" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height:80%">
+      <div class="sheet-handle"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h3 class="sheet-title" style="margin:0">Notifikasi Admin</h3>
+        <button id="btn-clear-notif" style="background:none;border:none;color:#007A68;font-size:11px;font-weight:700;cursor:pointer">Tandai dibaca</button>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#0F172A">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#007A68"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            Pengajuan mahasiswa baru
+          </div>
+          <div style="font-size:11px;color:#64748B">Rina Maharani mengirim dokumen KTM verifikasi.</div>
+          <div style="font-size:10px;color:#94A3B8;margin-top:2px">2 menit lalu · Belum dibaca</div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#0F172A">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#F28C28"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+            Produk baru masuk
+          </div>
+          <div style="font-size:11px;color:#64748B">Kalkulator Casio fx-991EX disewa oleh mahasiswa.</div>
+          <div style="font-size:10px;color:#94A3B8;margin-top:2px">15 menit lalu · Belum dibaca</div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#0F172A">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#007A68"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            Verifikasi properti kost
+          </div>
+          <div style="font-size:11px;color:#64748B">Bu Rani mengajukan listing properti Kos Ananda Dago.</div>
+          <div style="font-size:10px;color:#94A3B8;margin-top:2px">30 menit lalu · Belum dibaca</div>
+        </div>
+      </div>
+
+      <button id="btn-close-notif-sheet" class="btn-ghost-cancel" style="margin-top:14px">Tutup</button>
+    </div>
+  </div>
+
+  <!-- MODAL: PREVIEW KTM ZOOM -->
+  <div id="modal-ktm-zoom" class="modal-overlay">
+    <div class="bottom-sheet" style="max-height:90%;text-align:center">
+      <div class="sheet-handle"></div>
+      <h3 class="sheet-title">Preview Kartu Tanda Mahasiswa</h3>
+      <div id="zoom-img-container" style="max-height:360px;overflow:auto;margin:12px 0;background:#0F172A;border-radius:12px;padding:8px">
+        <!-- Zoom Image -->
+      </div>
+      <button id="btn-close-zoom-ktm" class="btn-solid-teal" style="width:100%;height:42px">Tutup Preview</button>
+    </div>
+  </div>
+
+  <!-- MODAL: PROMPT ALASAN PENOLAKAN LISTING (BARANG / KOS) -->
+  <div id="modal-reject-listing" class="modal-overlay">
+    <div class="bottom-sheet" style="max-width:480px;margin:0 auto">
+      <div class="sheet-handle"></div>
+      <h3 class="sheet-title" id="reject-listing-modal-title">Alasan Penolakan Listing</h3>
+      <p class="sheet-desc">Pilih atau tuliskan alasan mengapa postingan ini tidak diizinkan tayang:</p>
+
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E2E8F0;border-radius:10px;font-size:12px;cursor:pointer">
+          <input type="radio" name="listing_reject_reason" value="Foto buram atau tidak sesuai produk" checked>
+          <span>Foto buram, tidak jelas, atau tidak sesuai produk</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E2E8F0;border-radius:10px;font-size:12px;cursor:pointer">
+          <input type="radio" name="listing_reject_reason" value="Informasi harga sewa/jual tidak wajar">
+          <span>Informasi harga sewa / jual tidak wajar</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E2E8F0;border-radius:10px;font-size:12px;cursor:pointer">
+          <input type="radio" name="listing_reject_reason" value="Deskripsi melanggar ketentuan kampus">
+          <span>Deskripsi atau barang dilarang di lingkungan kampus</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E2E8F0;border-radius:10px;font-size:12px;cursor:pointer">
+          <input type="radio" name="listing_reject_reason" value="Dokumen atau legalitas kos belum lengkap">
+          <span>Dokumen / fasilitas properti kos belum lengkap</span>
+        </label>
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px">
+        <label style="font-size:11px">Catatan penolakan tambahan:</label>
+        <input type="text" id="input-reject-listing-notes" placeholder="Tuliskan pesan penolakan yang jelas untuk pemilik...">
+      </div>
+
+      <button id="btn-confirm-reject-listing" class="btn-outline-red" style="width:100%;height:44px">Kirim Penolakan</button>
+      <button id="btn-cancel-reject-listing" class="btn-ghost-cancel">Batal</button>
+    </div>
+  </div>
+
+  <!-- MODAL: PENYESUAIAN GREEN POINT MANUAL (+ / -) -->
+  <div id="modal-adjust-gp" class="modal-overlay">
+    <div class="bottom-sheet" style="max-width:480px;margin:0 auto">
+      <div class="sheet-handle"></div>
+      <h3 class="sheet-title">Atur Green Point Manual</h3>
+      <p class="sheet-desc">Tambah atau kurangi poin mahasiswa langsung dari dashboard admin.</p>
+
+      <form id="form-adjust-gp" style="display:flex;flex-direction:column;gap:12px;margin-bottom:8px">
+        <div class="form-group">
+          <label for="select-gp-user">Pilih Mahasiswa:</label>
+          <select id="select-gp-user" style="width:100%;height:42px;border-radius:10px;border:1px solid #CBD5E1;padding:0 12px;font-size:13px;font-family:inherit;background:#FFFFFF" required>
+            <option value="">-- Pilih Mahasiswa Terdaftar --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Jenis Penyesuaian:</label>
+          <div style="display:flex;gap:10px">
+            <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:1px solid #A7F3D0;background:#E8F8F5;border-radius:10px;font-size:12px;font-weight:700;color:#007A68;cursor:pointer">
+              <input type="radio" name="gp_direction" value="tambah" checked>
+              <span>+ Tambah Poin</span>
+            </label>
+            <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:1px solid #FECACA;background:#FFF5F5;border-radius:10px;font-size:12px;font-weight:700;color:#DC2626;cursor:pointer">
+              <input type="radio" name="gp_direction" value="kurang">
+              <span>- Kurangi Poin</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="input-gp-amount">Jumlah Poin:</label>
+          <input type="number" id="input-gp-amount" placeholder="Contoh: 30" min="1" max="5000" required>
+        </div>
+
+        <div class="form-group">
+          <label for="input-gp-reason">Keterangan / Alasan:</label>
+          <input type="text" id="input-gp-reason" placeholder="Contoh: Reward kontributor kampus hijau / Penyesuaian admin" required>
+        </div>
+
+        <button type="submit" class="btn-solid-teal" style="width:100%;height:44px;margin-top:6px">Simpan Mutasi Poin</button>
+        <button type="button" id="btn-cancel-adjust-gp" class="btn-ghost-cancel">Batal</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: TINDAK LANJUT LAPORAN / ADUAN -->
+  <div id="modal-action-laporan" class="modal-overlay">
+    <div class="bottom-sheet" style="max-width:480px;margin:0 auto">
+      <div class="sheet-handle"></div>
+      <h3 class="sheet-title" id="action-lap-title">Tindak Lanjut Laporan Aduan</h3>
+      <p class="sheet-desc">Pilih tindakan administratif yang akan dieksekusi terhadap aduan ini:</p>
+
+      <div id="action-lap-info" style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px;font-size:11px;color:#475569;margin-bottom:14px;line-height:1.5">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="form-group" style="margin-bottom:14px">
+        <label style="font-size:11px">Catatan Tindakan Admin (Opsional):</label>
+        <input type="text" id="input-action-lap-notes" placeholder="Contoh: Listing terbukti palsu / Akun telah diperingatkan">
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button id="btn-action-lap-takedown" class="btn-solid-teal" style="background:#EA580C;height:42px;border:none">Takedown Listing Terlapor</button>
+        <button id="btn-action-lap-ban" class="btn-outline-red" style="height:42px">Blokir Akun Pengguna Terlapor</button>
+        <button id="btn-action-lap-dismiss" class="btn-action-outline" style="height:40px;border-color:#CBD5E1;color:#475569">Selesaikan / Abaikan Aduan</button>
+        <button id="btn-cancel-action-lap" class="btn-ghost-cancel">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DETAIL PENGGUNA POP-UP -->
+  <div id="modal-detail-user" class="modal-overlay">
+    <div class="bottom-sheet" style="max-width:480px;margin:0 auto">
+      <div class="sheet-handle"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #E2E8F0">
+        <img id="modal-user-avatar" src="/img/avatar-rina-figma.png" alt="Avatar" class="action-avatar" style="width:48px;height:48px">
+        <div>
+          <div id="modal-user-nama" style="font-size:15px;font-weight:700;color:#0F172A">-</div>
+          <div id="modal-user-id" style="font-size:11px;color:#64748B">-</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:12px;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:#64748B">NIM / Identitas:</span>
+          <strong id="modal-user-nim" style="color:#0F172A">-</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:#64748B">Email:</span>
+          <strong id="modal-user-email" style="color:#0F172A">-</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:#64748B">No. WhatsApp / HP:</span>
+          <strong id="modal-user-wa" style="color:#0F172A">-</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:#64748B">Universitas / Kampus:</span>
+          <strong id="modal-user-kampus" style="color:#0F172A">-</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:#64748B">Role Akun:</span>
+          <strong id="modal-user-role" style="color:#0F172A">-</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:#64748B">Status Verifikasi:</span>
+          <span id="modal-user-verif" class="status-badge">-</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:#64748B">Status Akun:</span>
+          <span id="modal-user-banned" class="status-badge">-</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:#64748B">Tanggal Terdaftar:</span>
+          <strong id="modal-user-created" style="color:#0F172A">-</strong>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button id="btn-modal-user-verify" class="btn-solid-teal" style="display:none;flex:1;height:42px">Verifikasi</button>
+        <button id="btn-modal-user-toggle-ban" class="btn-outline-red" style="flex:1;height:42px">Blokir Akun</button>
+        <button id="btn-modal-user-close" class="btn-ghost-cancel" style="flex:1;margin-top:0;height:42px">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script type="module" src="/js/pages/admin.js"></script>
 </body>
 </html>

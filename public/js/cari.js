@@ -7,6 +7,385 @@ function escHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// Rumus Haversine: menghitung jarak antara dua pasang koordinat GPS (dalam meter)
+function haversineDistance(lat1, lon1, lat2, lon2) {
+  if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return null;
+  const nLat1 = Number(lat1);
+  const nLon1 = Number(lon1);
+  const nLat2 = Number(lat2);
+  const nLon2 = Number(lon2);
+  if (isNaN(nLat1) || isNaN(nLon1) || isNaN(nLat2) || isNaN(nLon2)) return null;
+
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const R = 6371000; // Radius rata-rata bumi dalam meter
+  const dLat = toRad(nLat2 - nLat1);
+  const dLon = toRad(nLon2 - nLon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(nLat1)) * Math.cos(toRad(nLat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c);
+}
+
+// Format tampilan jarak secara dinamis:
+// - Jarak < 1000m: satuan meter dibulatkan (contoh: "350 m · Fakultas Teknik")
+// - Jarak >= 1000m: satuan km dengan 1 angka desimal (contoh: "1.4 km · Gedung Rektorat")
+// - Lokasi belum diizinkan: "Jarak belum aktif · Nama Lokasi"
+function formatDistanceText(meters, lokasiName) {
+  const lokasi = lokasiName || 'Kampus ITG';
+  if (meters == null || isNaN(meters)) {
+    return `Jarak belum aktif · ${lokasi}`;
+  }
+  if (meters < 1000) {
+    return `${Math.round(meters)} m · ${lokasi}`;
+  }
+  const km = (meters / 1000).toFixed(1);
+  return `${km} km · ${lokasi}`;
+}
+
+// ==============================================================================
+// CATATAN KEAMANAN & PROTOKOL DEV TUNNELS:
+// Browser modern (Chrome, Edge, Safari, dll.) mewajibkan Secure Context (HTTPS)
+// untuk mengakses API Geolocation (navigator.geolocation).
+// Jika Anda menjalankan aplikasi melalui Visual Studio / VS Code Dev Tunnels
+// atau jaringan remote, pastikan URL yang dibuka selalu berawalan "https://".
+// Akses via HTTP biasa pada host remote akan diblokir otomatis oleh kebijakan browser.
+// ==============================================================================
+
+// Koordinat Fallback Pusat Kampus ITG (Tarogong Kidul, Garut)
+const DEFAULT_CAMPUS_LAT = -7.2160;
+const DEFAULT_CAMPUS_LNG = 107.9020;
+const DEFAULT_CAMPUS_LOCATION = {
+  lat: DEFAULT_CAMPUS_LAT,
+  lng: DEFAULT_CAMPUS_LNG,
+  name: 'Kampus ITG (Tarogong Kidul, Garut)',
+  isFallback: true
+};
+
+// Geolocation state
+let userLocation = null; // { lat, lng, name, isFallback }
+
+// Cek apakah koordinat user sudah tersimpan sebelumnya di localStorage
+const cachedLat = localStorage.getItem('userLat');
+const cachedLng = localStorage.getItem('userLng');
+const cachedIsFallback = localStorage.getItem('userLocIsFallback') === 'true';
+
+if (cachedLat && cachedLng && !isNaN(Number(cachedLat)) && !isNaN(Number(cachedLng))) {
+  userLocation = {
+    lat: Number(cachedLat),
+    lng: Number(cachedLng),
+    name: cachedIsFallback ? DEFAULT_CAMPUS_LOCATION.name : 'Lokasi Terdeteksi (GPS)',
+    isFallback: cachedIsFallback
+  };
+} else {
+  // Tetapkan titik fallback pusat kampus secara otomatis agar jarak barang tidak null
+  userLocation = { ...DEFAULT_CAMPUS_LOCATION };
+}
+
+// Pasang titik fallback lokasi kampus jika GPS tidak diizinkan / bermasalah
+function terapkanFallbackLokasi() {
+  userLocation = { ...DEFAULT_CAMPUS_LOCATION };
+  localStorage.setItem('userLat', String(DEFAULT_CAMPUS_LAT));
+  localStorage.setItem('userLng', String(DEFAULT_CAMPUS_LNG));
+  localStorage.setItem('userLocIsFallback', 'true');
+
+  const locBtn = document.getElementById('headerLocBtn');
+  if (locBtn) {
+    locBtn.classList.remove('active');
+    locBtn.title = 'Titik acuan: Kampus ITG (Tarogong Kidul, Garut) · Klik untuk aktifkan GPS akurat';
+  }
+
+  recalculateDistances();
+  render();
+  updateFilterPreview();
+  return userLocation;
+}
+
+// Popup interaktif SweetAlert2 saat izin lokasi ditolak / diblokir browser
+function tampilkanPopupIzinLokasiSpesifik(err) {
+  if (typeof Swal === 'undefined') {
+    alert('Izin lokasi diperlukan. Menggunakan titik pusat area kampus default (Tarogong Kidul, Garut).');
+    return;
+  }
+
+  // 1. Error PERMISSION_DENIED (Kode 1): User atau browser memblokir izin lokasi
+  if (err && err.code === (err.PERMISSION_DENIED || 1)) {
+    return Swal.fire({
+      icon: 'warning',
+      title: 'Akses Lokasi Dibatasi',
+      html: `
+        <div style="text-align: left; font-size: 13.5px; line-height: 1.6; color: #4B5563;">
+          <p style="margin: 0 0 10px 0; color: #374151;">
+            Browser Anda saat ini memblokir izin akses lokasi (GPS). Untuk mengaktifkannya kembali secara manual:
+          </p>
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px;">
+            <ol style="margin: 0; padding-left: 18px; color: #1E293B; font-size: 13px;">
+              <li style="margin-bottom: 6px;">Klik ikon <strong>Gembok (🔒)</strong> atau <strong>Setelan Situs</strong> di sebelah kiri bilah URL browser.</li>
+              <li style="margin-bottom: 6px;">Ubah izin <strong>Lokasi / Location</strong> menjadi <strong>Izinkan / Allow</strong>.</li>
+              <li><strong>Muat ulang (refresh)</strong> halaman ini.</li>
+            </ol>
+          </div>
+          <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; padding: 10px 12px; color: #065F46; font-size: 12px; display: flex; align-items: flex-start; gap: 8px;">
+            <span style="font-size: 15px; line-height: 1.2;">💡</span>
+            <div>
+              <strong>Fallback Aktif:</strong> Aplikasi otomatis beralih menggunakan titik pusat <strong>Kampus ITG (Tarogong Kidul, Garut)</strong> agar fitur filter dan jarak barang tetap dapat Anda gunakan.
+            </div>
+          </div>
+        </div>
+      `,
+      confirmButtonText: 'Gunakan Lokasi Kampus',
+      buttonsStyling: false,
+      customClass: {
+        popup: 'rounded-2xl shadow-xl border-0',
+        title: 'text-xl font-bold text-gray-800',
+        htmlContainer: 'text-gray-600 font-medium',
+        confirmButton: 'bg-[#059669] text-white px-8 py-2.5 rounded-xl font-semibold hover:bg-emerald-700 transition-colors'
+      }
+    });
+  }
+
+  // 2. Error POSITION_UNAVAILABLE (Kode 2): Sinyal GPS tidak tersedia
+  if (err && err.code === (err.POSITION_UNAVAILABLE || 2)) {
+    return Swal.fire({
+      icon: 'info',
+      title: 'Sinyal GPS Tidak Ditemukan',
+      html: `
+        <div style="text-align: left; font-size: 13.5px; line-height: 1.6; color: #4B5563;">
+          <p style="margin: 0 0 10px 0;">
+            Informasi lokasi saat ini tidak dapat diperoleh dari perangkat Anda. Pastikan layanan GPS di perangkat Anda aktif.
+          </p>
+          <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; padding: 10px 12px; color: #065F46; font-size: 12px;">
+            💡 Titik pusat <strong>Kampus ITG (Tarogong Kidul, Garut)</strong> digunakan sebagai acuan pencarian barang.
+          </div>
+        </div>
+      `,
+      confirmButtonText: 'Lanjutkan',
+      buttonsStyling: false,
+      customClass: {
+        popup: 'rounded-2xl shadow-xl border-0',
+        title: 'text-xl font-bold text-gray-800',
+        htmlContainer: 'text-gray-600 font-medium',
+        confirmButton: 'bg-[#059669] text-white px-8 py-2.5 rounded-xl font-semibold hover:bg-emerald-700 transition-colors'
+      }
+    });
+  }
+
+  // 3. Error TIMEOUT (Kode 3): Waktu permintaan lokasi habis
+  if (err && err.code === (err.TIMEOUT || 3)) {
+    return Swal.fire({
+      icon: 'info',
+      title: 'Waktu Permintaan GPS Habis',
+      html: `
+        <div style="text-align: left; font-size: 13.5px; line-height: 1.6; color: #4B5563;">
+          <p style="margin: 0 0 10px 0;">
+            Permintaan lokasi memakan waktu terlalu lama. Kami telah mengalihkan acuan ke titik pusat <strong>Kampus ITG Garut</strong>.
+          </p>
+          <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; padding: 10px 12px; color: #065F46; font-size: 12px;">
+            💡 Anda tetap dapat menyaring dan melihat barang terdekat di sekitar area kampus.
+          </div>
+        </div>
+      `,
+      confirmButtonText: 'Lanjutkan',
+      buttonsStyling: false,
+      customClass: {
+        popup: 'rounded-2xl shadow-xl border-0',
+        title: 'text-xl font-bold text-gray-800',
+        htmlContainer: 'text-gray-600 font-medium',
+        confirmButton: 'bg-[#059669] text-white px-8 py-2.5 rounded-xl font-semibold hover:bg-emerald-700 transition-colors'
+      }
+    });
+  }
+
+  // Default error lainnya
+  const pesan = (err && err.message) || 'Terjadi kendala saat membaca lokasi. Titik kampus default tetap digunakan.';
+  return Swal.fire({
+    icon: 'info',
+    title: 'Informasi Lokasi',
+    text: pesan,
+    confirmButtonText: 'Mengerti',
+    buttonsStyling: false,
+    customClass: {
+      popup: 'rounded-2xl shadow-xl border-0',
+      title: 'text-xl font-bold text-gray-800',
+      htmlContainer: 'text-gray-600 font-medium',
+      confirmButton: 'bg-[#059669] text-white px-8 py-2.5 rounded-xl font-semibold hover:bg-emerald-700 transition-colors'
+    }
+  });
+}
+
+// Popup jika Dev Tunnels diakses menggunakan HTTP non-secure
+function tampilkanPopupDevTunnelsHttps() {
+  if (typeof Swal === 'undefined') {
+    alert('Dev Tunnels mewajibkan HTTPS (https://) agar fitur Geolocation dapat diakses oleh browser.');
+    return;
+  }
+
+  return Swal.fire({
+    icon: 'info',
+    title: 'Gunakan Protokol HTTPS',
+    html: `
+      <div style="text-align: left; font-size: 13.5px; line-height: 1.6; color: #4B5563;">
+        <p style="margin: 0 0 10px 0;">
+          Aplikasi diakses melalui <strong>Dev Tunnels / Jaringan Remote</strong> dengan protokol <code>http://</code>.
+        </p>
+        <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; color: #991B1B; font-size: 12.5px;">
+          Browser modern memblokir API Geolocation (GPS) pada koneksi non-HTTPS. Harap buka URL Dev Tunnels menggunakan awalan <strong>https://</strong>.
+        </div>
+        <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; padding: 10px 12px; color: #065F46; font-size: 12px;">
+          💡 Titik pusat <strong>Kampus ITG Garut (Tarogong Kidul)</strong> tetap aktif sebagai acuan fallback default.
+        </div>
+      </div>
+    `,
+    confirmButtonText: 'Gunakan Titik Kampus',
+    buttonsStyling: false,
+    customClass: {
+      popup: 'rounded-2xl shadow-xl border-0',
+      title: 'text-xl font-bold text-gray-800',
+      htmlContainer: 'text-gray-600 font-medium',
+      confirmButton: 'bg-[#059669] text-white px-8 py-2.5 rounded-xl font-semibold hover:bg-emerald-700 transition-colors'
+    }
+  });
+}
+
+// Popup jika browser tidak mendukung fitur Geolocation
+function tampilkanPopupBrowserTidakMendukung() {
+  if (typeof Swal === 'undefined') {
+    alert('Browser tidak mendukung Geolocation. Menggunakan lokasi default kampus.');
+    return;
+  }
+  return Swal.fire({
+    icon: 'info',
+    title: 'Geolocation Tidak Didukung',
+    html: `
+      <div style="text-align: left; font-size: 13.5px; line-height: 1.6; color: #4B5563;">
+        <p style="margin: 0 0 10px 0;">
+          Browser atau perangkat kamu tidak mendukung fitur Geolocation.
+        </p>
+        <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; padding: 10px 12px; color: #065F46; font-size: 12px;">
+          💡 Titik pusat <strong>Kampus ITG Garut (Tarogong Kidul)</strong> tetap aktif sebagai acuan fallback default.
+        </div>
+      </div>
+    `,
+    confirmButtonText: 'Mengerti',
+    buttonsStyling: false,
+    customClass: {
+      popup: 'rounded-2xl shadow-xl border-0',
+      title: 'text-xl font-bold text-gray-800',
+      htmlContainer: 'text-gray-600 font-medium',
+      confirmButton: 'bg-[#059669] text-white px-8 py-2.5 rounded-xl font-semibold hover:bg-emerald-700 transition-colors'
+    }
+  });
+}
+
+// Flag untuk mencegah duplikasi pemanggilan GPS dan popup berulang
+let isLocPending = false;
+let hasPromptedLocation = false;
+
+// Request GPS location dari browser dengan fallback kampus otomatis (Non-blocking & Ringan)
+function requestUserLocation(showPopupOnFail = true) {
+  if (isLocPending) {
+    // Jika proses deteksi lokasi sedang berjalan di background, jangan buat panggilan tumpang tindih
+    return Promise.resolve(userLocation);
+  }
+
+  return new Promise((resolve) => {
+    // 1. Cek keamanan protokol (Dev Tunnels / Remote Context)
+    // Geolocation API mewajibkan Secure Context (HTTPS). Browser memblokir jika via HTTP pada origin remote.
+    const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const isSecure = window.isSecureContext || window.location.protocol === 'https:' || isLocalhost;
+
+    if (!isSecure) {
+      console.warn('Geolocation diblokir karena halaman dibuka melalui HTTP non-localhost. Gunakan HTTPS untuk Dev Tunnels.');
+      const fallback = terapkanFallbackLokasi();
+      if (showPopupOnFail) {
+        tampilkanPopupDevTunnelsHttps();
+      }
+      resolve(fallback);
+      return;
+    }
+
+    // 2. Cek ketersediaan API Geolocation pada browser
+    if (!navigator.geolocation) {
+      console.warn('Geolocation tidak didukung oleh browser ini.');
+      const fallback = terapkanFallbackLokasi();
+      if (showPopupOnFail) {
+        tampilkanPopupBrowserTidakMendukung();
+      }
+      resolve(fallback);
+      return;
+    }
+
+    // 3. Panggil API Geolocation dengan opsi ringan agar tidak memicu freeze/lag pada CPU perangkat
+    isLocPending = true;
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        isLocPending = false;
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        userLocation = {
+          lat: lat,
+          lng: lng,
+          name: 'Lokasi Anda (GPS Aktif)',
+          isFallback: false
+        };
+
+        localStorage.setItem('userLat', String(lat));
+        localStorage.setItem('userLng', String(lng));
+        localStorage.setItem('userLocIsFallback', 'false');
+
+        const locBtn = document.getElementById('headerLocBtn');
+        if (locBtn) {
+          locBtn.classList.add('active');
+          locBtn.title = `GPS Aktif: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        }
+
+        recalculateDistances();
+        render();
+        updateFilterPreview();
+
+        if (showPopupOnFail && window.KM && KM.ui) {
+          KM.ui.toast('Lokasi kamu berhasil diperbarui');
+        }
+        resolve(userLocation);
+      },
+      (err) => {
+        isLocPending = false;
+        console.warn('Geolocation error:', err.code, err.message);
+        // Selalu terapkan fallback lokasi area kampus agar aplikasi tidak mandek
+        const fallback = terapkanFallbackLokasi();
+
+        if (showPopupOnFail) {
+          tampilkanPopupIzinLokasiSpesifik(err);
+        }
+        resolve(fallback);
+      },
+      {
+        enableHighAccuracy: false, // Jauh lebih cepat (<100ms) tanpa membebani browser/hardware GPS
+        timeout: 4000,             // Maksimal 4 detik agar tidak menggantung UI
+        maximumAge: 120000         // Gunakan cache lokasi 2 menit jika ada
+      }
+    );
+  });
+}
+
+// Pantau perubahan izin lokasi browser secara dinamis jika didukung (misal user mengubah izin via ikon gembok)
+if (typeof navigator !== 'undefined' && navigator.permissions && navigator.permissions.query) {
+  try {
+    navigator.permissions.query({ name: 'geolocation' }).then((status) => {
+      status.onchange = () => {
+        if (status.state === 'granted') {
+          // Ketika user mengubah izin gembok menjadi "Izinkan", perbarui GPS secara senyap
+          requestUserLocation(false);
+        }
+      };
+    });
+  } catch (_e) {
+    // Abaikan jika browser tidak mendukung permissions.query geolocation
+  }
+}
+
 // Illustrations for goods
 const ilustrasi = {
   kalkulator: `<svg viewBox="0 0 88 98" width="70" height="78">
@@ -62,7 +441,7 @@ function getSvg(title) {
   return ilustrasi.umum(title);
 }
 
-// Initial sample items (matching Figma prototype data)
+// Initial sample items dengan koordinat nyata sekitar kampus ITG Garut (-7.2160, 107.9020)
 let data = [
   {
     id: 'kalk-1',
@@ -71,8 +450,11 @@ let data = [
     kondisi: 'baik',
     price: 'Rp5.000/hari',
     priceNum: 5000,
-    dist: 350,
-    distText: '350 m · Fakultas Teknik',
+    latitude: -7.2145,
+    longitude: 107.9015,
+    lokasi: 'Fakultas Teknik',
+    dist: null,
+    distText: 'Jarak belum aktif · Fakultas Teknik',
     img: 'lav',
     campus: 'teknik',
     verified: true
@@ -84,8 +466,11 @@ let data = [
     kondisi: 'baik',
     price: 'Rp3.000/hari',
     priceNum: 3000,
-    dist: 900,
-    distText: '900 m · Gedung Rektorat',
+    latitude: -7.2200,
+    longitude: 107.9050,
+    lokasi: 'Gedung Rektorat',
+    dist: null,
+    distText: 'Jarak belum aktif · Gedung Rektorat',
     img: 'lav',
     campus: 'teknik',
     verified: true
@@ -97,8 +482,11 @@ let data = [
     kondisi: 'cukup',
     price: 'Rp85.000',
     priceNum: 85000,
-    dist: 1200,
-    distText: '1,2 km · Gerbang kampus',
+    latitude: -7.2280,
+    longitude: 107.9090,
+    lokasi: 'Gerbang kampus',
+    dist: null,
+    distText: 'Jarak belum aktif · Gerbang kampus',
     img: 'lav',
     campus: 'teknik',
     verified: true
@@ -110,8 +498,11 @@ let data = [
     kondisi: 'baik',
     price: 'Gratis',
     priceNum: 0,
-    dist: 600,
-    distText: '600 m · Perpustakaan',
+    latitude: -7.2155,
+    longitude: 107.9025,
+    lokasi: 'Perpustakaan',
+    dist: null,
+    distText: 'Jarak belum aktif · Perpustakaan',
     img: 'mint',
     campus: 'teknik',
     verified: true
@@ -123,8 +514,11 @@ let data = [
     kondisi: 'baru',
     price: 'Rp3.200.000',
     priceNum: 3200000,
-    dist: 800,
-    distText: '800 m · Kantin Teknik',
+    latitude: -7.2130,
+    longitude: 107.9035,
+    lokasi: 'Kantin Teknik',
+    dist: null,
+    distText: 'Jarak belum aktif · Kantin Teknik',
     img: 'peach',
     campus: 'teknik',
     verified: true
@@ -136,18 +530,46 @@ let data = [
     kondisi: 'baik',
     price: 'Rp8.000/hari',
     priceNum: 8000,
-    dist: 450,
-    distText: '450 m · Lab Kimia',
+    latitude: -7.2120,
+    longitude: 107.9010,
+    lokasi: 'Lab Kimia',
+    dist: null,
+    distText: 'Jarak belum aktif · Lab Kimia',
     img: 'mint',
     campus: 'teknik',
     verified: true
   }
 ];
 
+// Recalculate distance for all items based on current userLocation
+function recalculateDistances() {
+  data.forEach((item) => {
+    const itemLat = item.latitude ?? item.lokasi_lat;
+    const itemLng = item.longitude ?? item.lokasi_lng;
+    const lokasiName = item.lokasi || item.campus || 'Kampus ITG';
+
+    if (userLocation && itemLat != null && itemLng != null) {
+      const meters = haversineDistance(userLocation.lat, userLocation.lng, itemLat, itemLng);
+      item.dist = meters;
+      item.distText = formatDistanceText(meters, lokasiName);
+    } else {
+      item.dist = null;
+      item.distText = formatDistanceText(null, lokasiName);
+    }
+  });
+}
+
 // Asynchronously load real items from backend database
 async function syncFromApi() {
   try {
-    const items = await KM.get('/barang');
+    const queryParams = new URLSearchParams();
+    if (userLocation) {
+      queryParams.set('lat', String(userLocation.lat));
+      queryParams.set('lng', String(userLocation.lng));
+    }
+    const url = `/barang${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    const items = await KM.get(url);
+
     if (Array.isArray(items) && items.length > 0) {
       const colors = ['lav', 'mint', 'peach'];
       const dbMapped = items.map((b, idx) => {
@@ -181,9 +603,16 @@ async function syncFromApi() {
           priceStr = 'Rp' + Number(priceNum).toLocaleString('id-ID') + '/hari';
         }
 
-        const distances = [350, 600, 1200, 800, 450, 900];
-        const dist = distances[idx % distances.length];
-        const distText = (dist >= 1000 ? (dist/1000).toFixed(1) + ' km' : dist + ' m') + ' · Kampus';
+        const itemLat = b.latitude ?? b.lokasi_lat ?? (-7.2160 + (idx * 0.0012));
+        const itemLng = b.longitude ?? b.lokasi_lng ?? (107.9020 + (idx * 0.0012));
+        const lokasiName = b.lokasi || 'Kampus ITG Garut';
+
+        let dist = null;
+        let distText = formatDistanceText(null, lokasiName);
+        if (userLocation) {
+          dist = haversineDistance(userLocation.lat, userLocation.lng, itemLat, itemLng);
+          distText = formatDistanceText(dist, lokasiName);
+        }
 
         return {
           id: b.id_barang,
@@ -192,20 +621,26 @@ async function syncFromApi() {
           kondisi: (b.kondisi || 'baik').toLowerCase(),
           price: priceStr,
           priceNum: priceNum,
+          latitude: itemLat,
+          longitude: itemLng,
+          lokasi: lokasiName,
           dist: dist,
           distText: distText,
           img: colors[idx % colors.length],
           foto: (typeof KM !== 'undefined' && KM.getFoto ? KM.getFoto(b.foto) : b.foto) || null,
-          campus: idx % 2 === 0 ? 'teknik' : 'itg',
+          campus: lokasiName,
           verified: true
         };
       });
+
       data = [...data.filter(d => !dbMapped.some(m => m.id === d.id)), ...dbMapped];
+      recalculateDistances();
       updateFilterPreview();
       render();
     }
   } catch (_e) {
     // If backend is unreachable, fallback demo data is already displayed
+    KM.ui.toast('Server tidak terjangkau, menampilkan data contoh', 'error');
   }
 }
 
@@ -215,7 +650,7 @@ let filterActive = true;
 let selectedMode = 'sewa';
 let minPriceVal = 0;
 let maxPriceVal = 100000;
-let maxDistVal = 2000;
+let maxDistVal = 2000; // <= 2 km aktif sebagai standar awal
 let selectedCond = 'all';
 
 // DOM Elements
@@ -239,6 +674,7 @@ const chipPrice = document.getElementById('chipPrice');
 const chipDist = document.getElementById('chipDist');
 const sortBtn = document.getElementById('sortBtn');
 const sortLabel = document.getElementById('sortLabel');
+const headerLocBtn = document.getElementById('headerLocBtn');
 
 function formatKm(meters) {
   if (meters >= 1000) {
@@ -303,9 +739,11 @@ function getFilteredItems(tempMode = selectedMode, tempMinPrice = minPriceVal, t
       return false;
     }
 
-    // Distance match
-    if (tempDist > 0 && d.dist > tempDist) {
-      return false;
+    // Distance match (≤ 2 km filter)
+    if (tempDist > 0 && userLocation) {
+      if (d.dist == null || d.dist > tempDist) {
+        return false;
+      }
     }
 
     // Condition match
@@ -341,9 +779,21 @@ function render() {
   });
 
   // Sorting
-  if (sortMode === 'near') items.sort((a, b) => a.dist - b.dist);
-  else if (sortMode === 'cheap') items.sort((a, b) => a.priceNum - b.priceNum);
-  else items = items.slice().reverse();
+  if (sortMode === 'near') {
+    if (userLocation) {
+      // Urutkan dari jarak meter terdekat ke terjauh
+      items.sort((a, b) => {
+        if (a.dist == null && b.dist == null) return 0;
+        if (a.dist == null) return 1;
+        if (b.dist == null) return -1;
+        return a.dist - b.dist;
+      });
+    }
+  } else if (sortMode === 'cheap') {
+    items.sort((a, b) => a.priceNum - b.priceNum);
+  } else {
+    items = items.slice().reverse();
+  }
 
   if (countText) {
     countText.textContent = `${items.length} barang ditemukan`;
@@ -360,7 +810,7 @@ function render() {
   }
 
   let html = items.map(d => `
-    <div class="horizontal-item-card result-card" data-id="${d.id}" role="button" tabindex="0" aria-label="${escHtml(d.title)}, ${escHtml(d.badge)}, ${escHtml(d.price)}">
+    <div class="horizontal-item-card result-card" data-id="${d.id}" data-mode="${escHtml(d.badge.toLowerCase())}" role="button" tabindex="0" aria-label="${escHtml(d.title)}, ${escHtml(d.badge)}, ${escHtml(d.price)}">
       <div class="card-left-thumb ${escHtml(d.img)}">
         ${d.foto && !d.foto.includes('AARCAAEAAEDASIAAhEBAxEB') ? `<img src="${escHtml(d.foto)}" alt="${escHtml(d.title)}" loading="lazy">` : (d.svg || getSvg(d.title))}
       </div>
@@ -387,7 +837,8 @@ function render() {
   list.querySelectorAll('.result-card').forEach(card => {
     const bukaDetail = () => {
       const id = card.dataset.id || '1';
-      window.location.href = `/detail.html?id=${id}`;
+      const mode = card.dataset.mode || 'sewa';
+      window.location.href = `/detail.html?id=${id}&mode=${mode}`;
     };
     card.addEventListener('click', bukaDetail);
     card.addEventListener('keydown', (e) => {
@@ -401,12 +852,97 @@ function render() {
 
 // Setup Event Listeners on DOM Ready
 document.addEventListener('DOMContentLoaded', () => {
-  // Search Input
-  if (q) {
-    q.addEventListener('input', () => {
-      if (clearBtn) clearBtn.style.display = q.value ? 'flex' : 'none';
+  // Indikator ikon lokasi di header
+  if (userLocation && !userLocation.isFallback && headerLocBtn) {
+    headerLocBtn.classList.add('active');
+    headerLocBtn.title = 'Lokasi GPS Akurat Aktif';
+  } else if (headerLocBtn) {
+    headerLocBtn.classList.remove('active');
+    headerLocBtn.title = 'Titik acuan: Kampus ITG (Tarogong Kidul, Garut) · Klik untuk aktifkan GPS akurat';
+  }
+
+  // 1. Tombol Pin Lokasi di Header
+  if (headerLocBtn) {
+    headerLocBtn.addEventListener('click', () => {
+      // User secara sadar mengeklik pin lokasi -> jalankan deteksi GPS
+      requestUserLocation(true);
+    });
+  }
+
+  // 2. Chip Filter Jarak (≤ 2 km) - Respon Instan (0ms delay)
+  if (chipDist) {
+    if (maxDistVal === 2000) chipDist.classList.add('active');
+
+    chipDist.addEventListener('click', () => {
+      // Pastikan titik acuan lokasi selalu ada (fallback kampus)
+      if (!userLocation) {
+        terapkanFallbackLokasi();
+      }
+
+      // 1. Toggle filter dan render secara INSTAN tanpa menunggu GPS selesai
+      if (maxDistVal === 2000) {
+        maxDistVal = 0;
+        chipDist.classList.remove('active');
+        chipDist.textContent = 'Semua jarak';
+      } else {
+        maxDistVal = 2000;
+        chipDist.classList.add('active');
+        chipDist.textContent = '≤ 2 km';
+      }
+
+      // Sinkronisasi dengan modal chips
+      document.querySelectorAll('#filterDistChips .f-pill-opt').forEach(c => {
+        c.classList.toggle('active', maxDistVal === 2000 ? c.dataset.dist === '2' : c.dataset.dist === 'all');
+      });
+
       render();
       updateFilterPreview();
+
+      // 2. Jika belum memiliki GPS aktual, tanyakan di background tanpa menahan UI
+      if (userLocation && userLocation.isFallback && !hasPromptedLocation && maxDistVal > 0) {
+        hasPromptedLocation = true;
+        requestUserLocation(true);
+      }
+    });
+  }
+
+  // 3. Tombol Sort (Terdekat, Termurah, Terbaru) - Respon Instan (0ms delay)
+  const sortOptions = [
+    { val: 'near', label: 'Terdekat' },
+    { val: 'cheap', label: 'Termurah' },
+    { val: 'new', label: 'Terbaru' }
+  ];
+  let sortIdx = 0;
+  sortBtn?.addEventListener('click', () => {
+    sortIdx = (sortIdx + 1) % sortOptions.length;
+    sortMode = sortOptions[sortIdx].val;
+    if (sortLabel) sortLabel.textContent = sortOptions[sortIdx].label;
+    if (filterSort) filterSort.value = sortOptions[sortIdx].label;
+
+    if (!userLocation) {
+      terapkanFallbackLokasi();
+    }
+
+    // Render urutan langsung secara instan
+    render();
+
+    // Jika user memilih sorting Terdekat dan belum ada GPS aktual, minta di background
+    if (sortMode === 'near' && userLocation && userLocation.isFallback && !hasPromptedLocation) {
+      hasPromptedLocation = true;
+      requestUserLocation(true);
+    }
+  });
+
+  // Search Input dengan Debounce 120ms agar pengetikan mulus tanpa lag
+  if (q) {
+    let searchDebounceTimer = null;
+    q.addEventListener('input', () => {
+      if (clearBtn) clearBtn.style.display = q.value ? 'flex' : 'none';
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        render();
+        updateFilterPreview();
+      }, 120);
     });
   }
 
@@ -432,7 +968,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   filterChip?.addEventListener('click', openModal);
   chipPrice?.addEventListener('click', openModal);
-  chipDist?.addEventListener('click', openModal);
   document.getElementById('closeFilterBtn')?.addEventListener('click', closeModal);
 
   // Close modal on backdrop click or Escape
@@ -452,7 +987,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Distance chips in modal
+  // Distance chips in modal - Respon instan tanpa lag
   document.querySelectorAll('#filterDistChips .f-pill-opt').forEach(chip => {
     chip.addEventListener('click', function() {
       chip.parentElement.querySelectorAll('.f-pill-opt').forEach(c => c.classList.remove('active'));
@@ -497,14 +1032,17 @@ document.addEventListener('DOMContentLoaded', () => {
     filterActive = true;
 
     if (chipPrice) chipPrice.textContent = '≤ Rp100.000';
-    if (chipDist) chipDist.textContent = 'Semua jarak';
+    if (chipDist) {
+      chipDist.textContent = 'Semua jarak';
+      chipDist.classList.remove('active');
+    }
 
     updateFilterPreview();
     render();
     closeModal();
   });
 
-  // Apply button in modal
+  // Apply button in modal - Respon instan
   filterApplyBtn?.addEventListener('click', () => {
     selectedMode = getActiveMode();
     selectedCond = getActiveCond();
@@ -517,26 +1055,23 @@ document.addEventListener('DOMContentLoaded', () => {
       chipPrice.textContent = `≤ Rp${maxPriceVal.toLocaleString('id-ID')}`;
     }
     if (chipDist) {
-      chipDist.textContent = maxDistVal > 0 ? `≤ ${formatKm(maxDistVal)}` : 'Semua jarak';
+      if (maxDistVal > 0) {
+        chipDist.textContent = `≤ ${formatKm(maxDistVal)}`;
+        chipDist.classList.add('active');
+      } else {
+        chipDist.textContent = 'Semua jarak';
+        chipDist.classList.remove('active');
+      }
     }
 
     render();
     closeModal();
-  });
 
-  // Sort cycle button
-  const sortOptions = [
-    { val: 'near', label: 'Terdekat' },
-    { val: 'cheap', label: 'Termurah' },
-    { val: 'new', label: 'Terbaru' }
-  ];
-  let sortIdx = 0;
-  sortBtn?.addEventListener('click', () => {
-    sortIdx = (sortIdx + 1) % sortOptions.length;
-    sortMode = sortOptions[sortIdx].val;
-    if (sortLabel) sortLabel.textContent = sortOptions[sortIdx].label;
-    if (filterSort) filterSort.value = sortOptions[sortIdx].label;
-    render();
+    // Minta GPS di background jika filter jarak aktif dan belum pernah ditanyakan
+    if (maxDistVal > 0 && userLocation && userLocation.isFallback && !hasPromptedLocation) {
+      hasPromptedLocation = true;
+      requestUserLocation(true);
+    }
   });
 
   // Check URL query parameters
@@ -558,8 +1093,18 @@ document.addEventListener('DOMContentLoaded', () => {
     else location.href = '/beranda.html';
   });
 
-  // Initial render
+  // Initial distance calculation and render
+  recalculateDistances();
   updateFilterPreview();
   render();
   syncFromApi();
+
+  // Hanya periksa izin jika browser sebelumnya sudah memberikan izin (granted), agar tidak membekukan UI saat loading
+  if (typeof navigator !== 'undefined' && navigator.permissions && navigator.permissions.query) {
+    navigator.permissions.query({ name: 'geolocation' }).then((status) => {
+      if (status.state === 'granted') {
+        requestUserLocation(false);
+      }
+    }).catch(() => {});
+  }
 });

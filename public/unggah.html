@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<script src="/vendor/sweetalert2.all.min.js"></script>
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CampusCircle — Unggah Produk</title>
@@ -116,28 +117,32 @@
   .info-banner-title { font-size: 12px; font-weight: 700; color: #166534; }
   .info-banner-sub { font-size: 11px; color: #166534; opacity: 0.9; line-height: 1.3; }
 
-  /* Mode Chips (Kept for compatibility and test) */
+  /* Mode Chips */
   .type-tabs {
-    display: none;
+    display: flex;
     gap: 8px;
-    margin-bottom: 4px;
+    margin-bottom: 16px;
+    background: #F1F5F9;
+    padding: 4px;
+    border-radius: 12px;
   }
   .type-chip {
     flex: 1;
     height: 38px;
-    border-radius: 10px;
-    border: 1px solid #E2E8F0;
-    background: #FFFFFF;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
     color: #64748B;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 700;
     cursor: pointer;
     font-family: inherit;
+    transition: all 0.2s;
   }
   .type-chip.active {
     background: #008F83;
     color: #FFFFFF;
-    border-color: #008F83;
+    box-shadow: 0 2px 6px rgba(0, 143, 131, 0.25);
   }
 
   /* Photos Section */
@@ -301,6 +306,66 @@
     background: #DCFCE7;
     color: #166534;
     border-color: #86EFAC;
+  }
+
+  /* Custom SweetAlert2 Tailwind Styles */
+  .swal2-popup.rounded-2xl {
+    border-radius: 1rem !important;
+    font-family: inherit !important;
+  }
+  .swal2-popup.shadow-xl {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  }
+  .swal2-popup.border-0 {
+    border: none !important;
+  }
+  .swal2-title.text-xl {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+  }
+  .swal2-title.font-bold {
+    font-weight: 700 !important;
+  }
+  .swal2-title.text-gray-800 {
+    color: #1f2937 !important;
+  }
+  .swal2-html-container.text-gray-600 {
+    color: #4b5563 !important;
+  }
+  .swal2-html-container.font-medium {
+    font-weight: 500 !important;
+  }
+  .swal2-confirm.bg-\[\#059669\] {
+    background-color: #059669 !important;
+  }
+  .swal2-confirm.text-white {
+    color: #ffffff !important;
+  }
+  .swal2-confirm.px-8 {
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+  }
+  .swal2-confirm.py-2\.5 {
+    padding-top: 0.625rem !important;
+    padding-bottom: 0.625rem !important;
+  }
+  .swal2-confirm.rounded-xl {
+    border-radius: 0.75rem !important;
+  }
+  .swal2-confirm.font-semibold {
+    font-weight: 600 !important;
+  }
+  .swal2-confirm.hover\:bg-emerald-700:hover {
+    background-color: #047857 !important;
+  }
+  .swal2-confirm.transition-colors {
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+    cursor: pointer !important;
+    outline: none !important;
+    border: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   /* Bottom Fixed Action Bar */
@@ -531,24 +596,27 @@
       </div>
     </div>
 
-    <!-- Hidden compatibility type-chips -->
-    <div class="type-tabs" id="typeChips">
-      <button class="type-chip active" type="button" data-type="sewa">Sewa</button>
-      <button class="type-chip" type="button" data-type="jual">Beli</button>
-      <button class="type-chip" type="button" data-type="pinjam">Free</button>
+    <!-- Pilihan Tipe Transaksi -->
+    <div style="margin-bottom: 6px;">
+      <span class="section-label" style="display:block; margin-bottom:8px;">Tipe Transaksi</span>
+      <div class="type-tabs" id="typeChips">
+        <button class="type-chip active" type="button" data-type="sewa">Sewa</button>
+        <button class="type-chip" type="button" data-type="jual">Beli</button>
+        <button class="type-chip" type="button" data-type="pinjam">Pinjam</button>
+      </div>
     </div>
 
     <!-- Photos Section -->
     <div>
       <div class="section-label-row">
         <span class="section-label">Foto produk</span>
-        <span class="section-sub" id="photoCountLabel">1 dari 5 foto</span>
+        <span class="section-sub" id="photoCountLabel">0 dari 5 foto</span>
       </div>
       <input type="file" id="photoInput" accept="image/*" multiple style="display:none">
       
       <div class="photos-row" id="photoPreviewList">
-        <div class="photo-item-box" id="defaultSamplePhoto" style="cursor:pointer">
-          <img src="/img/unggah-sample-sewa.png" alt="Foto Produk" id="sampleImg">
+        <div class="photo-item-box" id="defaultSamplePhoto" style="cursor:pointer; display:none;">
+          <img src="" alt="Foto Produk" id="sampleImg">
           <button class="photo-overlay-btn" type="button" id="btnChangePhoto" style="display:none">Ubah Foto</button>
         </div>
         <div class="upload-dashed-btn" id="uploadBox">
@@ -562,52 +630,75 @@
     <!-- Nama Produk -->
     <div class="form-group">
       <label class="form-label" for="namaBarang">Nama Produk</label>
-      <input class="form-input" id="namaBarang" type="text" placeholder="Contoh: Lampu Belajar LED" value="Lampu Belajar LED" required>
+      <input class="form-input" id="namaBarang" type="text" placeholder="Contoh: Kalkulator Casio fx-991EX" value="" required>
     </div>
 
     <!-- Deskripsi -->
     <div class="form-group">
       <label class="form-label" for="deskripsiInput">Deskripsi</label>
-      <textarea class="form-textarea" id="deskripsiInput" placeholder="Ceritakan kondisi, kelengkapan, dan spesifikasi barang...">Lampu LED 3 tingkat, kabel USB lengkap. Cocok untuk meja belajar di kos.</textarea>
+      <textarea class="form-textarea" id="deskripsiInput" placeholder="Ceritakan kondisi, kelengkapan, dan spesifikasi barang..."></textarea>
     </div>
 
     <!-- Kategori -->
     <div class="form-group">
       <label class="form-label" for="kategoriSelect">Kategori</label>
       <select class="form-select" id="kategoriSelect">
-        <option value="1" selected>Perlengkapan Kos</option>
-        <option value="2">Elektronik</option>
-        <option value="3">Buku & Alat Tulis</option>
-        <option value="4">Peralatan Kuliah</option>
+        <option value="" disabled selected>Pilih Kategori Produk</option>
+        <option value="1">Elektronik</option>
+        <option value="2">Buku & Diktat</option>
+        <option value="3">Perlengkapan Kos</option>
+        <option value="4">Alat Lab / Praktikum</option>
+        <option value="5">Olahraga & Outdoor</option>
       </select>
     </div>
 
     <!-- Kondisi Barang -->
     <div class="form-group">
-      <label class="form-label">Kondisi Barang</label>
-      <input type="hidden" id="kondisiSelect" value="baik">
+      <label class="form-label" for="kondisiSelect">Kondisi Barang</label>
+      <select class="form-select" id="kondisiSelect" style="display:none;">
+        <option value="baru">Seperti Baru</option>
+        <option value="baik" selected>Baik</option>
+        <option value="cukup">Cukup</option>
+        <option value="rusak">Rusak</option>
+      </select>
       <div class="chips-row" id="kondisiChips">
-        <button class="condition-chip" type="button" data-val="seperti-baru">Seperti Baru</button>
+        <button class="condition-chip" type="button" data-val="baru">Seperti Baru</button>
         <button class="condition-chip active" type="button" data-val="baik">Baik</button>
         <button class="condition-chip" type="button" data-val="cukup">Cukup</button>
       </div>
     </div>
 
-    <!-- Hidden compatibility fields for Harga & Lokasi -->
-    <div style="display:none;">
-      <label id="hargaLabel">Harga Sewa / hari</label>
-      <input id="hargaInput" type="text" value="Rp7.000">
-      <button id="btnOpenEstimator" type="button"></button>
-      <input id="lokasiBarang" type="text" value="Jl. Kampus Asri No. 8, Tarogong Kidul, Garut">
-      <button id="btnOpenLocation" type="button"></button>
-      <input id="lokasiLat" value="-7.2160">
-      <input id="lokasiLng" value="107.9020">
-      <div id="smartPriceCard">
-        <span id="smartPriceSub"></span>
-        <span id="smartPriceRange">Rp5.000 - Rp8.000</span>
-        <span id="smartPriceIdeal">Rp7.000</span>
-        <button id="btnPakaiIdeal" type="button"></button>
+    <!-- Harga Produk -->
+    <div class="form-group" id="hargaGroup">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+        <label class="form-label" for="hargaInput" id="hargaLabel" style="margin-bottom:0;">Harga Sewa per Hari (Rp)</label>
+        <button id="btnOpenEstimator" type="button" style="background:none; border:none; color:#008F83; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          Saran Harga
+        </button>
       </div>
+      <input class="form-input" id="hargaInput" type="text" placeholder="Contoh: 5.000" value="">
+      <span class="photo-helper-text" id="hargaHelper">Saran harga sewa harian untuk teman kampus.</span>
+    </div>
+
+    <!-- Info Pinjam Free -->
+    <div id="pinjamInfoBanner" style="display:none; padding:12px 14px; background:#F5F3FF; border:1px solid #DDD6FE; border-radius:12px; margin-bottom:16px;">
+      <div style="font-size:12px; font-weight:700; color:#6D28D9; margin-bottom:2px;">✨ Mode Pinjam Gratis</div>
+      <div style="font-size:11px; color:#5B21B6; line-height:1.4;">Barang ini akan dipinjamkan tanpa biaya sewa kepada teman kampus. Anda akan mendapatkan +20 Green Points setelah peminjaman selesai.</div>
+    </div>
+
+    <!-- Lokasi Penyerahan -->
+    <div class="form-group">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+        <label class="form-label" for="lokasiBarang" style="margin-bottom:0;">Lokasi Penyerahan Barang</label>
+        <button id="btnOpenLocation" type="button" style="background:none; border:none; color:#008F83; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+          Pilih di Peta / Lokasi Saat Ini
+        </button>
+      </div>
+      <input class="form-input" id="lokasiBarang" type="text" placeholder="Contoh: Kampus ITG Garut / Dekat Perpus" value="">
+      <input type="hidden" id="lokasiLat" value="-7.2160">
+      <input type="hidden" id="lokasiLng" value="107.9020">
     </div>
   </div>
 
@@ -677,7 +768,10 @@
 
         <div style="font-size: 12px; font-weight: 700; color: #0F172A; margin-top: 4px;">Alamat pratinjau</div>
         <div style="font-size: 11px; color: #64748B;" id="locPreviewAddr">Jl. Kampus Asri No. 8, Tarogong Kidul, Garut</div>
-        <div style="font-size: 10px; color: #94A3B8; margin-top: 2px;">Koordinat contoh: -7.2160, 107.9020</div>
+        <div style="font-size: 10px; color: #94A3B8; margin-top: 2px;" id="locCoordInfo">Koordinat contoh: -7.2160, 107.9020</div>
+        <div id="locMapLinkWrap" style="display: none; margin-top: 4px;">
+          <a id="locMapLink" href="#" target="_blank" rel="noopener" style="font-size: 11px; color: #007A68; font-weight: 600; text-decoration: underline;">Lihat di peta ↗</a>
+        </div>
       </div>
 
       <button class="sheet-btn-action" id="btnApplyLocation" type="button">Gunakan titik ini</button>
@@ -729,7 +823,7 @@
       </p>
     </div>
 
-    <button class="sheet-btn-action" id="btnLihatProdukSaya" type="button">Lihat Produk Saya</button>
+    <button class="sheet-btn-action" id="btnLihatProdukSaya" type="button">Buka Profil &amp; Barang Saya</button>
   </div>
 
   <!-- Toast Notification -->

@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<script src="/vendor/sweetalert2.all.min.js"></script>
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KampusCircle — Cari Barang</title>
@@ -9,6 +10,7 @@
 <style>
   .cari-body {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     scrollbar-width: none;
     display: flex;
@@ -151,6 +153,108 @@
     color: var(--text-dark);
     white-space: nowrap;
     flex-shrink: 0;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .chip-tag-pill.active {
+    background: #DCFCE7;
+    border-color: #86EFAC;
+    color: #166534;
+  }
+  .header-loc-btn.active {
+    color: #059669;
+  }
+
+  /* Custom SweetAlert2 Tailwind Styles */
+  .swal2-popup.rounded-2xl {
+    border-radius: 1rem !important;
+    font-family: inherit !important;
+  }
+  .swal2-popup.shadow-xl {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  }
+  .swal2-popup.border-0 {
+    border: none !important;
+  }
+  .swal2-title.text-xl {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+  }
+  .swal2-title.font-bold {
+    font-weight: 700 !important;
+  }
+  .swal2-title.text-gray-800 {
+    color: #1f2937 !important;
+  }
+  .swal2-html-container.text-gray-600 {
+    color: #4b5563 !important;
+  }
+  .swal2-html-container.font-medium {
+    font-weight: 500 !important;
+  }
+  .swal2-confirm.bg-\[\#059669\] {
+    background-color: #059669 !important;
+  }
+  .swal2-confirm.text-white {
+    color: #ffffff !important;
+  }
+  .swal2-confirm.px-8 {
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+  }
+  .swal2-confirm.py-2\.5 {
+    padding-top: 0.625rem !important;
+    padding-bottom: 0.625rem !important;
+  }
+  .swal2-confirm.rounded-xl {
+    border-radius: 0.75rem !important;
+  }
+  .swal2-confirm.font-semibold {
+    font-weight: 600 !important;
+  }
+  .swal2-confirm.hover\:bg-emerald-700:hover {
+    background-color: #047857 !important;
+  }
+  .swal2-confirm.transition-colors {
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+    cursor: pointer !important;
+    outline: none !important;
+    border: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .swal2-cancel.bg-gray-100 {
+    background-color: #f3f4f6 !important;
+  }
+  .swal2-cancel.text-gray-700 {
+    color: #374151 !important;
+  }
+  .swal2-cancel.px-6 {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+  }
+  .swal2-cancel.py-2\.5 {
+    padding-top: 0.625rem !important;
+    padding-bottom: 0.625rem !important;
+  }
+  .swal2-cancel.rounded-xl {
+    border-radius: 0.75rem !important;
+  }
+  .swal2-cancel.font-semibold {
+    font-weight: 600 !important;
+  }
+  .swal2-cancel.hover\:bg-gray-200:hover {
+    background-color: #e5e7eb !important;
+  }
+  .swal2-cancel.transition-colors {
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+    cursor: pointer !important;
+    outline: none !important;
+    border: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   /* Result header row */
@@ -507,7 +611,7 @@
 </style>
 </head>
 <body>
-<div class="app-frame">
+<div class="phone app-frame">
   <div class="cari-body">
     <div class="status-bar">
       <span>09.41</span>
@@ -520,14 +624,14 @@
 
     <!-- Header -->
     <div class="cari-header">
-      <button class="header-back-btn" id="backBtn" type="button" aria-label="Kembali" onclick="location.href='/beranda.html'">
+      <button class="header-back-btn" id="backBtn" type="button" aria-label="Kembali">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="19" y1="12" x2="5" y2="12"></line>
           <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
       </button>
       <span class="header-title">Cari barang</span>
-      <button class="header-loc-btn" type="button" aria-label="Lokasi">
+      <button class="header-loc-btn" id="headerLocBtn" type="button" aria-label="Lokasi">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/>
         </svg>
