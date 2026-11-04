@@ -34,8 +34,13 @@
   }
 
   if (backBtn) {
-    backBtn.addEventListener('click', () => {
-      location.href = '/masuk-kost.html';
+    backBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (typeof goBack === 'function') {
+        goBack('/masuk-kost.html');
+      } else {
+        location.href = '/masuk-kost.html';
+      }
     });
   }
 

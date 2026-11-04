@@ -4,9 +4,13 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const btnBack = document.getElementById('btnBackToProfil');
   if (btnBack) {
-    btnBack.addEventListener('click', () => {
-      if (window.history.length > 1) window.history.back();
-      else location.href = '/profil.html';
+    btnBack.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (typeof goBack === 'function') {
+        goBack('/profil.html');
+      } else {
+        location.href = '/profil.html';
+      }
     });
   }
 

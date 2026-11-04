@@ -39,8 +39,11 @@
 
   backBtn.addEventListener('click', function(e) {
     e.preventDefault();
-    if (window.history.length > 1) window.history.back();
-    else location.href = '/welcome.html';
+    if (typeof goBack === 'function') {
+      goBack('/welcome.html');
+    } else {
+      location.href = '/welcome.html';
+    }
   });
 
   function pasangToggle(btnId, input) {

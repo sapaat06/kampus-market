@@ -862,6 +862,33 @@ function init() {
     qKos.value = qParam;
   }
 
+  // Back button: aturan eksplisit kos.html -> beranda.html
+  document.getElementById('kosBackHome')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (typeof goBack === 'function') {
+      goBack('/beranda.html', { forceFallback: true });
+    } else {
+      window.location.href = '/beranda.html';
+    }
+  });
+
+  // Bottom nav Cari tab: cegah history loop dengan cari.html
+  document.getElementById('navCari')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    window.location.replace('/cari.html');
+  });
+
+  // Android Back: dari kos.html kembali ke beranda.html
+  window.history.pushState({ page: 'kos' }, '', window.location.href);
+  window.addEventListener('popstate', () => {
+    if (modalKos && modalKos.classList.contains('open')) {
+      modalKos.classList.remove('open');
+      window.history.pushState({ page: 'kos' }, '', window.location.href);
+      return;
+    }
+    window.location.href = '/beranda.html';
+  });
+
   loadKos(initialTipe);
 }
 

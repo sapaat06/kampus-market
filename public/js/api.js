@@ -285,6 +285,66 @@ window.KM = (() => {
     return userRole === 'pemilik_kost' ? 'kos-owner.html' : 'beranda.html';
   }
 
+    function goBack(fallbackUrl = '/beranda.html', options = {}) {
+    if (typeof fallbackUrl === 'object' && fallbackUrl !== null && options === undefined) {
+      options = fallbackUrl;
+      fallbackUrl = '/beranda.html';
+    }
+    const targetFallback = typeof fallbackUrl === 'string' && fallbackUrl ? fallbackUrl : '/beranda.html';
+
+    if (options.forceFallback) {
+      if (typeof window !== 'undefined') window.location.href = targetFallback;
+      return targetFallback;
+    }
+
+    if (typeof document === 'undefined' || typeof window === 'undefined') return targetFallback;
+
+    const ref = document.referrer;
+    if (!ref) {
+      window.location.href = targetFallback;
+      return targetFallback;
+    }
+
+    try {
+      const refUrl = new URL(ref, window.location.origin);
+      const currUrl = new URL(window.location.href);
+
+      // Referrer harus dari origin yang sama
+      if (refUrl.origin !== window.location.origin) {
+        window.location.href = targetFallback;
+        return targetFallback;
+      }
+
+      // Referrer tidak boleh halaman yang sama
+      if (refUrl.pathname === currUrl.pathname) {
+        window.location.href = targetFallback;
+        return targetFallback;
+      }
+
+      // Abaikan halaman jika pola cocok (misalnya filter, login, masuk, daftar, detail)
+      if (options.ignorePatterns && Array.isArray(options.ignorePatterns)) {
+        const refPath = refUrl.pathname.toLowerCase();
+        const isIgnored = options.ignorePatterns.some((pat) => refPath.includes(pat.toLowerCase()));
+        if (isIgnored) {
+          window.location.href = targetFallback;
+          return targetFallback;
+        }
+      }
+
+      // Jika ada riwayat browser, gunakan history.back(), jika tidak arahkan langsung
+      if (window.history && window.history.length > 1) {
+        window.history.back();
+        return 'history.back';
+      } else {
+        window.location.href = ref;
+        return ref;
+      }
+    } catch {
+      window.location.href = targetFallback;
+      return targetFallback;
+    }
+  }
+
   function goToHome() {
     const userRole = localStorage.getItem('role') || localStorage.getItem('km_role');
     if (userRole === 'pemilik_kost') {
@@ -311,7 +371,7 @@ window.KM = (() => {
         }
       }
       el.addEventListener('click', (e) => {
-        if (el.id === 'backBtn' && window.history.length > 1 && document.referrer.includes(window.location.host)) {
+        if (el.id === 'backBtn' || el.classList.contains('header-back-btn')) {
           return;
         }
         e.preventDefault();
@@ -398,6 +458,7 @@ window.KM = (() => {
 
   window.goToHome = goToHome;
   window.getHomeUrl = getHomeUrl;
+  window.goBack = goBack;
   window.createEmptyStateHtml = createEmptyStateHtml;
 
   // Nama lama dipertahankan supaya halaman lama tidak perlu diubah semua.
@@ -406,6 +467,7 @@ window.KM = (() => {
     ui,
     getFotos, getFoto,
     createEmptyStateHtml,
+    goBack,
     adaSesi: sesi.ada,
     simpanSesi: sesi.set,
     role,

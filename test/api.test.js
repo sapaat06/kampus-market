@@ -789,5 +789,54 @@ assert.equal(upJson.ok, true);
 assert.ok(upJson.secure_url);
 assert.ok(Array.isArray(upJson.urls) && upJson.urls.length === 1);
 
+// ==========================================
+// Uji Fungsi Navigasi goBack (Fallback tanpa referrer)
+// ==========================================
+const apiJsRes = await call('GET', '/js/api.js');
+assert.equal(apiJsRes.s, 200);
+assert.match(String(apiJsRes.j), /function goBack/);
+
+{
+  const mockWindow = {
+    location: { href: 'http://localhost:3000/detail.html?id=1', origin: 'http://localhost:3000' },
+    history: { length: 1, back: () => { mockWindow.history.called = true; } },
+    localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+  };
+  const mockDocument = {
+    referrer: '',
+    readyState: 'complete',
+    querySelectorAll: () => [],
+    addEventListener: () => {},
+  };
+  
+  const runGoBack = new Function('window', 'document', 'localStorage', `
+    ${apiJsRes.j}
+    return window.goBack('/beranda.html');
+  `);
+  
+  const target = runGoBack(mockWindow, mockDocument, mockWindow.localStorage);
+  assert.equal(target, '/beranda.html', 'goBack harus fallback ke /beranda.html saat tanpa referrer');
+  assert.equal(mockWindow.location.href, '/beranda.html');
+
+  // Uji goBack dengan referrer valid
+  const mockWindow2 = {
+    location: { href: 'http://localhost:3000/detail.html?id=1', origin: 'http://localhost:3000' },
+    history: { length: 2, back: () => { mockWindow2.history.called = true; } },
+    localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+  };
+  const mockDocument2 = {
+    referrer: 'http://localhost:3000/cari.html',
+    readyState: 'complete',
+    querySelectorAll: () => [],
+    addEventListener: () => {},
+  };
+  const target2 = (new Function('window', 'document', 'localStorage', `
+    ${apiJsRes.j}
+    return window.goBack('/beranda.html');
+  `))(mockWindow2, mockDocument2, mockWindow2.localStorage);
+  assert.equal(target2, 'history.back');
+  assert.equal(mockWindow2.history.called, true);
+}
+
 srv.close();
 console.log('semua cek lolos');

@@ -51,10 +51,14 @@
     toggle.setAttribute('aria-label', tampil ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi');
   });
 
-  // Back yang sama dengan halaman daftar: kembali ke halaman sebelumnya kalau ada.
-  backBtn.addEventListener('click', function(){
-    if (window.history.length > 1) window.history.back();
-    else location.href = '/welcome.html';
+  // Back: kembali ke halaman sebelumnya atau fallback ke welcome.html
+  backBtn.addEventListener('click', function(e){
+    e.preventDefault();
+    if (typeof goBack === 'function') {
+      goBack('/welcome.html');
+    } else {
+      location.href = '/welcome.html';
+    }
   });
 
   form.addEventListener('submit', async function(ev){

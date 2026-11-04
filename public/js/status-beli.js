@@ -27,9 +27,10 @@ async function initBeli() {
   const valLokasi = document.getElementById('valLokasi');
 
   if (backBtn) {
-    backBtn.addEventListener('click', () => {
-      if (window.history.length > 1) {
-        window.history.back();
+    backBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (typeof goBack === 'function') {
+        goBack('/beranda.html');
       } else {
         window.location.href = '/beranda.html';
       }

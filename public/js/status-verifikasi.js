@@ -157,10 +157,10 @@
   if (backBtn) {
     backBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      if (window.history.length > 1) {
-        window.history.back();
+      if (typeof goBack === 'function') {
+        goBack('/profil.html');
       } else {
-        location.href = '/verifikasi.html';
+        location.href = '/profil.html';
       }
     });
   }

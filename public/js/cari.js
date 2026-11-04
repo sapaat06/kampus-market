@@ -1104,10 +1104,25 @@ document.addEventListener('DOMContentLoaded', () => {
     openModal();
   }
 
-  // Back button
-  document.getElementById('backBtn')?.addEventListener('click', () => {
-    if (window.history.length > 1) window.history.back();
-    else location.href = '/beranda.html';
+  // Back button: aturan eksplisit cari.html -> beranda.html
+  document.getElementById('backBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (typeof goBack === 'function') {
+      goBack('/beranda.html', { forceFallback: true });
+    } else {
+      window.location.href = '/beranda.html';
+    }
+  });
+
+  // Android Back: hindari loop antara Cari dan Cari Kos
+  window.history.pushState({ page: 'cari' }, '', window.location.href);
+  window.addEventListener('popstate', () => {
+    if (filterModal && filterModal.classList.contains('open')) {
+      closeModal();
+      window.history.pushState({ page: 'cari' }, '', window.location.href);
+      return;
+    }
+    window.location.href = '/beranda.html';
   });
 
   // Initial distance calculation and render

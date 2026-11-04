@@ -66,9 +66,13 @@
   }
 
   if (backBtn) {
-    backBtn.addEventListener('click', function(){
-      if (window.history.length > 1) window.history.back();
-      else location.href = '/masuk.html';
+    backBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      if (typeof goBack === 'function') {
+        goBack('/masuk.html');
+      } else {
+        location.href = '/masuk.html';
+      }
     });
   }
 

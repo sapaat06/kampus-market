@@ -18,21 +18,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   let activeCheckoutMode = 'sewa'; // 'sewa', 'beli', or 'pinjam'
   let currentItem = null;
 
-  // Back button
+  // Back button: halaman asal bila referrer satu origin dan bukan halaman filter/login, jika tidak ke beranda.html
   const backBtn = document.getElementById('backBtn');
   if (backBtn) {
     backBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      const prevUrl = document.referrer;
-      const isSameDomain = prevUrl && prevUrl.includes(window.location.host);
-      if (window.history.length > 1 && isSameDomain && !prevUrl.includes('masuk') && !prevUrl.includes('daftar')) {
-        window.history.back();
+      if (typeof goBack === 'function') {
+        goBack('/beranda.html', { ignorePatterns: ['filter', 'login', 'masuk', 'daftar', 'detail'] });
       } else {
-        if (typeof window.goToHome === 'function') {
-          window.goToHome();
+        const prevUrl = document.referrer;
+        const isSameDomain = prevUrl && prevUrl.includes(window.location.host);
+        if (window.history.length > 1 && isSameDomain && !prevUrl.includes('filter') && !prevUrl.includes('login') && !prevUrl.includes('masuk') && !prevUrl.includes('daftar')) {
+          window.history.back();
         } else {
-          const userRole = localStorage.getItem('role') || localStorage.getItem('km_role');
-          window.location.href = (userRole === 'pemilik_kost') ? 'kos-owner.html' : 'beranda.html';
+          window.location.href = '/beranda.html';
         }
       }
     });

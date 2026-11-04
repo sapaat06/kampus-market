@@ -68,6 +68,16 @@
     selectedFacs.clear();
   });
 
+  // Back button: aturan eksplisit filter-kos.html -> kos.html
+  document.getElementById('filterKosBackBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (typeof goBack === 'function') {
+      goBack('/kos.html', { forceFallback: true });
+    } else {
+      window.location.href = '/kos.html';
+    }
+  });
+
   // Apply
   btnApply.addEventListener('click', () => {
     sessionStorage.setItem('fk_dist', selectedDist);
