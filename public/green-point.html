@@ -22,7 +22,8 @@
   /* Wallet Card (Deep Teal) */
   .gp-wallet-card {
     margin: 16px 18px 0;
-    height: 136px;
+    min-height: 136px;
+    height: auto;
     box-sizing: border-box;
     background: #008F83;
     border-radius: 18px;
@@ -31,6 +32,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    gap: 8px;
     position: relative;
     overflow: hidden;
     box-shadow: 0 8px 24px rgba(0, 143, 131, 0.25);
@@ -39,6 +41,7 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+    min-width: 0;
   }
   .gp-wallet-lbl {
     font-size: 13px;
@@ -53,6 +56,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
   }
   .gp-wallet-leaf svg {
     width: 20px;
@@ -62,28 +66,37 @@
     stroke-width: 2;
   }
   .gp-wallet-val {
-    font-size: 38px;
+    font-size: clamp(26px, 7.5vw, 38px);
     font-weight: 800;
-    line-height: 1;
+    line-height: 1.1;
     display: flex;
     align-items: baseline;
     gap: 6px;
+    min-width: 0;
+    word-break: break-word;
   }
   .gp-wallet-unit {
     font-size: 16px;
     font-weight: 600;
     color: #D0EBE8;
+    flex-shrink: 0;
   }
   .gp-wallet-quote {
-    font-size: 12px;
+    font-size: clamp(11px, 3.2vw, 12px);
     color: #E0F2F1;
     opacity: 0.9;
+    line-height: 1.35;
   }
 
   .gp-user-meta-sub {
     margin: -6px 18px 0;
     font-size: 11px;
     color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    display: block;
   }
 
   /* Filter Pills */
@@ -93,6 +106,9 @@
     margin: 0 18px;
     overflow-x: auto;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    padding: 2px 0;
   }
   .filter-row-gp::-webkit-scrollbar { display: none; }
   .filter-pill-gp {
@@ -108,6 +124,10 @@
     white-space: nowrap;
     display: flex;
     align-items: center;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    min-width: max-content;
+    box-sizing: border-box;
   }
   .filter-pill-gp.active {
     background: var(--orange);
@@ -128,6 +148,16 @@
     font-size: 13px;
     color: var(--text-dark);
     font-weight: 600;
+    min-width: 0;
+  }
+  .periode-box span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .periode-box svg {
+    flex-shrink: 0;
   }
 
   /* Perolehan List */
@@ -147,6 +177,8 @@
     gap: 12px;
     cursor: pointer;
     box-shadow: var(--shadow-card);
+    min-width: 0;
+    box-sizing: border-box;
   }
   .gp-act-icon {
     width: 40px;
@@ -159,10 +191,10 @@
     flex-shrink: 0;
   }
   .gp-act-icon svg { width: 22px; height: 22px; stroke: var(--primary); fill: none; stroke-width: 2; }
-  .gp-act-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-  .gp-act-title { font-size: 13px; font-weight: 700; color: var(--text-dark); }
-  .gp-act-sub { font-size: 11px; color: var(--text-muted); }
-  .gp-act-link { font-size: 11px; color: var(--primary); font-weight: 600; margin-top: 2px; }
+  .gp-act-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+  .gp-act-title { font-size: 13px; font-weight: 700; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gp-act-sub { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gp-act-link { font-size: 11px; color: var(--primary); font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .gp-act-pts {
     font-size: 15px;
     font-weight: 800;
@@ -170,6 +202,8 @@
     background: var(--mint-bg);
     padding: 4px 8px;
     border-radius: 8px;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 
   /* Empty State */

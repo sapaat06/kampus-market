@@ -779,4 +779,44 @@ html, body {
   background: var(--mint-bg, #DDF1EC) !important;
 }
 
+/* Shared Fluid & Scrollable Chip Bar Component (Anti-Truncation) */
+.chip-bar-scrollable,
+.filter-row-gp,
+.chip-filter-scroll,
+.quick-filter-scroll,
+.chat-tabs-bar {
+  display: flex !important;
+  gap: 8px !important;
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+  -webkit-overflow-scrolling: touch !important;
+  scroll-snap-type: x proximity !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+}
+.chip-bar-scrollable::-webkit-scrollbar,
+.filter-row-gp::-webkit-scrollbar,
+.chip-filter-scroll::-webkit-scrollbar,
+.quick-filter-scroll::-webkit-scrollbar,
+.chat-tabs-bar::-webkit-scrollbar {
+  display: none !important;
+}
+.chip-item-fluid,
+.filter-pill-gp,
+.chip-tag-pill,
+.tab-pill-btn {
+  flex-shrink: 0 !important;
+  scroll-snap-align: start !important;
+  white-space: nowrap !important;
+  min-width: max-content !important;
+  box-sizing: border-box !important;
+}
+.text-ellipsis-safe {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  min-width: 0 !important;
+}
+
+
 
