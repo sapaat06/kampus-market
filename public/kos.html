@@ -273,6 +273,7 @@
     border-radius: 18px;
     padding: 7px 10px;
     display: flex;
+    flex-wrap: nowrap;
     gap: 12px;
     align-items: center;
     cursor: pointer;
@@ -280,6 +281,7 @@
     height: 125px;
     box-sizing: border-box;
     transition: transform 0.15s ease;
+    overflow: hidden;
   }
   .card-kos:active {
     transform: scale(0.985);
@@ -299,6 +301,27 @@
     object-fit: cover;
     display: block;
   }
+  .card-kos .thumb .badge-corner,
+  .card-kos .thumb .badge-gender,
+  .card-kos .thumb .status-badge,
+  .card-kos .thumb .badge-verif {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    max-width: calc(100% - 12px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+    background: #FFF0DB;
+    color: #9A3412;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    z-index: 2;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
   
   .card-kos .info {
     flex: 1;
@@ -306,6 +329,7 @@
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+    overflow: hidden;
   }
   .card-kos .name {
     font-size: 14.5px;
@@ -315,6 +339,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    width: 100%;
   }
   .card-kos .price {
     font-size: 15.5px;
@@ -592,14 +617,14 @@
 
       <div class="subrow">
         <span class="count" id="countKos">3 kos • jarak dari kampus</span>
-        <span class="badge-listing">Contoh listing</span>
+        <span class="badge-listing" id="badgeContohListing">Contoh listing</span>
       </div>
 
       <div class="list" id="listKos">
         <!-- Elemen card akan dimuat secara dinamis via loadKos() -->
       </div>
 
-      <div class="fiktif">Data fiktif untuk ilustrasi, bukan ketersediaan aktual.</div>
+      <div class="fiktif" id="fiktifNotice">Data fiktif untuk ilustrasi, bukan ketersediaan aktual.</div>
     </div>
   </div>
 

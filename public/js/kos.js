@@ -212,17 +212,31 @@ async function loadKos(tipe = selectedTipe) {
   // WAJIB: Tambahkan console.log("URL Fetch:", url); tepat sebelum fetch dieksekusi
   console.log("URL Fetch:", url);
 
+  let isApiData = false;
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     kosData = Array.isArray(data) ? data.map(mapKosItem) : [];
+    isApiData = true;
   } catch (err) {
     console.error('Fetch /api/kos error:', err);
     // Fallback data lokal jika server tidak merespons
     kosData = defaultKosData
       .filter(k => selectedTipe === 'semua' || k.tipe_kos === selectedTipe || k.jenis_kelamin === selectedTipe)
       .map(mapKosItem);
+    isApiData = false;
+  }
+
+  // Badge "Contoh listing" dan teks fiktif hanya tampil untuk data tiruan/fallback
+  const badgeListing = document.getElementById('badgeContohListing') || document.querySelector('.badge-listing');
+  const fiktifNotice = document.getElementById('fiktifNotice') || document.querySelector('.fiktif');
+  if (isApiData) {
+    if (badgeListing) badgeListing.style.display = 'none';
+    if (fiktifNotice) fiktifNotice.style.display = 'none';
+  } else {
+    if (badgeListing) badgeListing.style.display = 'inline-block';
+    if (fiktifNotice) fiktifNotice.style.display = 'block';
   }
 
   renderKos();
@@ -276,6 +290,7 @@ function renderKos() {
     <div class="card-kos" data-id="${k.id}">
       <div class="thumb">
         <img src="${esc(k.img)}" alt="${esc(k.name)}">
+        <span class="badge-corner">${esc(k.gender || 'Campur')}</span>
       </div>
       <div class="info">
         <div class="name">${esc(k.name)}</div>
