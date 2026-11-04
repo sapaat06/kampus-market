@@ -684,6 +684,31 @@ const sortBtn = document.getElementById('sortBtn');
 const sortLabel = document.getElementById('sortLabel');
 const headerLocBtn = document.getElementById('headerLocBtn');
 
+// Dual-Thumb Range Slider (NOMOR 5)
+let priceSlider = null;
+const priceRangeContainer = document.getElementById('priceRangeContainer');
+const priceRangeHighlight = document.getElementById('priceRangeHighlight');
+const priceThumbLeft = document.getElementById('priceThumbLeft');
+const priceThumbRight = document.getElementById('priceThumbRight');
+
+const initSlider = window.createRangeSlider || (window.KM && window.KM.createRangeSlider);
+if (typeof initSlider === 'function' && priceRangeContainer && priceRangeHighlight && priceThumbLeft && priceThumbRight) {
+  priceSlider = initSlider({
+    container: priceRangeContainer,
+    highlight: priceRangeHighlight,
+    thumbLeft: priceThumbLeft,
+    thumbRight: priceThumbRight,
+    inputMin: filterMinPrice,
+    inputMax: filterMaxPrice,
+    min: 0,
+    max: 1000000,
+    step: 5000,
+    onChange: () => {
+      updateFilterPreview();
+    }
+  });
+}
+
 function formatKm(meters) {
   if (meters >= 1000) {
     const km = (meters / 1000).toFixed(meters % 1000 === 0 ? 0 : 1);
@@ -819,6 +844,7 @@ function resetFilters() {
   if (filterMinPrice) filterMinPrice.value = '';
   if (filterMaxPrice) filterMaxPrice.value = '';
   if (filterKategori) filterKategori.value = '';
+  if (priceSlider) priceSlider.reset();
   document.querySelectorAll('#filterModeChips .f-pill-opt').forEach(c => {
     c.classList.toggle('active', c.dataset.mode === 'all');
   });
@@ -1044,6 +1070,7 @@ document.addEventListener('DOMContentLoaded', () => {
     maxPriceVal = 0;
     if (filterMinPrice) filterMinPrice.value = '';
     if (filterMaxPrice) filterMaxPrice.value = '';
+    if (priceSlider) priceSlider.reset();
     filterActive = hasActiveFilters();
     updateFilterChips();
     updateFilterPreview();

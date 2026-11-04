@@ -7,6 +7,30 @@
   const btnReset = document.getElementById('btnReset');
   const btnApply = document.getElementById('btnApply');
 
+  let kosSlider = null;
+  const kosRangeContainer = document.querySelector('.range-container');
+  const rangeHighlight = document.getElementById('rangeHighlight');
+  const thumbLeft = document.getElementById('thumbLeft');
+  const thumbRight = document.getElementById('thumbRight');
+
+  const initSlider = window.createRangeSlider || (window.KM && window.KM.createRangeSlider);
+  if (typeof initSlider === 'function' && kosRangeContainer && rangeHighlight && thumbLeft && thumbRight) {
+    kosSlider = initSlider({
+      container: kosRangeContainer,
+      highlight: rangeHighlight,
+      thumbLeft: thumbLeft,
+      thumbRight: thumbRight,
+      inputMin: inMinPrice,
+      inputMax: inMaxPrice,
+      min: 0,
+      max: 3000000,
+      step: 50000,
+    });
+    const pMin = parseInt((inMinPrice?.value || '').replace(/[^\d]/g, ''), 10) || 500000;
+    const pMax = parseInt((inMaxPrice?.value || '').replace(/[^\d]/g, ''), 10) || 1000000;
+    kosSlider.setValues(pMin, pMax, false);
+  }
+
   let selectedDist = '2';
   let selectedGenders = new Set(['putra', 'putri', 'campur']);
   let selectedFacs = new Set(['wifi']);
@@ -53,8 +77,12 @@
 
   // Reset
   btnReset.addEventListener('click', () => {
-    inMinPrice.value = 'Rp0';
-    inMaxPrice.value = 'Rp2.000.000';
+    if (kosSlider) {
+      kosSlider.reset();
+    } else {
+      inMinPrice.value = 'Rp0';
+      inMaxPrice.value = 'Rp3.000.000';
+    }
 
     distChips.forEach(c => c.classList.toggle('active', c.dataset.dist === 'all'));
     selectedDist = 'all';

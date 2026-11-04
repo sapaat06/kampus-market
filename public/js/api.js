@@ -461,12 +461,212 @@ window.KM = (() => {
   window.goBack = goBack;
   window.createEmptyStateHtml = createEmptyStateHtml;
 
+  function createRangeSlider({
+    container,
+    highlight,
+    thumbLeft,
+    thumbRight,
+    inputMin,
+    inputMax,
+    min = 0,
+    max = 1000000,
+    step = 5000,
+    onChange = null,
+  }) {
+    if (!container || !thumbLeft || !thumbRight || !highlight) return null;
+
+    let currentMin = min;
+    let currentMax = max;
+
+    const clamp = (val, lo, hi) => Math.max(lo, Math.min(hi, val));
+
+    const snap = (val) => {
+      const stepped = Math.round(val / step) * step;
+      return clamp(stepped, min, max);
+    };
+
+    const updateVisuals = () => {
+      const range = max - min;
+      const leftPct = range > 0 ? ((currentMin - min) / range) * 100 : 0;
+      const rightPct = range > 0 ? ((currentMax - min) / range) * 100 : 100;
+
+      thumbLeft.style.left = `${leftPct}%`;
+      thumbRight.style.left = `${rightPct}%`;
+
+      highlight.style.left = `${leftPct}%`;
+      highlight.style.width = `${rightPct - leftPct}%`;
+
+      thumbLeft.setAttribute('aria-valuenow', currentMin);
+      thumbRight.setAttribute('aria-valuenow', currentMax);
+    };
+
+    const setValues = (newMin, newMax, triggerChange = true) => {
+      let sMin = snap(newMin != null ? newMin : currentMin);
+      let sMax = snap(newMax != null ? newMax : currentMax);
+
+      if (sMin > sMax) {
+        if (newMin != null && newMax == null) sMin = sMax;
+        else if (newMax != null && newMin == null) sMax = sMin;
+        else sMin = sMax;
+      }
+
+      currentMin = sMin;
+      currentMax = sMax;
+      updateVisuals();
+
+      if (inputMin) {
+        inputMin.value = currentMin > 0 ? 'Rp' + Number(currentMin).toLocaleString('id-ID') : '';
+      }
+      if (inputMax) {
+        inputMax.value = currentMax < max ? 'Rp' + Number(currentMax).toLocaleString('id-ID') : '';
+      }
+
+      if (triggerChange && typeof onChange === 'function') {
+        onChange(currentMin, currentMax);
+      }
+    };
+
+    const handlePointerDrag = (thumb, isLeft) => {
+      thumb.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try { thumb.setPointerCapture(e.pointerId); } catch {}
+
+        const onPointerMove = (moveEvent) => {
+          const rect = container.getBoundingClientRect();
+          if (rect.width <= 0) return;
+          const ratio = clamp((moveEvent.clientX - rect.left) / rect.width, 0, 1);
+          const rawVal = min + ratio * (max - min);
+
+          if (isLeft) {
+            const snapped = snap(rawVal);
+            if (snapped <= currentMax) {
+              currentMin = snapped;
+              updateVisuals();
+              if (inputMin) inputMin.value = currentMin > 0 ? 'Rp' + Number(currentMin).toLocaleString('id-ID') : '';
+              if (typeof onChange === 'function') onChange(currentMin, currentMax);
+            }
+          } else {
+            const snapped = snap(rawVal);
+            if (snapped >= currentMin) {
+              currentMax = snapped;
+              updateVisuals();
+              if (inputMax) inputMax.value = currentMax < max ? 'Rp' + Number(currentMax).toLocaleString('id-ID') : '';
+              if (typeof onChange === 'function') onChange(currentMin, currentMax);
+            }
+          }
+        };
+
+        const onPointerUp = (upEvent) => {
+          try { thumb.releasePointerCapture(upEvent.pointerId); } catch {}
+          thumb.removeEventListener('pointermove', onPointerMove);
+          thumb.removeEventListener('pointerup', onPointerUp);
+          thumb.removeEventListener('pointercancel', onPointerUp);
+        };
+
+        thumb.addEventListener('pointermove', onPointerMove);
+        thumb.addEventListener('pointerup', onPointerUp);
+        thumb.addEventListener('pointercancel', onPointerUp);
+      });
+    };
+
+    handlePointerDrag(thumbLeft, true);
+    handlePointerDrag(thumbRight, false);
+
+    // Klik di bar/track
+    container.addEventListener('pointerdown', (e) => {
+      if (e.target === thumbLeft || e.target === thumbRight) return;
+      const rect = container.getBoundingClientRect();
+      if (rect.width <= 0) return;
+      const ratio = clamp((e.clientX - rect.left) / rect.width, 0, 1);
+      const clickedVal = snap(min + ratio * (max - min));
+      const distToLeft = Math.abs(clickedVal - currentMin);
+      const distToRight = Math.abs(clickedVal - currentMax);
+
+      if (distToLeft < distToRight) {
+        setValues(clickedVal, currentMax, true);
+      } else {
+        setValues(currentMin, clickedVal, true);
+      }
+    });
+
+    const parseRupiahInput = (str) => {
+      if (typeof str === 'number') return str;
+      const n = parseInt(String(str || '').replace(/[^\d]/g, ''), 10);
+      return isNaN(n) ? 0 : n;
+    };
+
+    if (inputMin) {
+      inputMin.addEventListener('input', () => {
+        const raw = inputMin.value.trim();
+        const num = raw ? parseRupiahInput(raw) : min;
+        const valid = clamp(num, min, currentMax);
+        currentMin = snap(valid);
+        updateVisuals();
+        if (typeof onChange === 'function') onChange(currentMin, currentMax);
+      });
+      inputMin.addEventListener('blur', () => {
+        if (inputMin.value.trim()) {
+          inputMin.value = 'Rp' + Number(currentMin).toLocaleString('id-ID');
+        }
+      });
+    }
+
+    if (inputMax) {
+      inputMax.addEventListener('input', () => {
+        const raw = inputMax.value.trim();
+        const num = raw ? parseRupiahInput(raw) : max;
+        const valid = clamp(num, currentMin, max);
+        currentMax = snap(valid);
+        updateVisuals();
+        if (typeof onChange === 'function') onChange(currentMin, currentMax);
+      });
+      inputMax.addEventListener('blur', () => {
+        if (inputMax.value.trim() && currentMax < max) {
+          inputMax.value = 'Rp' + Number(currentMax).toLocaleString('id-ID');
+        }
+      });
+    }
+
+    const handleKey = (thumb, isLeft) => {
+      thumb.addEventListener('keydown', (e) => {
+        let delta = 0;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') delta = step;
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') delta = -step;
+        else if (e.key === 'PageUp') delta = step * 10;
+        else if (e.key === 'PageDown') delta = -step * 10;
+        else return;
+
+        e.preventDefault();
+        if (isLeft) {
+          setValues(clamp(currentMin + delta, min, currentMax), currentMax, true);
+        } else {
+          setValues(currentMin, clamp(currentMax + delta, currentMin, max), true);
+        }
+      });
+    };
+    handleKey(thumbLeft, true);
+    handleKey(thumbRight, false);
+
+    updateVisuals();
+
+    return {
+      getMin: () => currentMin,
+      getMax: () => currentMax,
+      setValues,
+      reset: () => setValues(min, max, true),
+    };
+  }
+
+  window.createRangeSlider = createRangeSlider;
+
   // Nama lama dipertahankan supaya halaman lama tidak perlu diubah semua.
   return {
     api, get, post, patch, del, token, sesi, logout, esc, rp, pesan, thumb, wajibLogin, nav,
     ui,
     getFotos, getFoto,
     createEmptyStateHtml,
+    createRangeSlider,
     goBack,
     adaSesi: sesi.ada,
     simpanSesi: sesi.set,

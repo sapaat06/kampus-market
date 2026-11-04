@@ -925,5 +925,64 @@ assert.match(String(apiJsRes.j), /function goBack/);
   assert.equal(delResNull.s, 200, 'hapus foto saat null harus tetap 200');
 }
 
+// Uji Slider Rentang Dua Penanda (NOMOR 5)
+{
+  const mockThumbLeft = { style: {}, setAttribute: () => {}, addEventListener: () => {} };
+  const mockThumbRight = { style: {}, setAttribute: () => {}, addEventListener: () => {} };
+  const mockHighlight = { style: {} };
+  const mockContainer = {
+    getBoundingClientRect: () => ({ left: 0, width: 300 }),
+    addEventListener: () => {},
+  };
+  const mockInMin = { value: '', addEventListener: () => {} };
+  const mockInMax = { value: '', addEventListener: () => {} };
+
+  const testSliderCode = new Function('window', 'document', 'localStorage', `
+    ${apiJsRes.j}
+    return window.createRangeSlider({
+      container: arguments[3],
+      highlight: arguments[4],
+      thumbLeft: arguments[5],
+      thumbRight: arguments[6],
+      inputMin: arguments[7],
+      inputMax: arguments[8],
+      min: 0,
+      max: 1000000,
+      step: 5000,
+    });
+  `);
+
+  const mockWindow = {
+    location: { href: 'http://localhost:3000' },
+    localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+  };
+  const mockDocument = { readyState: 'complete', querySelectorAll: () => [], addEventListener: () => {} };
+  const slider = testSliderCode(mockWindow, mockDocument, mockWindow.localStorage, mockContainer, mockHighlight, mockThumbLeft, mockThumbRight, mockInMin, mockInMax);
+
+  assert.ok(slider, 'slider harus berhasil diinisialisasi');
+  assert.equal(slider.getMin(), 0);
+  assert.equal(slider.getMax(), 1000000);
+
+  // Set nilai valid
+  slider.setValues(25000, 150000);
+  assert.equal(slider.getMin(), 25000);
+  assert.equal(slider.getMax(), 150000);
+  assert.equal(mockThumbLeft.style.left, '2.5%');
+  assert.equal(mockThumbRight.style.left, '15%');
+  assert.equal(mockHighlight.style.left, '2.5%');
+  assert.equal(mockHighlight.style.width, '12.5%');
+
+  // Penanda kiri tidak boleh melewati penanda kanan
+  slider.setValues(300000, 200000);
+  assert.ok(slider.getMin() <= slider.getMax(), 'penanda kiri tidak boleh melebihi kanan');
+
+  // Reset mengembalikan penanda ke ujung kiri dan kanan
+  slider.reset();
+  assert.equal(slider.getMin(), 0);
+  assert.equal(slider.getMax(), 1000000);
+  assert.equal(mockThumbLeft.style.left, '0%');
+  assert.equal(mockThumbRight.style.left, '100%');
+}
+
 srv.close();
 console.log('semua cek lolos');
