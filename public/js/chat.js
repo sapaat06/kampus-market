@@ -1,19 +1,60 @@
 // public/js/chat.js
-// Handles Dual-View: Chat Inbox / List (Pilih Orang) & Chat Room (Ruang Obrolan Terpilih)
-// Synchronized 100% between inbox list and chat room using localStorage
+// Real Two-Way User-to-User Chat System for Kampus Market
+// 100% Real Database Storage (chat_rooms & chat_messages), No Bot, Live Polling Sync
+
+function escHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getInitials(name) {
+  if (!name) return 'KC';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function formatChatTime(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
+  const now = new Date();
+  const diffDays = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+
+  const hours = String(d.getHours()).padStart(2, '0');
+  const mins = String(d.getMinutes()).padStart(2, '0');
+
+  if (diffDays === 0) {
+    return `${hours}.${mins}`;
+  } else if (diffDays === 1) {
+    return 'Kemarin';
+  } else if (diffDays < 7) {
+    const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    return days[d.getDay()];
+  } else {
+    return `${d.getDate()}/${d.getMonth() + 1}`;
+  }
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // View Containers
   const viewChatList = document.getElementById('viewChatList');
   const viewChatRoom = document.getElementById('viewChatRoom');
   const roomBackBtn = document.getElementById('roomBackBtn');
+
+  // List View Elements
+  const inboxListContainer = document.getElementById('inboxListContainer');
+  const inboxEmptyState = document.getElementById('inboxEmptyState');
   const searchChatInput = document.getElementById('searchChatInput');
   const filterChips = document.querySelectorAll('#filterChips .filter-chip');
-  const chatItems = document.querySelectorAll('.chat-item');
-  const chatCountText = document.getElementById('chatCountText');
 
   // Room View Elements
   const chatUserName = document.getElementById('chatUserName');
   const chatUserStatus = document.getElementById('chatUserStatus');
+  const roomAvatar = document.getElementById('roomAvatar');
   const pinnedCard = document.getElementById('pinnedCard');
   const pinnedTitle = document.getElementById('pinnedTitle');
   const pinnedPrice = document.getElementById('pinnedPrice');
@@ -25,395 +66,549 @@ document.addEventListener('DOMContentLoaded', async () => {
   const chipAjukanSewa = document.getElementById('chipAjukanSewa');
   const quickChips = document.querySelectorAll('.quick-chip[data-msg]');
 
-  let activeUser = 'rani';
-  let activeItemId = 'kos1';
-  let isDirectFromDetail = false;
+  let currentUserId = null;
+  let activeRoomId = null;
+  let lastMessageId = 0;
+  let activeFilter = 'all';
+  let searchQuery = '';
+  let cachedRooms = [];
+  let isRoomPollingActive = false;
+  let pollRoomTimer = null;
+  let pollInboxTimer = null;
 
-  // Conversations Directory Mock Data
-  const profiles = {
-    rani: {
-      name: 'Bu Rani',
-      status: 'Online · Pemilik Kost',
-      itemId: 'kos1',
-      itemTitle: 'Kos Ananda Dago',
-      itemPrice: 'Rp850.000 / bulan · Sewa Kost'
-    },
-    dimas: {
-      name: 'Dimas A.',
-      status: 'Online · Terverifikasi',
-      itemId: '1',
-      itemTitle: 'Kalkulator Scientific Casio',
-      itemPrice: 'Rp5.000 / hari · Sewa'
-    },
-    sarah: {
-      name: 'Sarah W.',
-      status: 'Online · Terverifikasi',
-      itemId: '3',
-      itemTitle: 'Tenda Dome Camping 4P',
-      itemPrice: 'Rp25.000 / hari · Sewa'
-    },
-    salsa: {
-      name: 'Salsa P.',
-      status: 'Aktif 15m lalu · Terverifikasi',
-      itemId: '4',
-      itemTitle: 'Modul Kalkulus 2',
-      itemPrice: 'Gratis · Pinjam'
-    },
-    koperasi: {
-      name: 'Koperasi Mahasiswa',
-      status: 'Jam operasional 08.00 - 16.00',
-      itemId: '8',
-      itemTitle: 'Jas Lab Putih (M)',
-      itemPrice: 'Rp5.000 / hari · Sewa'
-    },
-    budi: {
-      name: 'Budi Santoso',
-      status: 'Online · Terverifikasi',
-      itemId: '2',
-      itemTitle: 'Power Bank 20.000 mAh',
-      itemPrice: 'Rp4.000 / hari · Sewa'
+  // Helper: ambil ID pengirim dari berbagai kemungkinan nama field API
+  // (sender_id dari backend terbaru, atau id_pengirim dari versi lama).
+  function getIdPengirim(msg) {
+    const id = msg?.sender_id ?? msg?.id_pengirim ?? msg?.id_user;
+    return id === null || id === undefined ? null : Number(id);
+  }
+
+  // Penentu sisi bubble: true = milik sendiri (kanan), false = lawan (kiri).
+  function isPesanSendiri(msg) {
+    const id = getIdPengirim(msg);
+    return id !== null && currentUserId !== null && id === Number(currentUserId);
+  }
+
+  // 1. Ambil data user login saat ini
+  function setupRoleNavigation() {
+    const userRole = localStorage.getItem('role') || localStorage.getItem('km_role');
+    const isOwner = userRole === 'pemilik_kost';
+    const homeTarget = isOwner ? 'kos-owner.html' : 'beranda.html';
+
+    const chatBackHome = document.getElementById('chatBackHome');
+    if (chatBackHome) {
+      chatBackHome.setAttribute('href', homeTarget);
+      chatBackHome.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof window.goToHome === 'function') window.goToHome();
+        else window.location.href = homeTarget;
+      });
     }
-  };
 
-  // LocalStorage Helper
-  const loadChatHistory = () => {
+    const navChatHome = document.getElementById('navChatHome');
+    if (navChatHome) {
+      navChatHome.setAttribute('href', homeTarget);
+      navChatHome.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof window.goToHome === 'function') window.goToHome();
+        else window.location.href = homeTarget;
+      });
+    }
+
+    const chatFloatingPlus = document.getElementById('chatFloatingPlus');
+    if (chatFloatingPlus && isOwner) {
+      chatFloatingPlus.setAttribute('href', 'kos-owner.html?action=tambah-properti');
+      chatFloatingPlus.setAttribute('aria-label', 'Unggah Properti Kost');
+      chatFloatingPlus.setAttribute('title', 'Tambah Properti Kost');
+    }
+
+    const inboxEmptyBtn = document.getElementById('inboxEmptyBtn');
+    if (inboxEmptyBtn && isOwner) {
+      inboxEmptyBtn.textContent = 'Kembali ke Dashboard Kost';
+      inboxEmptyBtn.setAttribute('href', 'kos-owner.html');
+      inboxEmptyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof window.goToHome === 'function') window.goToHome();
+        else window.location.href = 'kos-owner.html';
+      });
+    }
+  }
+
+  setupRoleNavigation();
+
+  async function resolveCurrentUserId() {
     try {
-      const raw = localStorage.getItem('kampus_chat_history');
-      if (raw) return JSON.parse(raw);
-    } catch (_e) {}
-    return {
-      rani: [],
-      dimas: [],
-      sarah: [],
-      salsa: [],
-      koperasi: [],
-      budi: []
-    };
-  };
-
-  const saveChatHistory = (history) => {
-    try {
-      localStorage.setItem('kampus_chat_history', JSON.stringify(history));
-    } catch (_e) {}
-  };
-
-  // Update Inbox Snippets based on actual chat history
-  const updateInboxPreviews = () => {
-    const history = loadChatHistory();
-    chatItems.forEach(item => {
-      const u = item.getAttribute('data-user');
-      const msgs = history[u] || [];
-      const msgSpan = item.querySelector('.item-msg');
-      const timeSpan = item.querySelector('.item-time');
-      const existingPill = item.querySelector('.unread-pill');
-
-      if (!msgs || msgs.length === 0) {
-        // Belum pernah chatan -> tampilkan teks awal kosong
-        if (msgSpan) {
-          msgSpan.textContent = 'Belum ada pesan · Ketuk untuk mulai obrolan';
-          msgSpan.style.color = '#7A8583';
-          msgSpan.style.fontStyle = 'italic';
-          msgSpan.style.fontWeight = 'normal';
-        }
-        if (existingPill) existingPill.remove();
-        item.classList.remove('unread');
-      } else {
-        // Sudah ada riwayat obrolan -> tampilkan pesan terakhir aktual!
-        const last = msgs[msgs.length - 1];
-        if (msgSpan) {
-          msgSpan.textContent = (last.isOutgoing ? 'Anda: ' : '') + last.text;
-          msgSpan.style.color = '#1E3A38';
-          msgSpan.style.fontStyle = 'normal';
-          msgSpan.style.fontWeight = last.isOutgoing ? '500' : '700';
-        }
-        if (timeSpan && last.time) {
-          timeSpan.textContent = last.time;
-        }
-        item.classList.add('unread');
+      const me = await KM.get('/saya').catch(() => KM.get('/auth/me'));
+      if (me && me.role) {
+        localStorage.setItem('role', me.role);
+        localStorage.setItem('km_role', me.role);
+        setupRoleNavigation();
       }
-    });
-  };
+      const id = me && (me.id_mahasiswa ?? me.id ?? me.user?.id_mahasiswa);
+      if (id) {
+        currentUserId = Number(id);
+        localStorage.setItem('km_user_id', String(currentUserId));
+        return currentUserId;
+      }
+    } catch (_e) {
+      // Belum login / sesi berakhir: pakai cadangan di bawah.
+    }
+    // Cadangan hanya saat sesi masih dianggap aktif (hindari ID akun lama).
+    if (KM.sesi?.ada?.()) {
+      const cached = Number(localStorage.getItem('km_user_id'));
+      if (cached) currentUserId = cached;
+    }
+    if (currentUserId === null) {
+      console.warn('[chat] currentUserId tidak diketahui, bubble akan dirender sebagai pesan masuk.');
+    }
+    return currentUserId;
+  }
 
-  // Switch between List and Room
-  const showList = () => {
-    updateInboxPreviews();
+  await resolveCurrentUserId();
+
+  // Helper ganti tampilan
+  function showInboxView() {
+    stopRoomPolling();
+    activeRoomId = null;
     if (viewChatList && viewChatRoom) {
       viewChatList.style.display = 'flex';
       viewChatRoom.style.display = 'none';
     }
-  };
+    loadInbox();
+    startInboxPolling();
+  }
 
-  const renderBubble = (text, isOutgoing = true, timeStr = '') => {
-    if (!chatThread || !text.trim()) return;
+  function showRoomView() {
+    stopInboxPolling();
+    if (viewChatList && viewChatRoom) {
+      viewChatList.style.display = 'none';
+      viewChatRoom.style.display = 'flex';
+    }
+  }
 
+  // 2. Render Bubble Pesan di Thread
+  function renderMessageBubble(msg, isOutgoing) {
+    if (!chatThread || !msg.pesan) return;
     if (emptyChatState) emptyChatState.style.display = 'none';
 
+    // Cek apakah bubble sudah ada (hindari duplikasi)
+    if (document.getElementById(`msg-${msg.id_pesan}`)) return;
+
     const wrap = document.createElement('div');
+    wrap.id = `msg-${msg.id_pesan}`;
     wrap.className = `bubble-wrap ${isOutgoing ? 'right' : 'left'}`;
 
-    const metaCheck = isOutgoing ? `<svg viewBox="0 0 24 24"><path d="m2 12 5 5L17 7"/><path d="m9 12 3 3L22 5"/></svg>` : '';
+    const timeStr = formatChatTime(msg.created_at);
+    const metaCheck = isOutgoing
+      ? `<svg viewBox="0 0 24 24"><path d="m2 12 5 5L17 7"/><path d="m9 12 3 3L22 5"/></svg>`
+      : '';
 
     wrap.innerHTML = `
       <div class="bubble">
-        ${escapeHtml(text)}
+        ${escHtml(msg.pesan)}
         <div class="bubble-meta">
-          <span>${timeStr || formatTime()}</span>
+          <span>${timeStr}</span>
           ${metaCheck}
         </div>
       </div>
     `;
 
     chatThread.appendChild(wrap);
-    chatThread.scrollTop = chatThread.scrollHeight;
-  };
+  }
 
-  const showRoom = (userKey, itemId) => {
-    activeUser = userKey || 'dimas';
-    const profile = profiles[activeUser] || profiles.dimas;
-    activeItemId = itemId || profile.itemId;
-
-    if (chatUserName) chatUserName.textContent = profile.name;
-    if (chatUserStatus) chatUserStatus.textContent = profile.status;
-    if (pinnedTitle) pinnedTitle.textContent = profile.itemTitle;
-    if (pinnedPrice) pinnedPrice.textContent = profile.itemPrice;
-    if (emptyGreeting) emptyGreeting.textContent = `Mulai Obrolan dengan ${profile.name}`;
-
-    // Load actual messages from localStorage
-    const history = loadChatHistory();
-    const msgs = history[activeUser] || [];
-
-    // Clear existing bubbles
-    const existingBubbles = chatThread.querySelectorAll('.bubble-wrap');
-    existingBubbles.forEach(b => b.remove());
-
-    if (msgs.length === 0) {
-      if (emptyChatState) emptyChatState.style.display = 'flex';
-    } else {
-      if (emptyChatState) emptyChatState.style.display = 'none';
-      msgs.forEach(m => renderBubble(m.text, m.isOutgoing, m.time));
-    }
-
-    // Try fetching live item name if from backend
-    if (itemId) {
-      KM.get(`/barang/${itemId}`)
-        .then(data => {
-          if (data.nama_barang && pinnedTitle) pinnedTitle.textContent = data.nama_barang;
-          if (data.harga_sewa && pinnedPrice) pinnedPrice.textContent = `Rp${data.harga_sewa.toLocaleString('id-ID')} / hari · Sewa`;
-        })
-        .catch(() => {});
-    }
-
-    if (viewChatList && viewChatRoom) {
-      viewChatList.style.display = 'none';
-      viewChatRoom.style.display = 'flex';
-    }
-  };
-
-  // Check URL params on load
-  const urlParams = new URLSearchParams(window.location.search);
-  const paramSeller = urlParams.get('seller');
-  const paramItem = urlParams.get('item');
-  const paramName = urlParams.get('nama');
-  const paramTitle = urlParams.get('title');
-  const paramSub = urlParams.get('sub');
-
-  if (paramSeller) {
-    if (!profiles[paramSeller]) {
-      profiles[paramSeller] = {
-        name: paramName || 'Pemilik Kos',
-        status: 'Online · Terverifikasi',
-        itemId: paramItem || '',
-        itemTitle: paramTitle || 'Kamar Kos',
-        itemPrice: paramSub || 'Sewa Bulanan'
-      };
-    } else {
-      if (paramName) profiles[paramSeller].name = paramName;
-      if (paramTitle) profiles[paramSeller].itemTitle = paramTitle;
-      if (paramSub) profiles[paramSeller].itemPrice = paramSub;
+  function scrollToBottom() {
+    if (chatThread) {
+      chatThread.scrollTop = chatThread.scrollHeight;
     }
   }
 
-  if (paramSeller || paramItem) {
-    isDirectFromDetail = true;
-    showRoom(paramSeller || 'dimas', paramItem || '1');
-  } else {
-    showList();
-  }
+  // 3. Buka Ruang Chat Spesifik (Real Data dari Server)
+  async function openRoom(roomId) {
+    activeRoomId = roomId;
+    showRoomView();
 
-  // Back button in Room View
-  if (roomBackBtn) {
-    roomBackBtn.addEventListener('click', () => {
-      if (isDirectFromDetail && window.history.length > 1) {
-        window.history.back();
+    // Reset thread
+    const oldBubbles = chatThread.querySelectorAll('.bubble-wrap');
+    oldBubbles.forEach((b) => b.remove());
+    if (emptyChatState) emptyChatState.style.display = 'none';
+
+    try {
+      const data = await KM.get(`/chat/rooms/${roomId}`);
+      const { room, lawan, reference, messages } = data;
+
+      // Update info lawan bicara di header
+      if (chatUserName) chatUserName.textContent = lawan.nama || 'Pengguna';
+      if (chatUserStatus) {
+        const roleLabel = lawan.role === 'pemilik_kost' ? 'Pemilik Kost' : 'Mahasiswa';
+        chatUserStatus.textContent = `Online · ${roleLabel}`;
+      }
+      if (roomAvatar) {
+        roomAvatar.textContent = getInitials(lawan.nama);
+      }
+
+      // Update Pinned Reference Card (Barang atau Kos)
+      if (pinnedCard) {
+        if (reference) {
+          pinnedCard.style.display = 'block';
+          if (room.tipe_referensi === 'barang') {
+            if (pinnedTitle) pinnedTitle.textContent = reference.nama_barang || 'Barang Kampus';
+            if (pinnedPrice) {
+              const harga = reference.harga_sewa
+                ? `Rp${Number(reference.harga_sewa).toLocaleString('id-ID')} / hari · Sewa`
+                : `Rp${Number(reference.harga_jual || 0).toLocaleString('id-ID')} · Beli`;
+              pinnedPrice.textContent = harga;
+            }
+            pinnedCard.onclick = () => {
+              window.location.href = `/detail.html?id=${reference.id_barang}`;
+            };
+            if (chipAjukanSewa) {
+              chipAjukanSewa.textContent = reference.harga_sewa ? 'Ajukan Sewa' : 'Beli Sekarang';
+              chipAjukanSewa.onclick = () => {
+                window.location.href = `/detail.html?id=${reference.id_barang}`;
+              };
+            }
+          } else if (room.tipe_referensi === 'kos') {
+            if (pinnedTitle) pinnedTitle.textContent = reference.nama_kos || 'Kamar Kos';
+            if (pinnedPrice) {
+              pinnedPrice.textContent = `Rp${Number(reference.harga_bulan || 0).toLocaleString('id-ID')} / bulan · Sewa Kost`;
+            }
+            pinnedCard.onclick = () => {
+              window.location.href = `/kos.html`;
+            };
+            if (chipAjukanSewa) {
+              chipAjukanSewa.textContent = 'Ajukan Sewa Kos';
+              chipAjukanSewa.onclick = () => {
+                window.location.href = `/kos.html`;
+              };
+            }
+          }
+        } else {
+          pinnedCard.style.display = 'none';
+        }
+      }
+
+      // Render Messages
+      if (!messages || messages.length === 0) {
+        if (emptyChatState) {
+          emptyChatState.style.display = 'flex';
+          if (emptyGreeting) emptyGreeting.textContent = `Mulai Obrolan dengan ${lawan.nama}`;
+        }
+        lastMessageId = 0;
       } else {
-        showList();
+        if (emptyChatState) emptyChatState.style.display = 'none';
+        messages.forEach((m) => {
+          renderMessageBubble(m, isPesanSendiri(m));
+        });
+        lastMessageId = messages[messages.length - 1].id_pesan;
+        scrollToBottom();
       }
-    });
-  }
 
-  // Click on Chat List Items
-  chatItems.forEach(item => {
-    item.addEventListener('click', () => {
-      const u = item.getAttribute('data-user') || 'dimas';
-      const it = item.getAttribute('data-item') || '1';
-      showRoom(u, it);
-    });
-  });
-
-  // Search filter in Chat List
-  if (searchChatInput) {
-    searchChatInput.addEventListener('input', (e) => {
-      const q = e.target.value.toLowerCase().trim();
-      let matchCount = 0;
-      chatItems.forEach(card => {
-        const text = card.textContent.toLowerCase();
-        if (text.includes(q)) {
-          card.style.display = 'flex';
-          matchCount++;
-        } else {
-          card.style.display = 'none';
-        }
-      });
-      if (chatCountText) chatCountText.textContent = `${matchCount} percakapan ditemukan`;
-    });
-  }
-
-  // Filter chips in Chat List
-  filterChips.forEach(chip => {
-    chip.addEventListener('click', () => {
-      filterChips.forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      const filter = chip.getAttribute('data-filter');
-
-      let visibleCount = 0;
-      chatItems.forEach(card => {
-        const isUnread = card.classList.contains('unread');
-        const type = card.getAttribute('data-type');
-
-        if (filter === 'semua') {
-          card.style.display = 'flex';
-          visibleCount++;
-        } else if (filter === 'unread') {
-          const show = isUnread;
-          card.style.display = show ? 'flex' : 'none';
-          if (show) visibleCount++;
-        } else if (filter === type) {
-          card.style.display = 'flex';
-          visibleCount++;
-        } else {
-          card.style.display = 'none';
-        }
-      });
-      if (chatCountText) chatCountText.textContent = `${visibleCount} percakapan`;
-    });
-  });
-
-  // Pinned item click inside Room -> go to detail
-  if (pinnedCard) {
-    pinnedCard.addEventListener('click', () => {
-      window.location.href = `/detail.html?id=${activeItemId}`;
-    });
-  }
-
-  if (chipAjukanSewa) {
-    chipAjukanSewa.addEventListener('click', () => {
-      window.location.href = `/detail.html?id=${activeItemId}`;
-    });
-  }
-
-  // Helpers
-  const formatTime = () => {
-    const d = new Date();
-    const h = String(d.getHours()).padStart(2, '0');
-    const m = String(d.getMinutes()).padStart(2, '0');
-    return `${h}.${m}`;
-  };
-
-  const escapeHtml = (str) => {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  };
-
-  const getOwnerReply = (userMsg, targetUser) => {
-    const lower = userMsg.toLowerCase();
-    const currentProfile = profiles[targetUser] || profiles.dimas;
-    let reply = `Halo kak! Silakan langsung ajukan lewat tombol di atas ya, nanti segera saya setujui.`;
-
-    if (lower.includes('tersedia') || lower.includes('ready') || lower.includes('ada')) {
-      reply = `Iya kak, barangnya masih ready dan siap pakai. Mau disewa untuk berapa hari kak?`;
-    } else if (lower.includes('nego') || lower.includes('harga') || lower.includes('kurang') || lower.includes('diskon')) {
-      reply = `Boleh kak, kalau ambil 3 hari atau lebih saya kasih potongan khusus. Mau ambil berapa lama?`;
-    } else if (lower.includes('lokasi') || lower.includes('temu') || lower.includes('mana') || lower.includes('kampus')) {
-      reply = `Bisa ketemuan di Fakultas Teknik lantai 2 atau depan perpus kampus ya kak. Jam berapa bisanya?`;
-    } else if (lower.includes('kondisi') || lower.includes('baterai') || lower.includes('rusak')) {
-      reply = `Kondisinya mulus dan bersih kak, tombol normal dan siap pakai untuk kuliah.`;
-    } else if (lower.includes('makasih') || lower.includes('terima kasih') || lower.includes('ok') || lower.includes('siap')) {
-      reply = `Sama-sama kak! Ditunggu konfirmasinya ya.`;
+      // Mulai Polling Sinkronisasi Pesan Baru
+      startRoomPolling();
+    } catch (err) {
+      if (err.status === 401) {
+        await KM.ui.info('Masuk dulu, ya', 'Silakan masuk ke akun kamu terlebih dahulu untuk melihat obrolan.');
+        window.location.href = '/masuk.html';
+      } else {
+        KM.ui.error('Gagal Memuat Obrolan', err.message || 'Silakan coba lagi sebentar lagi.');
+        showInboxView();
+      }
     }
-
-    return reply;
-  };
-
-  const handleSend = () => {
-    const val = msgInput.value.trim();
-    if (!val) return;
-
-    const timeStr = formatTime();
-
-    // 1. Render in thread
-    renderBubble(val, true, timeStr);
-
-    // 2. Save in localStorage
-    const history = loadChatHistory();
-    if (!history[activeUser]) history[activeUser] = [];
-    history[activeUser].push({ text: val, isOutgoing: true, time: timeStr });
-    saveChatHistory(history);
-
-    // 3. Update inbox list snippet in background
-    updateInboxPreviews();
-
-    msgInput.value = '';
-    msgInput.focus();
-
-    // 4. Owner auto reply
-    setTimeout(() => {
-      const reply = getOwnerReply(val, activeUser);
-      const replyTime = formatTime();
-      renderBubble(reply, false, replyTime);
-
-      const h = loadChatHistory();
-      if (!h[activeUser]) h[activeUser] = [];
-      h[activeUser].push({ text: reply, isOutgoing: false, time: replyTime });
-      saveChatHistory(h);
-
-      updateInboxPreviews();
-    }, 900);
-  };
-
-  if (sendBtn) {
-    sendBtn.addEventListener('click', handleSend);
   }
 
-  if (msgInput) {
-    msgInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleSend();
+  // 4. Polling Real-Time di Ruang Chat (Setiap 1.5 detik)
+  function startRoomPolling() {
+    stopRoomPolling();
+    isRoomPollingActive = true;
+    pollRoomTimer = setInterval(async () => {
+      if (!isRoomPollingActive || !activeRoomId) return;
+      try {
+        const syncData = await KM.get(`/chat/rooms/${activeRoomId}?after=${lastMessageId}`);
+        if (syncData && syncData.messages && syncData.messages.length > 0) {
+          syncData.messages.forEach((m) => {
+            renderMessageBubble(m, isPesanSendiri(m));
+            if (m.id_pesan > lastMessageId) lastMessageId = m.id_pesan;
+          });
+          scrollToBottom();
+        }
+      } catch (_e) {
+        // Abaikan error polling transient
       }
-    });
+    }, 1500);
   }
 
-  quickChips.forEach(chip => {
+  function stopRoomPolling() {
+    isRoomPollingActive = false;
+    if (pollRoomTimer) {
+      clearInterval(pollRoomTimer);
+      pollRoomTimer = null;
+    }
+  }
+
+  // 5. Kirim Pesan Real ke API Backend
+  async function handleSendMessage() {
+    if (!activeRoomId) return;
+    const text = (msgInput?.value || '').trim();
+    if (!text) return;
+
+    if (sendBtn) sendBtn.disabled = true;
+    msgInput.value = '';
+
+    try {
+      const newMsg = await KM.post(`/chat/rooms/${activeRoomId}/messages`, { pesan: text });
+      if (newMsg && newMsg.id_pesan) {
+        renderMessageBubble(newMsg, true);
+        if (newMsg.id_pesan > lastMessageId) lastMessageId = newMsg.id_pesan;
+        scrollToBottom();
+      }
+    } catch (err) {
+      if (err.status === 401) {
+        await KM.ui.info('Sesi berakhir', 'Silakan login kembali untuk melanjutkan obrolan.');
+        window.location.href = '/masuk.html';
+      } else {
+        KM.ui.error('Pesan Gagal Terkirim', err.message || 'Periksa koneksi kamu lalu coba lagi.');
+        msgInput.value = text;
+      }
+    } finally {
+      if (sendBtn) sendBtn.disabled = false;
+      msgInput?.focus();
+    }
+  }
+
+  sendBtn?.addEventListener('click', handleSendMessage);
+  msgInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  });
+
+  quickChips.forEach((chip) => {
     chip.addEventListener('click', () => {
       const msg = chip.getAttribute('data-msg');
-      if (msg) {
+      if (msg && msgInput) {
         msgInput.value = msg;
-        handleSend();
+        handleSendMessage();
       }
     });
   });
 
-  // Initial update
-  updateInboxPreviews();
+  // Tombol Kembali di Room View
+  roomBackBtn?.addEventListener('click', () => {
+    window.history.replaceState(null, '', '/chat.html');
+    showInboxView();
+  });
+
+  // 6. Muat dan Render Inbox Daftar Chat Masuk
+  async function loadInbox(isSilent = false) {
+    if (!inboxListContainer) return;
+
+    try {
+      const data = await KM.get('/chat/rooms');
+      cachedRooms = data?.rooms || [];
+      renderInboxRooms();
+    } catch (err) {
+      if (err.status === 401) {
+        if (!isSilent && inboxListContainer) {
+          inboxListContainer.innerHTML = `
+            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;padding:20px 16px;text-align:center;">
+              <div style="font-size:14px;font-weight:700;color:#0F172A;margin-bottom:6px;">Masuk ke Akun Anda</div>
+              <div style="font-size:12px;color:#64748B;margin-bottom:14px;">Masuk untuk melihat riwayat pesan dan chat langsung dengan penjual atau pemilik kos.</div>
+              <a href="/masuk.html" class="btn-primary" style="display:inline-flex;width:auto;padding:0 24px;height:40px;font-size:13px;text-decoration:none;">Masuk Sekarang</a>
+            </div>
+          `;
+          if (inboxEmptyState) inboxEmptyState.style.display = 'none';
+        }
+      }
+    }
+  }
+
+  function renderInboxRooms() {
+    if (!inboxListContainer) return;
+
+    let filtered = cachedRooms.slice();
+
+    // Filter Chips
+    if (activeFilter === 'kost') {
+      filtered = filtered.filter((r) => r.tipe_referensi === 'kos');
+    } else if (activeFilter === 'barang') {
+      filtered = filtered.filter((r) => r.tipe_referensi === 'barang');
+    } else if (activeFilter === 'unread') {
+      filtered = filtered.filter((r) => r.unread_count > 0);
+    }
+
+    // Search Query
+    if (searchQuery) {
+      filtered = filtered.filter((r) => {
+        const lawanNama = (r.lawan?.nama || '').toLowerCase();
+        const refNama = (r.reference?.nama_barang || r.reference?.nama_kos || '').toLowerCase();
+        const lastMsg = (r.last_message || '').toLowerCase();
+        return lawanNama.includes(searchQuery) || refNama.includes(searchQuery) || lastMsg.includes(searchQuery);
+      });
+    }
+
+    if (filtered.length === 0) {
+      inboxListContainer.innerHTML = '';
+      if (inboxEmptyState) inboxEmptyState.style.display = 'flex';
+      return;
+    }
+
+    if (inboxEmptyState) inboxEmptyState.style.display = 'none';
+
+    inboxListContainer.innerHTML = filtered.map((r) => {
+      const lawan = r.lawan || { nama: 'Pengguna', role: 'pelanggan' };
+      const roleBadge = lawan.role === 'pemilik_kost' ? 'Pemilik Kost' : 'Mahasiswa';
+      const roleClass = lawan.role === 'pemilik_kost' ? 'teal' : 'orange';
+      const initials = getInitials(lawan.nama);
+      const timeFmt = formatChatTime(r.last_message_time);
+      const unreadBadge = r.unread_count > 0 ? `<span class="unread-pill">${r.unread_count}</span>` : '';
+
+      let snippet = r.last_message
+        ? (Number(r.last_message_sender) === Number(currentUserId) ? 'Anda: ' : '') + r.last_message
+        : 'Belum ada pesan · Ketuk untuk mulai';
+      const snippetStyle = r.unread_count > 0 ? 'font-weight:700;color:#0F172A;' : 'font-weight:500;color:#64748B;';
+
+      // Mini Attached Item Preview
+      let attachedHtml = '';
+      if (r.reference) {
+        if (r.tipe_referensi === 'barang') {
+          const harga = r.reference.harga_sewa
+            ? `Rp${Number(r.reference.harga_sewa).toLocaleString('id-ID')} / hari`
+            : `Rp${Number(r.reference.harga_jual || 0).toLocaleString('id-ID')}`;
+          attachedHtml = `
+            <div class="attached-product">
+              <div class="product-mini-thumb">
+                <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/></svg>
+              </div>
+              <div class="product-mini-info">
+                <div class="product-mini-title">${escHtml(r.reference.nama_barang)}</div>
+                <div class="product-mini-sub">${escHtml(r.reference.lokasi || 'Kampus')}</div>
+              </div>
+              <div class="product-mini-price orange">${harga}</div>
+            </div>
+          `;
+        } else if (r.tipe_referensi === 'kos') {
+          attachedHtml = `
+            <div class="attached-product">
+              <div class="product-mini-thumb">
+                <svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              </div>
+              <div class="product-mini-info">
+                <div class="product-mini-title">${escHtml(r.reference.nama_kos)}</div>
+                <div class="product-mini-sub">${escHtml(r.reference.alamat || 'Area Kampus')}</div>
+              </div>
+              <div class="product-mini-price">Rp${Number(r.reference.harga_bulan || 0).toLocaleString('id-ID')} / bln</div>
+            </div>
+          `;
+        }
+      }
+
+      return `
+        <div class="chat-item" data-room="${r.id_room}" role="button" tabindex="0">
+          <div class="chat-item-header">
+            <div class="avatar-wrap">
+              <div class="avatar-img ${roleClass}">${escHtml(initials)}</div>
+              <div class="online-indicator"></div>
+            </div>
+            <div class="item-meta">
+              <div class="item-top-row">
+                <div class="name-row">
+                  <span class="item-name">${escHtml(lawan.nama)}</span>
+                  <span class="verified-badge" title="Terverifikasi">
+                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                  <span class="item-tag ${roleClass}">${escHtml(roleBadge)}</span>
+                </div>
+                <span class="item-time">${timeFmt}</span>
+              </div>
+              <div class="item-msg-row">
+                <span class="item-msg" style="${snippetStyle}">${escHtml(snippet)}</span>
+                ${unreadBadge}
+              </div>
+            </div>
+          </div>
+          ${attachedHtml}
+        </div>
+      `;
+    }).join('');
+
+    // Tambah event click untuk tiap chat item
+    inboxListContainer.querySelectorAll('.chat-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        const rId = Number(item.getAttribute('data-room'));
+        if (rId) openRoom(rId);
+      });
+    });
+  }
+
+  // 7. Polling Background untuk Inbox List (Setiap 4 detik)
+  function startInboxPolling() {
+    stopInboxPolling();
+    pollInboxTimer = setInterval(() => {
+      if (!activeRoomId && document.visibilityState === 'visible') {
+        loadInbox(true);
+      }
+    }, 4000);
+  }
+
+  function stopInboxPolling() {
+    if (pollInboxTimer) {
+      clearInterval(pollInboxTimer);
+      pollInboxTimer = null;
+    }
+  }
+
+  // Filter Chips Handler
+  filterChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      filterChips.forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.getAttribute('data-filter') || 'all';
+      renderInboxRooms();
+    });
+  });
+
+  // Search Input Handler
+  searchChatInput?.addEventListener('input', (e) => {
+    searchQuery = (e.target.value || '').toLowerCase().trim();
+    renderInboxRooms();
+  });
+
+  // 8. Inisialisasi Berdasarkan Query URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const tipeParam = urlParams.get('tipe');
+  const idParam = urlParams.get('id');
+  const roomParam = urlParams.get('room');
+
+  if (roomParam) {
+    // Arahkan langsung ke ID room tertentu
+    openRoom(Number(roomParam));
+  } else if (tipeParam && idParam) {
+    // Alur Tanya Barang / Kos: buat atau temukan room langsung
+    try {
+      const room = await KM.post('/chat/room', {
+        tipe_referensi: tipeParam,
+        id_referensi: Number(idParam)
+      });
+      if (room && room.id_room) {
+        openRoom(room.id_room);
+      } else {
+        showInboxView();
+      }
+    } catch (err) {
+      if (err.status === 401) {
+        await KM.ui.info('Masuk dulu, ya', 'Silakan masuk ke akun kamu terlebih dahulu untuk mengirim pesan ke penjual / pemilik kos.');
+        window.location.href = '/masuk.html';
+      } else if (err.status === 400 && err.message.includes('sendiri')) {
+        KM.ui.peringatan('Postingan Sendiri', err.message || 'Ini adalah postingan Anda sendiri.');
+        showInboxView();
+      } else {
+        KM.ui.error('Gagal Memulai Obrolan', err.message || 'Silakan coba lagi sebentar lagi.');
+        showInboxView();
+      }
+    }
+  } else {
+    // Tampilan default: Halaman Inbox Pesan Masuk
+    showInboxView();
+  }
 });

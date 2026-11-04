@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<script src="/vendor/sweetalert2.all.min.js"></script>
+<script src="/js/api.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KampusCircle — Masuk Pemilik Kost</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .swal2-popup.rounded-2xl {
+    border-radius: 1rem !important;
+    font-family: inherit !important;
+  }
+  .swal2-popup.shadow-xl {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  }
+  .swal2-popup.border-0 {
+    border: none !important;
+  }
+  .swal2-title.text-xl {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+  }
+  .swal2-title.font-bold {
+    font-weight: 700 !important;
+  }
+  .swal2-title.text-gray-800 {
+    color: #1f2937 !important;
+  }
+  .swal2-html-container.text-gray-600 {
+    color: #4b5563 !important;
+  }
+  .swal2-html-container.font-medium {
+    font-weight: 500 !important;
+  }
+  .swal2-confirm.bg-\[\#007A68\] {
+    background-color: #007A68 !important;
+  }
+  .swal2-confirm.text-white {
+    color: #ffffff !important;
+  }
+  .swal2-confirm.px-8 {
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+  }
+  .swal2-confirm.py-2\.5 {
+    padding-top: 0.625rem !important;
+    padding-bottom: 0.625rem !important;
+  }
+  .swal2-confirm.rounded-xl {
+    border-radius: 0.75rem !important;
+  }
+  .swal2-confirm.font-semibold {
+    font-weight: 600 !important;
+  }
+  .swal2-confirm.hover\:bg-emerald-700:hover {
+    background-color: #006052 !important;
+  }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar">
+    <span>09.41</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.95 9.05 8.05 9.05 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+
+  <div class="auth-wrap">
+    <div class="brand-top-bar">
+      <div class="brand-logo-text">
+        <img src="/img/logo-mark.png?v=3" alt="Logo KampusCircle" class="brand-logo-img">
+        <span class="brand-teal">Kampus</span><span class="brand-orange">Circle</span>
+      </div>
+      <button id="backBtn" type="button" aria-label="Kembali" style="border:none;background:transparent;cursor:pointer;color:var(--text-dark);display:flex;align-items:center">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </button>
+    </div>
+
+    <div class="pill-badge" style="background:#E8F8F5;border-color:#A7F3D0;color:#007A68">
+      <span style="font-size:14px;margin-right:2px">🏠</span>
+      <span>Portal Mitra Pemilik Kost</span>
+    </div>
+
+    <h1 class="auth-title">Masuk Pemilik Kost</h1>
+    <p class="auth-sub">Kelola hunian, pantau ketersediaan kamar, dan kelola pengajuan sewa mahasiswa.</p>
+
+    <form id="loginKostForm" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="emailKost">Email Akun Kost</label>
+        <div class="form-input-box" id="emailKostBox">
+          <input id="emailKost" type="email" placeholder="Masukkan email pemilik kost" autocomplete="email" aria-required="true" aria-invalid="false">
+        </div>
+        <div class="err" id="emailKostErr" style="font-size:12px;color:#EF4444;display:none">Masukkan email yang valid.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="passKost">Kata sandi</label>
+        <div class="form-input-box" id="passKostBox">
+          <input id="passKost" type="password" placeholder="Masukkan kata sandi" autocomplete="current-password" aria-required="true" aria-invalid="false">
+          <button id="togglePassKost" type="button" aria-label="Tampilkan kata sandi" style="border:none;background:transparent;cursor:pointer;padding:0;display:flex;align-items:center;color:#64748B">
+            <svg id="eyeIconKost" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+        <div class="err" id="passKostErr" style="font-size:12px;color:#EF4444;display:none">Kata sandi minimal 8 karakter.</div>
+      </div>
+
+      <div class="form-row-between">
+        <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;color:#64748B">
+          <input type="checkbox" id="rememberKostBox" style="width:16px;height:16px;accent-color:#007A68">
+          <span>Ingat saya</span>
+        </label>
+        <a href="#" id="forgotKostLink" class="link-forgot">Lupa kata sandi?</a>
+      </div>
+
+      <button id="loginKostBtn" class="btn-primary" type="submit" style="background:#007A68;border-color:#007A68">
+        Masuk sebagai Pemilik Kost
+      </button>
+    </form>
+
+    <!-- OPSI PENDAFTARAN KHUSUS PEMILIK KOST -->
+    <div style="margin-top: 18px; text-align: center;">
+      <div style="font-size: 12px; color: #64748B; margin-bottom: 8px;">Belum mendaftarkan properti kos Anda?</div>
+      <a id="linkDaftarKost" class="btn-ghost" href="/daftar-kost.html" style="font-weight: 700; color: #007A68; border-color: #A7F3D0; background: #F0FDFA; display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <span>📝</span> Daftar Akun Pemilik Kost Baru
+      </a>
+    </div>
+
+    <!-- TAUTAN KEMBALI KE PORTAL MAHASISWA -->
+    <div style="margin-top: 18px; text-align: center; border-top: 1px dashed #E2E8F0; padding-top: 14px;">
+      <a href="/masuk.html" style="font-size: 12px; color: #64748B; text-decoration: none; font-weight: 500;">
+        Bukan Pemilik Kost? <strong style="color: #008F83;">Masuk sebagai Mahasiswa</strong>
+      </a>
+    </div>
+
+    <div class="home-indicator-bar" style="margin-top: 24px;"></div>
+  </div>
+</div>
+<script src="/js/masuk-kost.js"></script>
+</body>
+</html>

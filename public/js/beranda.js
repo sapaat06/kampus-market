@@ -1,3 +1,11 @@
+// Route Guard: Pemilik Kost tidak boleh masuk beranda mahasiswa
+(function() {
+  const currentRole = localStorage.getItem('role') || localStorage.getItem('km_role');
+  if (currentRole === 'pemilik_kost') {
+    window.location.replace('kos-owner.html');
+  }
+})();
+
 let currentUser = null;
 let allItems = [];
 let activeFilter = 'semua';
@@ -103,6 +111,14 @@ function openModal(id) {
 async function muatUser() {
   try {
     currentUser = await KM.get('/saya');
+    if (currentUser?.role) {
+      localStorage.setItem('role', currentUser.role);
+      localStorage.setItem('km_role', currentUser.role);
+      if (currentUser.role === 'pemilik_kost') {
+        window.location.replace('kos-owner.html');
+        return;
+      }
+    }
     const namaDepan = (currentUser.nama || '').split(' ')[0] || 'Rina';
     const elSapaan = document.getElementById('sapaanNama');
     if (elSapaan) elSapaan.textContent = `Halo, ${namaDepan}`;
@@ -117,7 +133,10 @@ async function muatUser() {
     if (elSapaan) {
       elSapaan.textContent = 'Halo, Rina!';
     }
-    if (e && e.status !== 401) console.log('Gagal memuat profil:', e);
+    if (e && e.status !== 401) {
+      console.log('Gagal memuat profil:', e);
+      KM.ui.toast('Gagal memuat profil pengguna', 'error');
+    }
   }
 }
 
@@ -135,47 +154,29 @@ async function muatBarang() {
       const isPinjam = descLower.includes('[mode pinjam') ||
                        descLower.includes('pinjam') ||
                        titleLower.includes('pinjam') ||
-                       (b.harga_sewa === 1000 && !b.harga_jual);
+                       (b.harga_sewa === 0 && !b.harga_jual);
 
-      const isSewa = !isPinjam && Boolean(b.harga_sewa);
-      const isBeli = !isPinjam && !isSewa;
+      const canBeli = Boolean(b.harga_jual && b.harga_jual > 0);
+      const canSewa = Boolean(b.harga_sewa && b.harga_sewa > 0 && !isPinjam);
+      const canPinjam = isPinjam || (b.harga_sewa === 0);
 
-      let badge = 'Beli';
-      let harga = b.harga_jual || b.harga_sewa || 0;
-      let hargaText = 'Rp' + Number(harga).toLocaleString('id-ID');
-      let unitText = '';
-
-      if (isPinjam) {
-        badge = 'Pinjam';
-        const biaya = (b.harga_sewa && b.harga_sewa > 0) ? b.harga_sewa : 0;
-        harga = biaya;
-        if (biaya > 0) {
-          hargaText = 'Rp' + Number(biaya).toLocaleString('id-ID');
-          unitText = ' (pinjam)';
-        } else {
-          hargaText = 'Gratis';
-          unitText = '';
-        }
-      } else if (isSewa) {
-        badge = 'Sewa';
-        harga = b.harga_sewa;
-        hargaText = 'Rp' + Number(harga).toLocaleString('id-ID');
-        unitText = '/hari';
-      } else {
-        badge = 'Beli';
-        hargaText = 'Rp' + Number(harga).toLocaleString('id-ID');
-        unitText = '';
-      }
+      // Default badge & pricing
+      let defaultBadge = 'Beli';
+      if (isPinjam) defaultBadge = 'Pinjam';
+      else if (canSewa) defaultBadge = 'Sewa';
+      else if (canBeli) defaultBadge = 'Beli';
 
       return {
         id: b.id_barang,
         title: b.nama_barang,
         deskripsi: b.deskripsi || 'Kondisi barang ' + b.kondisi + ', siap pakai untuk kuliah.',
-        badge: badge,
         kondisi: b.kondisi,
-        harga: harga,
-        hargaText: hargaText,
-        unitText: unitText,
+        harga_jual: b.harga_jual,
+        harga_sewa: b.harga_sewa,
+        canBeli,
+        canSewa,
+        canPinjam,
+        defaultBadge,
         color: colors[idx % colors.length],
         lokasi: b.lokasi || '-',
         kategori: b.id_kategori,
@@ -189,6 +190,7 @@ async function muatBarang() {
     renderCards();
   } catch (e) {
     console.error('Gagal memuat barang:', e);
+    KM.ui.error('Gagal Memuat Barang', 'Daftar barang tidak bisa diambil dari server. Periksa koneksi kamu lalu muat ulang.');
   }
 }
 
@@ -200,7 +202,16 @@ function renderCards(keyword = '') {
   const kw = keyword.toLowerCase().trim();
   let filtered = allItems.filter(item => {
     const matchText = !kw || item.title.toLowerCase().includes(kw) || item.deskripsi.toLowerCase().includes(kw);
-    const matchType = activeFilter === 'semua' || item.badge.toLowerCase() === activeFilter.toLowerCase();
+
+    let matchType = true;
+    if (activeFilter === 'beli') {
+      matchType = item.canBeli;
+    } else if (activeFilter === 'sewa') {
+      matchType = item.canSewa;
+    } else if (activeFilter === 'pinjam') {
+      matchType = item.canPinjam;
+    }
+
     const matchCat = !activeCategory || String(item.kategori) === String(activeCategory);
     return matchText && matchType && matchCat;
   });
@@ -215,28 +226,64 @@ function renderCards(keyword = '') {
     return;
   }
 
-  grid.innerHTML = filtered.map(item => `
-    <div class="product-card card-item" data-id="${item.id}" role="button" tabindex="0" aria-label="${escHtml(item.title)}, ${escHtml(item.badge)}, ${escHtml(item.hargaText)}">
-      <div class="card-thumb-wrap ${escHtml(item.color)}">
-        <span class="card-badge-pill ${escHtml(item.badge.toLowerCase())}">${escHtml(item.badge)}</span>
-        ${item.foto && !item.foto.includes('AARCAAEAAEDASIAAhEBAxEB') ? `<img src="${escHtml(item.foto)}" alt="${escHtml(item.title)}" loading="lazy">` : getSvg(item.title)}
-      </div>
-      <div class="card-body-content">
-        <div class="card-item-title">${escHtml(item.title)}</div>
-        <div class="card-price-row ${escHtml(item.badge.toLowerCase())}">${escHtml(item.hargaText)}<span class="unit">${escHtml(item.unitText)}</span></div>
-        <div class="card-distance-row">
-          <svg viewBox="0 0 24 24"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
-          <span>${escHtml(item.lokasi || '350 m dari kamu')}</span>
+  grid.innerHTML = filtered.map(item => {
+    // Tentukan badge & label harga yang ditampilkan sesuai filter aktif
+    let currentBadge = item.defaultBadge;
+    let hargaNum = item.harga_jual || item.harga_sewa || 0;
+    let unitText = '';
+
+    if (activeFilter === 'beli' && item.canBeli) {
+      currentBadge = 'Beli';
+      hargaNum = item.harga_jual;
+      unitText = '';
+    } else if (activeFilter === 'sewa' && item.canSewa) {
+      currentBadge = 'Sewa';
+      hargaNum = item.harga_sewa;
+      unitText = '/hari';
+    } else if (activeFilter === 'pinjam' && item.canPinjam) {
+      currentBadge = 'Pinjam';
+      hargaNum = 0;
+      unitText = '';
+    } else {
+      if (currentBadge === 'Sewa') {
+        hargaNum = item.harga_sewa;
+        unitText = '/hari';
+      } else if (currentBadge === 'Pinjam') {
+        hargaNum = 0;
+        unitText = '';
+      } else {
+        hargaNum = item.harga_jual;
+        unitText = '';
+      }
+    }
+
+    const hargaText = currentBadge === 'Pinjam' ? 'Gratis' : `Rp${Number(hargaNum).toLocaleString('id-ID')}`;
+    const modeUrl = currentBadge.toLowerCase();
+
+    return `
+      <div class="product-card card-item" data-id="${item.id}" data-mode="${modeUrl}" role="button" tabindex="0" aria-label="${escHtml(item.title)}, ${currentBadge}, ${hargaText}">
+        <div class="card-thumb-wrap ${escHtml(item.color)}">
+          <span class="card-badge-pill ${modeUrl}">${currentBadge}</span>
+          ${item.foto && !item.foto.includes('AARCAAEAAEDASIAAhEBAxEB') ? `<img src="${escHtml(item.foto)}" alt="${escHtml(item.title)}" loading="lazy">` : getSvg(item.title)}
+        </div>
+        <div class="card-body-content">
+          <div class="card-item-title">${escHtml(item.title)}</div>
+          <div class="card-price-row ${modeUrl}">${hargaText}<span class="unit">${escHtml(unitText)}</span></div>
+          <div class="card-distance-row">
+            <svg viewBox="0 0 24 24"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>${escHtml(item.lokasi || '350 m dari kamu')}</span>
+          </div>
         </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 
   // Attach click listener for detail page
   document.querySelectorAll('.card-item').forEach(c => {
     const bukaDetail = () => {
       const id = Number(c.dataset.id);
-      window.location.href = `/detail.html?id=${id}`;
+      const mode = c.dataset.mode || 'sewa';
+      window.location.href = `/detail.html?id=${id}&mode=${mode}`;
     };
     c.addEventListener('click', bukaDetail);
     c.addEventListener('keydown', (e) => {
@@ -284,26 +331,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Category buttons
+  // Category buttons (Buku, Elektronik, Praktikum, Perlengkapan Kos)
   const catBoxes = document.querySelectorAll('#categoryList .cat');
   catBoxes.forEach(cat => {
     cat.addEventListener('click', () => {
       const catId = cat.dataset.cat;
-      if (catId === 'kos') {
-        location.href = '/kos.html';
-        return;
-      }
 
       if (activeCategory === catId) {
         activeCategory = null;
-        cat.querySelector('.box').style.outline = 'none';
+        cat.classList.remove('active');
+        const b = cat.querySelector('.box');
+        if (b) {
+          b.style.outline = 'none';
+          b.style.transform = 'scale(1)';
+        }
       } else {
         catBoxes.forEach(c => {
+          c.classList.remove('active');
           const b = c.querySelector('.box');
-          if (b) b.style.outline = 'none';
+          if (b) {
+            b.style.outline = 'none';
+            b.style.transform = 'scale(1)';
+          }
         });
         activeCategory = catId;
-        cat.querySelector('.box').style.outline = '2.5px solid var(--primary)';
+        cat.classList.add('active');
+        const b = cat.querySelector('.box');
+        if (b) {
+          b.style.outline = '2.5px solid var(--primary)';
+          b.style.transform = 'scale(1.05)';
+        }
       }
       renderCards(s2?.value || '');
     });
@@ -322,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Bottom Navigation buttons
   document.getElementById('navBeranda')?.addEventListener('click', () => {
     closeModal();
-    const scrollEl = document.querySelector('.scroll');
+    const scrollEl = document.querySelector('.beranda-body');
     if (scrollEl) scrollEl.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
@@ -347,6 +404,34 @@ document.addEventListener('DOMContentLoaded', () => {
   // Campus location switcher
   document.getElementById('btnKampus')?.addEventListener('click', () => {
     openModal('modalKampus');
+  });
+
+  // Search Bar 1: Pencarian Kos & Filter Kos
+  const sKos = document.getElementById('searchKosInput');
+  if (sKos) {
+    sKos.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const val = sKos.value.trim();
+        location.href = val ? '/kos.html?q=' + encodeURIComponent(val) : '/kos.html';
+      }
+    });
+  }
+
+  document.getElementById('searchKosBox')?.addEventListener('click', (e) => {
+    if (e.target.closest('#filterKosBtn')) return;
+    if (e.target === sKos) return;
+    location.href = '/kos.html';
+  });
+
+  document.getElementById('filterKosBtn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    location.href = '/filter-kos.html';
+  });
+
+  // Search Bar 2: Filter Barang & Enter search
+  document.getElementById('filterBarangBtn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    location.href = '/cari.html?filter=open';
   });
 
   document.querySelectorAll('.campus-opt').forEach(opt => {

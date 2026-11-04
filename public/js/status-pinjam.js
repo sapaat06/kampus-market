@@ -47,15 +47,28 @@ async function initPinjam() {
 
   // Load real transaction details if logged in
   try {
-    const me = await KM.get('/saya');
-    if (me.transaksi && me.transaksi.length > 0) {
-      const found = me.transaksi.find(t => String(t.id_transaksi) === String(txId));
-      if (found) {
-        if (found.jenis_transaksi !== 'pinjam') throw Object.assign(new Error('Bukan transaksi pinjam'), { status: 404 });
-        activeTx = found;
-      } else {
-        activeTx = me.transaksi.find(t => t.jenis_transaksi === 'pinjam');
+    if (txId) {
+      try {
+        const single = await KM.get('/transaksi/' + txId);
+        if (single) activeTx = single;
+      } catch (_e) {}
+    }
+
+    if (!activeTx) {
+      const me = await KM.get('/saya');
+      const allTx = [
+        ...((me && Array.isArray(me.transaksi)) ? me.transaksi : []),
+        ...((me && Array.isArray(me.transaksi_penjualan)) ? me.transaksi_penjualan : [])
+      ];
+      if (allTx.length > 0) {
+        const found = allTx.find(t => String(t.id_transaksi) === String(txId));
+        if (found) {
+          activeTx = found;
+        } else {
+          activeTx = allTx.find(t => t.jenis_transaksi === 'pinjam');
+        }
       }
+    }
 
       if (activeTx) {
         if (itemTitle && activeTx.nama_barang) itemTitle.textContent = activeTx.nama_barang;
@@ -75,6 +88,12 @@ async function initPinjam() {
         }
         if (badgeTempo && activeTx.durasi_sewa) {
           badgeTempo.textContent = `Durasi ${activeTx.durasi_sewa} hari`;
+        }
+
+        // Render alur COD dan kode verifikasi pertemuan
+        const codContainer = document.getElementById('codSection');
+        if (codContainer && typeof window.renderCodFlow === 'function') {
+          window.renderCodFlow(codContainer, activeTx, () => initPinjam());
         }
 
         // Cek foto barang
@@ -121,8 +140,9 @@ async function initPinjam() {
           }
         }
       }
-    }
-  } catch (_e) {}
+  } catch (_e) {
+    KM.ui.error('Gagal Memuat Transaksi', 'Data transaksi pinjam tidak bisa diambil. Periksa koneksi kamu.');
+  }
 
   // Back button
   if (backBtn) {
@@ -144,11 +164,29 @@ async function initPinjam() {
 
       // Panggil backend agar status transaksi menjadi 'selesai' dan green_points bertambah di database!
       if (activeTx && activeTx.id_transaksi) {
+        const yakin = await KM.ui.konfirmasi({
+          judul: 'Konfirmasi pengembalian?',
+          teks: 'Pastikan barang sudah kamu kembalikan ke pemilik. Transaksi akan ditandai selesai.',
+          teksYa: 'Ya, Selesai',
+          teksBatal: 'Batal',
+        });
+        if (!yakin) {
+          returnBtn.disabled = false;
+          returnBtn.textContent = '✓ Konfirmasi Pengembalian';
+          return;
+        }
+        KM.ui.loading('Menyelesaikan transaksi...');
         try {
           const resp = await KM.patch('/transaksi/' + activeTx.id_transaksi + '/selesai');
           if (resp && resp.poin_didapat) ptsEarned = resp.poin_didapat;
+          KM.ui.tutup();
+          KM.ui.toast('Pengembalian barang berhasil');
         } catch (err) {
-          console.warn('Gagal memproses penyelesaian transaksi di server:', err);
+          KM.ui.tutup();
+          returnBtn.disabled = false;
+          returnBtn.textContent = '✓ Konfirmasi Pengembalian';
+          KM.ui.error('Gagal Menyelesaikan Transaksi', err.message || 'Transaksi tidak dapat diselesaikan. Periksa koneksi kamu.');
+          return;
         }
       }
 

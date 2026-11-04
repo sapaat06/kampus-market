@@ -2,218 +2,1082 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<script src="/vendor/sweetalert2.all.min.js"></script>
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CampusCircle — Dashboard Pemilik Kos</title>
+<meta name="theme-color" content="#007A68">
+<title>Dashboard Pemilik Kost · KampusCircle</title>
+<link rel="stylesheet" href="/css/style.css">
 <style>
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-400.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
+  body {
+    background: #EAEFEF;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    color: #1E293B;
   }
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-500.woff2') format('woff2');
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
+  .phone {
+    width: 100%;
+    max-width: 360px;
+    height: 800px;
+    background: #F8FAFC;
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.12);
   }
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-600.woff2') format('woff2');
+
+  /* Status Bar */
+  .status-bar {
+    height: 28px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
     font-weight: 600;
-    font-style: normal;
-    font-display: swap;
+    color: #0F172A;
+    background: #F8FAFC;
+    flex-shrink: 0;
+    z-index: 10;
   }
-  @font-face {
-    font-family: 'Poppins';
-    src: url('/fonts/poppins-700.woff2') format('woff2');
+  .status-bar .icons { display: flex; gap: 6px; align-items: center; }
+  .status-bar svg { width: 14px; height: 14px; fill: #0F172A; }
+
+  /* Scroll Container */
+  .app-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 84px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .app-scroll::-webkit-scrollbar { display: none; }
+
+  /* Top App Bar */
+  .owner-top-bar {
+    padding: 8px 16px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #F8FAFC;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+  }
+  .brand-logo img {
+    height: 26px;
+    object-fit: contain;
+  }
+  .top-action-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.15s;
+  }
+  .top-action-btn:hover { background: #F1F5F9; }
+  .top-action-btn svg { width: 18px; height: 18px; fill: #1E293B; }
+  .notif-dot {
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #F28C28;
+    border: 1.5px solid #FFFFFF;
+  }
+
+  /* Owner Header */
+  .owner-profile-header {
+    padding: 0 16px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .owner-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #FFFFFF;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    background: #E2E8F0;
+  }
+  .owner-profile-info { flex: 1; }
+  .owner-name {
+    font-size: 15px;
     font-weight: 700;
-    font-style: normal;
-    font-display: swap;
+    color: #0F172A;
+    line-height: 1.2;
+  }
+  .owner-greeting {
+    font-size: 11px;
+    color: #64748B;
+    margin-top: 2px;
+  }
+  .owner-role-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #E8F8F5;
+    color: #007A68;
+    font-size: 10px;
+    font-weight: 600;
+    margin-top: 4px;
   }
 
-  :root {
-    --primary: #007A68;
-    --primary-active: #006354;
-    --text-dark: #1E3A38;
-    --text-muted: #7A8583;
-    --orange: #F28C28;
-    --mint-bg: #DDF1EC;
-    --peach-bg: #FFF0DB;
-    --border-light: #E3E8E7;
-    --card-bg: #F4F7F6;
-    --danger: #D64545;
+  /* Big Headline */
+  .hero-headline {
+    padding: 6px 16px 16px;
+    font-size: 21px;
+    font-weight: 800;
+    color: #0F172A;
+    line-height: 1.25;
+    letter-spacing: -0.3px;
   }
 
-  html,body{margin:0;padding:0;background:#EAEFEF;min-height:100vh;display:flex;justify-content:center;font-family:'Poppins',system-ui,-apple-system,sans-serif}
-  *{box-sizing:border-box;margin:0;padding:0}
-  .phone{width:100%;max-width:440px;height:100vh;height:100dvh;background:#fff;margin:0 auto;position:relative;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08)}
+  /* 2x2 Metric Grid */
+  .metric-grid {
+    padding: 0 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .metric-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  }
+  .metric-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #E8F8F5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #007A68;
+  }
+  .metric-icon svg { width: 16px; height: 16px; fill: currentColor; }
+  .metric-val {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0F172A;
+    line-height: 1;
+  }
+  .metric-lbl {
+    font-size: 11px;
+    color: #64748B;
+    line-height: 1.3;
+    font-weight: 500;
+  }
 
-  .status{height:24px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;color:var(--text-dark);flex-shrink:0;margin-top:6px}
-  .status .icons{display:flex;gap:6px;align-items:center}
-  .status svg{width:14px;height:14px;fill:var(--text-dark)}
+  /* Notice / Pengajuan Card */
+  .notice-banner-card {
+    margin: 14px 16px 0;
+    background: #E8F8F5;
+    border: 1px solid #A7F3D0;
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .notice-header {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .notice-icon {
+    width: 20px;
+    height: 20px;
+    fill: #007A68;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .notice-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .notice-sub {
+    font-size: 11px;
+    color: #065F46;
+    margin-top: 2px;
+  }
+  .btn-notice-action {
+    width: 100%;
+    height: 38px;
+    border-radius: 12px;
+    border: 1.5px solid #007A68;
+    background: #FFFFFF;
+    color: #007A68;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .btn-notice-action:hover { background: #E8F8F5; }
 
-  .header{height:50px;padding:0 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
-  .back-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
-  .back-btn:hover{background:var(--card-bg)}
-  .back-btn svg{width:22px;height:22px;stroke:var(--text-dark);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-  .header-title{font-size:18px;font-weight:700;color:var(--text-dark)}
+  /* Section Header */
+  .section-header {
+    padding: 20px 16px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .section-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0F172A;
+  }
+  .section-link {
+    font-size: 11px;
+    font-weight: 600;
+    color: #007A68;
+    text-decoration: none;
+    cursor: pointer;
+  }
 
-  .scroll-body{flex:1;overflow-y:auto;padding:8px 20px 24px;display:flex;flex-direction:column;gap:16px;scrollbar-width:none}
-  .scroll-body::-webkit-scrollbar{display:none}
+  /* Action & Item Cards */
+  .cards-list {
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .tenant-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  }
+  .tenant-card-header {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .tenant-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #E2E8F0;
+  }
+  .tenant-info { flex: 1; }
+  .tenant-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .tenant-room {
+    font-size: 11px;
+    color: #64748B;
+    margin-top: 2px;
+  }
+  .badge-mint {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #E8F8F5;
+    color: #007A68;
+    font-size: 10px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .badge-orange {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #FFF7ED;
+    color: #C2410C;
+    font-size: 10px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
 
-  .sec-title{font-size:15px;font-weight:700;color:var(--text-dark);display:flex;justify-content:space-between;align-items:center}
+  /* Property Listing Card */
+  .prop-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  }
+  .prop-img {
+    width: 100%;
+    height: 150px;
+    border-radius: 12px;
+    object-fit: cover;
+    background: #E2E8F0;
+  }
+  .prop-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .prop-price {
+    font-size: 14px;
+    font-weight: 800;
+    color: #007A68;
+  }
+  .prop-sub {
+    font-size: 11px;
+    color: #64748B;
+  }
+  .prop-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
 
-  .btn-add{height:40px;border-radius:10px;background:var(--primary);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0 16px;font-family:inherit}
-  .btn-add:hover{background:var(--primary-active)}
+  /* Buttons */
+  .btn-outline-teal {
+    flex: 1;
+    height: 38px;
+    border-radius: 10px;
+    border: 1.5px solid #007A68;
+    background: transparent;
+    color: #007A68;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-solid-teal {
+    flex: 1;
+    height: 38px;
+    border-radius: 10px;
+    border: none;
+    background: #007A68;
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-solid-orange {
+    flex: 1;
+    height: 38px;
+    border-radius: 10px;
+    border: none;
+    background: #F28C28;
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-primary-wide {
+    width: 100%;
+    height: 44px;
+    border-radius: 12px;
+    background: #007A68;
+    color: #FFFFFF;
+    border: none;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
 
-  .kos-card{background:#fff;border:1px solid var(--border-light);border-radius:18px;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.03)}
-  .kos-thumb{width:56px;height:56px;border-radius:12px;background:var(--mint-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
-  .kos-thumb img{width:100%;height:100%;object-fit:cover}
-  .kos-thumb svg{width:24px;height:24px;stroke:var(--primary);fill:none;stroke-width:2}
-  .kos-info{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
-  .kos-name{font-size:14px;font-weight:700;color:var(--text-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .kos-addr{font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis}
-  .kos-price{font-size:13px;font-weight:800;color:var(--primary)}
-  .kos-status{font-size:11px;font-weight:700;padding:2px 10px;border-radius:999px;display:inline-flex;align-items:center}
-  .kos-status.tersedia{background:var(--mint-bg);color:#00695C}
-  .kos-status.tidak_tersedia{background:#FDE8E8;color:var(--danger)}
+  /* Search Box */
+  .search-row {
+    padding: 0 16px 12px;
+    display: flex;
+    gap: 8px;
+  }
+  .search-input-box {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .search-input-box svg {
+    position: absolute;
+    left: 12px;
+    width: 16px;
+    height: 16px;
+    fill: #94A3B8;
+  }
+  .search-input-box input {
+    width: 100%;
+    height: 38px;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    padding: 0 12px 0 36px;
+    font-size: 12px;
+    font-family: inherit;
+    color: #0F172A;
+    outline: none;
+  }
+  .search-input-box input:focus { border-color: #007A68; }
 
-  .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;flex:1}
-  .empty-icon{width:64px;height:64px;border-radius:50%;background:var(--card-bg);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
-  .empty-icon svg{width:32px;height:32px;stroke:var(--text-muted);fill:none;stroke-width:1.8}
-  .empty-title{font-size:16px;font-weight:700;color:var(--text-dark);margin-bottom:6px}
-  .empty-desc{font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.4}
+  /* Chips */
+  .chips-scroll {
+    padding: 0 16px 14px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .chips-scroll::-webkit-scrollbar { display: none; }
+  .filter-pill {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748B;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .filter-pill.active {
+    background: #F28C28;
+    color: #FFFFFF;
+    border-color: #F28C28;
+  }
 
-  .action-group{display:flex;gap:8px;margin-top:8px}
-  .action-btn{flex:1;height:34px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
-  .action-btn.edit{background:var(--mint-bg);color:#00695C}
-  .action-btn.edit:hover{background:#c3e6db}
-  .action-btn.status{background:var(--card-bg);color:var(--text-dark)}
-  .action-btn.status:hover{background:#e9ecef}
-  .action-btn.delete{background:#FDE8E8;color:var(--danger)}
-  .action-btn.delete:hover{background:#f8caca}
+  /* Utility classes */
+  .fixed { position: fixed !important; }
+  .bottom-0 { bottom: 0 !important; }
+  .w-full { width: 100% !important; }
+  .z-50 { z-index: 50 !important; }
+  .z-\[60\] { z-index: 60 !important; }
 
-  .toast{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:rgba(30,58,56,0.92);color:#fff;padding:8px 18px;border-radius:999px;font-size:12px;font-weight:600;z-index:60;display:none;align-items:center;gap:6px}
+  /* Bottom Navigation */
+  .owner-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 360px;
+    height: 64px;
+    background: #FFFFFF;
+    border-top: 1px solid #E2E8F0;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 6px 4px;
+    z-index: 60;
+    pointer-events: auto;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    color: #64748B;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 12px;
+    transition: all 0.15s;
+  }
+  .nav-item svg { width: 20px; height: 20px; fill: currentColor; }
+  .nav-item.active { color: #007A68; }
+  .nav-item.active .nav-pill {
+    background: #E8F8F5;
+    padding: 3px 12px;
+    border-radius: 999px;
+  }
 
-  /* Modal Form */
-  .modal-overlay{position:absolute;inset:0;background:rgba(30,58,56,0.6);z-index:50;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
-  .modal-box{background:#fff;border-radius:24px;padding:24px 20px;width:100%;max-width:340px;display:flex;flex-direction:column;gap:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2)}
-  .modal-header{display:flex;justify-content:space-between;align-items:center}
-  .modal-title{font-size:17px;font-weight:800;color:var(--text-dark)}
-  .modal-close{width:32px;height:32px;border-radius:50%;border:none;background:var(--card-bg);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-muted)}
-  .form-group{display:flex;flex-direction:column;gap:6px}
-  .form-label{font-size:13px;font-weight:700;color:var(--text-dark)}
-  .form-input{height:44px;border-radius:12px;border:1.5px solid var(--border-light);background:#fff;padding:0 14px;font-size:13px;color:var(--text-dark);outline:none;font-family:inherit}
-  .form-input:focus{border-color:var(--primary)}
-  .form-select{height:44px;border-radius:12px;border:1.5px solid var(--border-light);background:#fff;padding:0 12px;font-size:13px;font-weight:600;color:var(--text-dark);outline:none;font-family:inherit;cursor:pointer}
-  .chips-row{display:flex;gap:8px}
-  .type-chip{flex:1;height:36px;border-radius:999px;border:1.5px solid var(--border-light);background:#fff;font-size:12px;font-weight:700;color:var(--text-dark);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-family:inherit}
-  .type-chip.active{background:var(--orange);border-color:var(--orange);color:#fff}
-  .submit-btn{height:50px;border-radius:18px;background:var(--primary);color:#fff;border:none;outline:none;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
-  .submit-btn:active{background:var(--primary-active)}
-  .submit-btn:disabled{background:#CBD5E1;cursor:not-allowed}
+  /* Modals & Fullscreen Sheets */
+  .modal-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.5);
+    z-index: 70;
+    display: none;
+    flex-direction: column;
+    justify-content: flex-end;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .modal-overlay:not(.open) {
+    display: none !important;
+    pointer-events: none !important;
+  }
+  .modal-overlay.open {
+    display: flex !important;
+    opacity: 1;
+    pointer-events: auto !important;
+    z-index: 70;
+  }
+  .bottom-sheet {
+    background: #FFFFFF;
+    border-radius: 24px 24px 0 0;
+    padding: 16px 20px 28px;
+    max-height: 88%;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+    pointer-events: auto !important;
+    position: relative;
+    z-index: 10;
+  }
+  .modal-overlay.open .bottom-sheet { transform: translateY(0); }
+  .sheet-handle {
+    width: 36px;
+    height: 4px;
+    border-radius: 999px;
+    background: #CBD5E1;
+    margin: 0 auto 14px;
+  }
+
+  .fullscreen-view {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: #F8FAFC;
+    z-index: 75;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+  }
+  .fullscreen-view:not(.open) {
+    display: none !important;
+    pointer-events: none !important;
+  }
+  .fullscreen-view.open {
+    display: flex !important;
+    transform: translateX(0);
+    pointer-events: auto !important;
+    z-index: 75;
+  }
+  .fullscreen-header {
+    height: 52px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #F8FAFC;
+    border-bottom: 1px solid #E2E8F0;
+    flex-shrink: 0;
+  }
+  .fullscreen-header h2 { font-size: 15px; font-weight: 700; margin: 0; }
+  .fullscreen-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  /* Form Controls */
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .form-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .form-input {
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid #E2E8F0;
+    padding: 0 12px;
+    font-size: 12px;
+    font-family: inherit;
+  }
+
+  /* Toast */
+  .toast {
+    position: absolute;
+    top: 40px;
+    left: 20px;
+    right: 20px;
+    background: #007A68;
+    color: #FFFFFF;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: all 0.25s ease;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
 </style>
 </head>
 <body>
 
 <div class="phone">
-  <div class="status">
-    <span>09:41</span>
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span>09.41</span>
     <div class="icons">
-      <svg viewBox="0 0 24 24"><path d="M2 17h3v5H2zm5-4h3v9H7zm5-4h3v13h-3zm5-5h3v18h-3z"/></svg>
-      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.95 9.05 8.05 9.05 5 13z"/></svg>
-      <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.28 19.58 10.59 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M17 4h-3V2h-4v2H7v18h10V4z"/></svg>
     </div>
   </div>
 
-  <div class="header">
-    <button class="back-btn" id="backBtn" aria-label="Kembali">
-      <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+  <!-- Toast Notification -->
+  <div id="toast-el" class="toast">
+    <span id="toast-text">Tersimpan</span>
+  </div>
+
+  <!-- Top App Bar -->
+  <header class="owner-top-bar">
+    <a href="/kos-owner.html" class="brand-logo">
+      <img src="/img/logo-campuscircle.png?v=3" alt="KampusCircle">
+    </a>
+    <button id="btn-owner-notif" class="top-action-btn" aria-label="Notifikasi">
+      <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+      <div class="notif-dot"></div>
     </button>
-    <h1 class="header-title">Dashboard Pemilik Kos</h1>
-  </div>
+  </header>
 
-  <div class="scroll-body" id="scrollBody">
-    <div class="empty-state" id="emptyState" style="display:none">
-      <div class="empty-icon">
-        <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M8 6h8M8 11h2M12 11h2M16 11h.01M8 15h2M12 15h2M16 15h.01"/></svg>
+  <!-- TAB 1: BERANDA ROLE KOST -->
+  <main id="tab-beranda" class="app-scroll">
+    <!-- Owner Profile Section -->
+    <div class="owner-profile-header">
+      <img src="/img/avatar-bu-rani.png" alt="Bu Rani" class="owner-avatar">
+      <div class="owner-profile-info">
+        <div class="owner-name" id="owner-display-name">Bu Rani</div>
+        <div class="owner-greeting">Selamat pagi, Bu Rani</div>
+        <span class="owner-role-badge">Mode Pemilik Kost</span>
       </div>
-      <div class="empty-title">Belum ada kos</div>
-      <div class="empty-desc">Kamu belum memiliki kost yang terdaftar. Tambahkan data kos pertama untuk mulai mengelola.</div>
-      <button class="btn-add" id="btnAddKos">+ Tambah Kost</button>
     </div>
 
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div class="sec-title">Daftar Kost Milikmu</div>
-      <button class="btn-add" id="btnAddKos2">+ Tambah Kost</button>
-    </div>
-    <div class="kos-list" id="kosList"></div>
-  </div>
+    <!-- Big Headline -->
+    <h1 class="hero-headline">Hunian terkelola, penyewa<br>nyaman.</h1>
 
-  <div class="toast" id="toastMsg">
-    <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.2"><path d="m5 12 4 4L19 6"/></svg>
-    <span id="toastText">Tersimpan</span>
-  </div>
-
-  <!-- Modal Form Tambah/Edit Kost -->
-  <div class="modal-overlay" id="modalKos">
-    <div class="modal-box">
-      <div class="modal-header">
-        <div class="modal-title" id="modalKosTitle">Tambah Kost</div>
-        <button class="modal-close" id="modalKosClose">&times;</button>
+    <!-- 2x2 Metric Grid -->
+    <div class="metric-grid">
+      <div class="metric-card">
+        <div class="metric-icon">
+          <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+        </div>
+        <div id="stat-total-prop" class="metric-val">1</div>
+        <div class="metric-lbl">Total Properti</div>
       </div>
-      <form id="formKos" novalidate>
-        <div class="form-group">
-          <label class="form-label" for="kosNama">Nama Kost</label>
-          <input type="text" class="form-input" id="kosNama" placeholder="Misal: Kos Damar Asri" required>
+
+      <div class="metric-card">
+        <div class="metric-icon">
+          <svg viewBox="0 0 24 24"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="kosAlamat">Alamat</label>
-          <input type="text" class="form-input" id="kosAlamat" placeholder="Misal: Jalan Cihideung No. 10" required>
+        <div id="stat-kamar-terisi" class="metric-val">8</div>
+        <div class="metric-lbl">Kamar Terisi</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon">
+          <svg viewBox="0 0 24 24"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="kosHarga">Harga per Bulan</label>
-          <input type="number" class="form-input" id="kosHarga" placeholder="Misal: 850000" required>
+        <div id="stat-kamar-kosong" class="metric-val">2</div>
+        <div class="metric-lbl">Kamar Kosong</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon">
+          <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="kosFasilitas">Fasilitas</label>
-          <input type="text" class="form-input" id="kosFasilitas" placeholder="Wi-Fi, KM dalam, Furnitur, dll">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="kosJenis">Jenis Kelamin</label>
-          <div class="chips-row" id="jenisChips">
-            <button type="button" class="type-chip active" data-val="putra">Putra</button>
-            <button type="button" class="type-chip" data-val="putri">Putri</button>
-            <button type="button" class="type-chip" data-val="campur">Campur</button>
+        <div id="stat-pendapatan" class="metric-val">Rp9,6 jt</div>
+        <div class="metric-lbl">Pendapatan Bulan Ini</div>
+      </div>
+    </div>
+
+    <!-- Notice / Pengajuan Sewa Card (Pending Rent List: dirender dinamis via muatPengajuanSewa) -->
+    <div id="pending-rent-list"></div>
+
+    <!-- Section Penyewa Aktif -->
+    <div class="section-header">
+      <span class="section-title">Penyewa aktif</span>
+      <a id="btn-see-all-tenants" class="section-link">Lihat semua</a>
+    </div>
+
+    <div id="list-penyewa-beranda" class="cards-list">
+      <!-- Nadia Putri Card -->
+      <div class="tenant-card">
+        <div class="tenant-card-header">
+          <img src="/img/avatar-rina-figma.png" alt="Avatar" class="tenant-avatar">
+          <div class="tenant-info">
+            <div class="tenant-name">Nadia Putri</div>
+            <div class="tenant-room">Kos Ananda Dago · Kamar A-01</div>
+            <span class="badge-mint">Aktif · Lunas</span>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="kosKamar">Kamar Tersedia</label>
-          <input type="number" class="form-input" id="kosKamar" placeholder="0" value="0">
+        <div style="font-size:11px;color:#64748B">
+          Periode sewa: <strong style="color:#0F172A">1 Okt – 31 Des 2026</strong> (3 bulan)
         </div>
-        <div class="form-group">
-          <label class="form-label" for="kosStatus">Status Ketersediaan</label>
-          <select class="form-select" id="kosStatus">
-            <option value="tersedia">Tersedia</option>
-            <option value="tidak_tersedia">Tidak Tersedia</option>
-          </select>
+        <button class="btn-outline-teal btn-chat-tenant" data-name="Nadia Putri">Chat Penyewa</button>
+      </div>
+
+      <!-- Salsa Aulia Card -->
+      <div class="tenant-card">
+        <div class="tenant-card-header">
+          <img src="/img/avatar-rina-figma.png" alt="Avatar" class="tenant-avatar">
+          <div class="tenant-info">
+            <div class="tenant-name">Salsa Aulia</div>
+            <div class="tenant-room">Kos Ananda Dago · Kamar A-02</div>
+            <span class="badge-mint">Aktif · Lunas</span>
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="kosDeskripsi">Deskripsi</label>
-          <input type="text" class="form-input" id="kosDeskripsi" placeholder="Ceritakan tentang kost kamu...">
+        <div style="font-size:11px;color:#64748B">
+          Periode sewa: <strong style="color:#0F172A">1 Okt – 31 Des 2026</strong> (3 bulan)
         </div>
-        <button type="submit" class="submit-btn" id="btnSimpanKos">Simpan Kost</button>
+        <button class="btn-outline-teal btn-chat-tenant" data-name="Salsa Aulia">Chat Penyewa</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- TAB 2: PROPERTI KOST -->
+  <main id="tab-properti" class="app-scroll" style="display:none">
+    <div class="section-header" style="padding-top:6px">
+      <span class="section-title" style="font-size:18px">Properti</span>
+    </div>
+
+    <div class="search-row">
+      <div class="search-input-box">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <input type="text" id="search-properti" placeholder="Cari properti milikmu">
+      </div>
+    </div>
+
+    <div style="padding:0 16px 14px">
+      <button id="btn-tambah-properti" class="btn-primary-wide">+ Tambah Properti</button>
+    </div>
+
+    <div class="section-header" style="padding-top:0">
+      <span id="prop-counter-title" class="section-title">1 properti milik Bu Rani</span>
+    </div>
+
+    <div id="list-properti-container" class="cards-list">
+      <!-- Properti Card -->
+    </div>
+  </main>
+
+  <!-- TAB 3: PENYEWA -->
+  <main id="tab-penyewa" class="app-scroll" style="display:none">
+    <div class="section-header" style="padding-top:6px">
+      <span class="section-title" style="font-size:18px">Penyewa</span>
+    </div>
+
+    <div class="search-row">
+      <div class="search-input-box">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <input type="text" placeholder="Cari nama penyewa atau kamar">
+      </div>
+    </div>
+
+    <div style="padding:0 16px 12px">
+      <button id="btn-pengajuan-banner" class="btn-primary-wide" style="background:#007A68">Pengajuan Sewa · 1 baru</button>
+    </div>
+
+    <div class="chips-scroll">
+      <button class="filter-pill active">Aktif (8)</button>
+      <button class="filter-pill">Akan berakhir</button>
+      <button class="filter-pill">Selesai</button>
+    </div>
+
+    <div class="cards-list">
+      <div class="tenant-card">
+        <div class="tenant-card-header">
+          <img src="/img/avatar-rina-figma.png" alt="Avatar" class="tenant-avatar">
+          <div class="tenant-info">
+            <div class="tenant-name">Nadia Putri</div>
+            <div class="tenant-room">Kos Ananda Dago · Kamar A-01</div>
+            <span class="badge-mint">Aktif · Lunas</span>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#64748B">
+          Mulai / durasi: <strong style="color:#0F172A">1 Okt 2026 · 3 bulan</strong><br>
+          Periode sewa: <strong style="color:#0F172A">1 Okt – 31 Des 2026</strong>
+        </div>
+        <button class="btn-outline-teal btn-chat-tenant" data-name="Nadia Putri">Chat Penyewa</button>
+      </div>
+
+      <div class="tenant-card">
+        <div class="tenant-card-header">
+          <img src="/img/avatar-rina-figma.png" alt="Avatar" class="tenant-avatar">
+          <div class="tenant-info">
+            <div class="tenant-name">Salsa Aulia</div>
+            <div class="tenant-room">Kos Ananda Dago · Kamar A-02</div>
+            <span class="badge-mint">Aktif · Lunas</span>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#64748B">
+          Mulai / durasi: <strong style="color:#0F172A">1 Okt 2026 · 3 bulan</strong><br>
+          Periode sewa: <strong style="color:#0F172A">1 Okt – 31 Des 2026</strong>
+        </div>
+        <button class="btn-outline-teal btn-chat-tenant" data-name="Salsa Aulia">Chat Penyewa</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- TAB 4: AKUN PEMILIK KOST -->
+  <main id="tab-akun" class="app-scroll" style="display:none">
+    <div class="section-header" style="padding-top:6px">
+      <span class="section-title" style="font-size:18px">Akun</span>
+    </div>
+
+    <!-- Owner Header -->
+    <div class="owner-profile-header" style="margin-bottom:12px">
+      <img src="/img/avatar-bu-rani.png" alt="Bu Rani" class="owner-avatar" style="width:54px;height:54px">
+      <div class="owner-profile-info">
+        <div class="owner-name" style="font-size:16px">Bu Rani</div>
+        <div class="owner-greeting" style="font-size:12px">rani@example.com · OWN-001</div>
+        <span class="owner-role-badge">Mode Pemilik Kost</span>
+      </div>
+    </div>
+
+    <!-- Mode Switcher Pill -->
+    <div style="padding:0 16px 14px">
+      <div style="font-size:14px;font-weight:800;color:#0F172A;margin-bottom:8px">Mode yang dimiliki</div>
+      <div style="display:flex;gap:8px">
+        <button id="btn-switch-mhs" class="filter-pill" style="flex:1;height:38px;padding:0;border-radius:12px">User / Penyewa</button>
+        <button class="btn-solid-teal" style="flex:1;height:38px;border-radius:12px">✓ Owner / Pemilik Kost</button>
+      </div>
+      <div style="font-size:10px;color:#64748B;margin-top:8px;line-height:1.4">
+        Beralih mode tidak mengubah kepemilikan properti. Pilihan hanya berasal dari hak akun.
+      </div>
+    </div>
+
+    <!-- Menu Links -->
+    <div style="padding:0 16px;display:flex;flex-direction:column;gap:8px">
+      <button class="btn-notice-action" style="background:#FFFFFF;border-color:#E2E8F0;color:#1E293B">Informasi akun</button>
+      <button class="btn-notice-action" style="background:#FFFFFF;border-color:#E2E8F0;color:#1E293B">Keamanan & kata sandi</button>
+      <button class="btn-notice-action" style="background:#FFFFFF;border-color:#E2E8F0;color:#1E293B">Preferensi notifikasi</button>
+      <button class="btn-notice-action" style="background:#FFFFFF;border-color:#E2E8F0;color:#1E293B">Bantuan pemilik</button>
+      <button class="btn-notice-action" style="background:#FFFFFF;border-color:#E2E8F0;color:#1E293B">Privasi & syarat layanan</button>
+      <button id="btn-owner-logout" class="btn-notice-action" style="background:#FFFFFF;border-color:#FECACA;color:#DC2626;margin-top:6px">Keluar</button>
+    </div>
+  </main>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="owner-bottom-nav fixed bottom-0 w-full z-50" style="position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 360px; z-index: 60; pointer-events: auto;">
+    <button class="nav-item active" data-tab="beranda">
+      <span class="nav-pill">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      </span>
+      <span>Beranda</span>
+    </button>
+
+    <button class="nav-item" data-tab="properti">
+      <span class="nav-pill">
+        <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h14v-8h3L12 3zm0 3.84L17 11v7H7v-7l5-4.16z"/></svg>
+      </span>
+      <span>Properti</span>
+    </button>
+
+    <button class="nav-item" data-tab="penyewa">
+      <span class="nav-pill">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      </span>
+      <span>Penyewa</span>
+    </button>
+
+    <button class="nav-item" data-tab="chat">
+      <span class="nav-pill">
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+      </span>
+      <span>Chat</span>
+    </button>
+
+    <button class="nav-item" data-tab="akun">
+      <span class="nav-pill">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      </span>
+      <span>Akun</span>
+    </button>
+  </nav>
+
+  <!-- MODAL: PENGAJUAN SEWA DETAIL -->
+  <div id="modal-pengajuan-sewa" class="modal-overlay" style="display: none;">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <img src="/img/avatar-rina-figma.png" alt="Penyewa" class="tenant-avatar" id="modal-tenant-avatar">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:#0F172A" id="modal-tenant-name">Rina Maharani</div>
+          <div style="font-size:11px;color:#007A68;font-weight:600" id="modal-tenant-sub">Mahasiswa Terverifikasi · USR-001</div>
+        </div>
+      </div>
+
+      <div style="background:#FFF9EB;border:1px solid #FED7AA;border-radius:12px;padding:12px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:#B45309">MENUNGGU KEPUTUSAN</div>
+        <div style="font-size:13px;font-weight:800;color:#0F172A;margin-top:2px" id="modal-tenant-kos">Kos Ananda Dago - Kamar A-09</div>
+        <div style="font-size:11px;color:#64748B;margin-top:4px" id="modal-tenant-detail">
+          Periode: <strong id="modal-tenant-periode">1 Nov 2026 – 31 Jan 2027</strong><br>
+          Durasi / Total: <strong id="modal-tenant-total">3 bulan · Rp3.600.000</strong>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px">
+        <button id="btn-terima-sewa" class="btn-solid-teal btn-setujui-pesanan" style="height:42px" data-action="approve">Setujui Pesanan</button>
+        <button id="btn-tolak-sewa" class="btn-outline-teal" style="height:42px;border-color:#DC2626;color:#DC2626">Tolak</button>
+      </div>
+      <button id="btn-tutup-pengajuan" class="btn-notice-action" style="margin-top:8px;border-color:#E2E8F0;color:#64748B">Tutup</button>
+    </div>
+  </div>
+
+  <!-- MODAL: FORM TAMBAH / EDIT PROPERTI -->
+  <div id="modal-form-properti" class="modal-overlay" style="display: none;">
+    <div class="bottom-sheet" style="max-height:90%;padding-bottom:30px">
+      <div class="sheet-handle"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h3 id="form-prop-title" style="font-size:16px;font-weight:800;color:#0F172A;margin:0">Tambah Properti Kost</h3>
+        <button type="button" id="btn-x-form-prop" aria-label="Tutup" style="background:none;border:none;font-size:20px;font-weight:700;color:#64748B;cursor:pointer;padding:4px 8px;line-height:1">&times;</button>
+      </div>
+
+      <form id="form-kost" novalidate>
+        <div class="form-group">
+          <label for="input-prop-nama">Nama Kost</label>
+          <input type="text" class="form-input" id="input-prop-nama" placeholder="Contoh: Kos Ananda Dago" required>
+        </div>
+
+        <div class="form-group">
+          <label for="input-prop-alamat">Alamat Lengkap</label>
+          <input type="text" class="form-input" id="input-prop-alamat" placeholder="Contoh: Jl. Dago Asri No. 12, Bandung" required>
+        </div>
+
+        <div class="form-group">
+          <label for="input-prop-harga">Harga Sewa per Bulan (Rp)</label>
+          <input type="number" class="form-input" id="input-prop-harga" placeholder="1200000" required>
+        </div>
+
+        <div class="form-group">
+          <label for="input-prop-fasilitas">Fasilitas Kost</label>
+          <input type="text" class="form-input" id="input-prop-fasilitas" placeholder="Wi-Fi, KM dalam, Tempat tidur, Meja">
+        </div>
+
+        <div class="form-group">
+          <label for="input-prop-kamar">Jumlah Kamar Tersedia</label>
+          <input type="number" class="form-input" id="input-prop-kamar" placeholder="2" value="2">
+        </div>
+
+        <div class="form-group">
+          <label for="input-prop-foto">Foto Kost (maks. 5)</label>
+          <input type="file" id="input-prop-foto" accept="image/*" multiple
+            style="width:100%;font-size:12px;color:#64748B">
+          <div id="preview-prop-foto" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>
+          <div id="count-prop-foto" style="font-size:11px;color:#64748B;margin-top:4px">0 dari 5 foto</div>
+        </div>
+
+        <button type="submit" class="btn-solid-teal" style="width:100%;height:44px;margin-top:10px">Kirim Pengajuan Properti</button>
+        <button type="button" id="btn-tutup-form-prop" class="btn-notice-action" style="margin-top:8px;border-color:#E2E8F0;color:#64748B">Batal</button>
       </form>
     </div>
   </div>
 
-  <div class="toast" id="toastError" style="background:rgba(214,69,69,0.92)">
-    <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.2"><circle cx="12" cy="12" r="10"/><path d="m9 12l2 2 4-4"/></svg>
-    <span id="toastErrorText">Error</span>
+  <!-- FULLSCREEN VIEW: DETAIL PROPERTI -->
+  <div id="view-detail-prop" class="fullscreen-view">
+    <div class="fullscreen-header">
+      <button id="btn-close-detail-prop" class="top-action-btn" style="border:none;background:transparent">
+        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      </button>
+      <h2>Detail Properti</h2>
+      <div style="width:38px"></div>
+    </div>
+
+    <div class="fullscreen-body">
+      <img id="detail-prop-img" src="/img/kos-ananda-dago.png" alt="Kost" style="width:100%;height:180px;border-radius:14px;object-fit:cover;margin-bottom:14px">
+      
+      <span class="badge-mint" style="margin-bottom:6px">Published · Terverifikasi</span>
+      <h2 id="detail-prop-title" style="font-size:18px;font-weight:800;color:#0F172A;margin-bottom:2px">Kos Ananda Dago</h2>
+      <div id="detail-prop-price" style="font-size:16px;font-weight:800;color:#007A68;margin-bottom:6px">Rp1.200.000 <span style="font-size:11px;font-weight:500;color:#64748B">/bulan</span></div>
+      <div id="detail-prop-addr" style="font-size:12px;color:#64748B;line-height:1.4;margin-bottom:14px">Jl. Dago Asri No. 12, Dago, Coblong, Bandung 40135</div>
+
+      <div class="metric-card" style="margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:#0F172A">Rincian Kamar</div>
+        <div style="font-size:11px;color:#64748B;margin-top:4px" id="detail-prop-room-summary">
+          Total: <strong>10 kamar</strong> · Terisi: <strong>8 kamar</strong> · Kosong: <strong style="color:#007A68">2 kamar</strong>
+        </div>
+        <div style="font-size:11px;color:#64748B;margin-top:2px">
+          Pendapatan Oktober: <strong style="color:#0F172A">Rp9.600.000</strong>
+        </div>
+      </div>
+
+      <!-- Kelola Status Kamar -->
+      <div class="metric-card" style="margin-bottom:14px">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+          <div>
+            <div style="font-size:13px; font-weight:700; color:#0F172A">Kelola Status Kamar</div>
+            <div style="font-size:10px; color:#64748B">Tentukan kamar kosong/terisi untuk penyewa</div>
+          </div>
+          <button id="btn-tambah-kamar" type="button" style="background:#007A68; color:#fff; border:none; padding:5px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer">+ Kamar</button>
+        </div>
+        <div id="room-list-container" style="display:flex; flex-direction:column; gap:8px">
+          <!-- Room items rendered dynamically -->
+        </div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;color:#0F172A;margin-bottom:8px">Fasilitas Tersedia</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="badge-mint">Wi-Fi Cepat</span>
+        <span class="badge-mint">KM Dalam</span>
+        <span class="badge-mint">Tempat Tidur</span>
+        <span class="badge-mint">Meja Belajar</span>
+        <span class="badge-mint">Parkir Motor</span>
+      </div>
+    </div>
   </div>
 </div>
 

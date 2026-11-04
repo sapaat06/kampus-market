@@ -12,6 +12,14 @@
   const daftarLink = document.getElementById('daftarLink');
   const loginBtn = document.getElementById('loginBtn');
   const rememberBox = document.getElementById('rememberBox');
+  const forgotLink = document.getElementById('forgotLink');
+
+  if (forgotLink) {
+    forgotLink.addEventListener('click', function(ev){
+      ev.preventDefault();
+      KM.ui.info('Lupa kata sandi?', 'Silakan hubungi admin kampus untuk reset password.');
+    });
+  }
 
   const REMEMBER_KEY = 'km_email';
 
@@ -70,20 +78,84 @@
     } else {
       pass.setAttribute('aria-invalid', 'false');
     }
-    if (!ok) return;
+    if (!ok) {
+      KM.ui.peringatan('Form belum lengkap', 'Periksa kembali email dan kata sandi kamu.');
+      return;
+    }
 
     loginBtn.disabled = true;
     loginBtn.textContent = 'Memproses...';
     try {
-      await KM.post('/login', { email: e, password: pass.value });
+      const user = await KM.post('/login', { email: e, password: pass.value, intended_role: 'mahasiswa' });
+
+      // 2. Validasi Setara di Form Login Mahasiswa:
+      // Jika akun terdaftar sebagai pemilik_kost, tolak dan suruh user pindah ke login Pemilik Kost
+      if (user?.role === 'pemilik_kost') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('km_token');
+        localStorage.removeItem('km_sesi');
+        localStorage.removeItem('role');
+        localStorage.removeItem('km_role');
+        if (window.KM && KM.sesi && KM.sesi.clear) KM.sesi.clear();
+
+        if (typeof Swal !== 'undefined') {
+          await Swal.fire({
+            icon: 'error',
+            title: 'Akses Ditolak',
+            text: 'Email ini terdaftar sebagai Pemilik Kost. Silakan gunakan halaman Login Pemilik Kost.',
+            confirmButtonColor: '#059669'
+          });
+        } else if (window.KM && KM.ui) {
+          await KM.ui.error('Akses Ditolak', 'Email ini terdaftar sebagai Pemilik Kost. Silakan gunakan halaman Login Pemilik Kost.');
+        } else {
+          alert('Email ini terdaftar sebagai Pemilik Kost. Silakan gunakan halaman Login Pemilik Kost.');
+        }
+        return; // Hentikan proses, JANGAN redirect ke kos-owner
+      }
+
       if (rememberBox.checked) localStorage.setItem(REMEMBER_KEY, e);
       else localStorage.removeItem(REMEMBER_KEY);
+      await KM.ui.sukses('Berhasil Masuk', 'Selamat datang kembali!');
       location.href = '/beranda.html';
     } catch (err) {
       passBox.classList.add('error');
       pass.setAttribute('aria-invalid', 'true');
-      passErr.textContent = err.message;
+      const pesanError = err?.message || 'Email atau kata sandi salah.';
+      passErr.textContent = pesanError;
       passErr.style.display = 'block';
+
+      if (typeof Swal !== 'undefined') {
+        const isPending = /tinjauan|belum disetujui|verifikasi|belum diverifikasi/i.test(pesanError);
+        const isDitolak = /ditolak/i.test(pesanError);
+        let judul = 'Gagal Masuk';
+        let ikon = 'error';
+
+        if (isPending) {
+          judul = 'Verifikasi Admin Diperlukan';
+          ikon = 'info';
+        } else if (isDitolak) {
+          judul = 'Pendaftaran Ditolak';
+          ikon = 'warning';
+        }
+
+        Swal.fire({
+          icon: ikon,
+          title: judul,
+          text: pesanError,
+          confirmButtonText: 'Tutup',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'rounded-2xl shadow-xl border-0',
+            title: 'text-xl font-bold text-gray-800',
+            htmlContainer: 'text-gray-600 font-medium',
+            confirmButton: 'bg-[#059669] text-white px-8 py-2.5 rounded-xl font-semibold hover:bg-emerald-700 transition-colors'
+          }
+        });
+      } else if (window.KM && KM.ui) {
+        KM.ui.error('Gagal Masuk', pesanError);
+      } else {
+        alert(`Gagal Masuk: ${pesanError}`);
+      }
     } finally {
       loginBtn.disabled = false;
       loginBtn.textContent = 'Masuk';

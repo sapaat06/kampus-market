@@ -297,16 +297,18 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // 3. State "Mencari lokasi..." di tombol selama menunggu
+    // 3. State "Mencari lokasi..." di tombol selama menunggu & teks pencarian
     if (btnGpsCurrent) {
       btnGpsCurrent.disabled = true;
       btnGpsCurrent.textContent = 'Mencari lokasi...';
       btnGpsCurrent.style.background = '#F1F5F9';
       btnGpsCurrent.style.color = '#64748B';
     }
+    if (locSearchInput) locSearchInput.value = 'Sedang mencari alamat...';
+    if (locPreviewAddr) locPreviewAddr.textContent = 'Sedang mencari alamat...';
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const lat = Number(pos.coords.latitude);
         const lng = Number(pos.coords.longitude);
         const acc = Math.round(pos.coords.accuracy || 0);
@@ -317,11 +319,47 @@ document.addEventListener('DOMContentLoaded', () => {
         if (lokasiLat) lokasiLat.value = lat.toFixed(6);
         if (lokasiLng) lokasiLng.value = lng.toFixed(6);
 
-        // Alamat pratinjau netral jika koordinat berasal dari GPS
-        if (locSearchInput) locSearchInput.value = 'Titik dari lokasi saat ini';
-        if (locPreviewAddr) locPreviewAddr.textContent = 'Titik dari lokasi saat ini';
+        // 1. Integrasi Peta OpenStreetMap Embed
+        const mapBox = document.getElementById('mapPreviewBox');
+        let mapIframe = document.getElementById('map-preview') || document.getElementById('mapPreviewIframe');
 
-        // Ganti teks "Koordinat contoh" menjadi "Koordinat: <lat>, <lng>" (6 desimal) dan tulis akurasi "±<n> m"
+        // Ganti elemen gambar/placeholder yang rusak dengan tag <iframe> jika belum ada
+        if (mapIframe && mapIframe.tagName !== 'IFRAME') {
+          const newIframe = document.createElement('iframe');
+          newIframe.id = 'map-preview';
+          newIframe.className = 'w-full h-full rounded-lg border-0';
+          newIframe.setAttribute('scrolling', 'no');
+          newIframe.setAttribute('marginheight', '0');
+          newIframe.setAttribute('marginwidth', '0');
+          newIframe.title = 'Pratinjau Peta Lokasi';
+          mapIframe.parentNode.replaceChild(newIframe, mapIframe);
+          mapIframe = newIframe;
+        } else if (!mapIframe && mapBox) {
+          const oldImg = mapBox.querySelector('img');
+          if (oldImg) oldImg.remove();
+          mapIframe = document.createElement('iframe');
+          mapIframe.id = 'map-preview';
+          mapIframe.className = 'w-full h-full rounded-lg border-0';
+          mapIframe.setAttribute('scrolling', 'no');
+          mapIframe.setAttribute('marginheight', '0');
+          mapIframe.setAttribute('marginwidth', '0');
+          mapIframe.title = 'Pratinjau Peta Lokasi';
+          mapBox.prepend(mapIframe);
+        }
+
+        // 2. Update URL Peta Secara Dinamis dengan format OpenStreetMap embed & bbox
+        if (mapIframe) {
+          mapIframe.className = 'w-full h-full rounded-lg border-0';
+          mapIframe.style.width = '100%';
+          mapIframe.style.height = '100%';
+          mapIframe.style.border = '0';
+          mapIframe.style.borderRadius = '8px';
+          // Menambahkan bbox (bounding box) agar peta sedikit zoom-out dan tidak terlalu sempit
+          const bbox = `${lng - 0.01},${lat - 0.01},${lng + 0.01},${lat + 0.01}`;
+          mapIframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`;
+        }
+
+        // Tampilkan koordinat dan akurasi
         if (coordDesc) {
           coordDesc.textContent = `Koordinat: ${lat.toFixed(6)}, ${lng.toFixed(6)} (±${acc} m)`;
         }
@@ -336,11 +374,77 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Tautan "Lihat di peta" membuka OpenStreetMap di tab baru
         if (mapLink && mapLinkWrap) {
-          mapLink.href = `https://www.openstreetmap.org/?mlat=${lat.toFixed(6)}&mlon=${lng.toFixed(6)}#map=17/${lat.toFixed(6)}/${lng.toFixed(6)}`;
+          mapLink.href = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`;
           mapLinkWrap.style.display = 'block';
         }
 
-        if (window.KM && KM.ui) KM.ui.toast('Lokasi berhasil didapatkan');
+        // 3. Tambahkan state "Sedang mencari alamat..." pada teks-teks tersebut saat proses fetch sedang berjalan (loading)
+        const mapPreviewTag = document.getElementById('mapPreviewTag') || document.querySelector('.map-tag');
+        if (locSearchInput) locSearchInput.value = 'Sedang mencari alamat...';
+        if (locPreviewAddr) locPreviewAddr.textContent = 'Sedang mencari alamat...';
+        if (mapPreviewTag) mapPreviewTag.textContent = 'Sedang mencari alamat...';
+
+        // 2. Terapkan Reverse Geocoding (Ubah Koordinat ke Alamat via Nominatim OpenStreetMap)
+        try {
+          const endpoint = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
+          let data = null;
+          try {
+            const res = await fetch(endpoint);
+            if (res.ok) {
+              data = await res.json();
+            }
+          } catch (_netErr) {
+            // Fallback via server proxy jika direct external call dibatasi
+            try {
+              const resProxy = await fetch(`/api/reverse-geocode?lat=${lat}&lon=${lng}`);
+              if (resProxy.ok) {
+                data = await resProxy.json();
+              }
+            } catch (_proxyErr) {}
+          }
+
+          // Tangkap responsnya, dan ambil bagian nama jalan atau daerah (misal: data.display_name)
+          if (data && (data.display_name || data.address)) {
+            const addr = data.address || {};
+            const namaJalan = addr.road || addr.pedestrian || addr.suburb || addr.neighbourhood || addr.village || addr.city_district || '';
+            const namaDaerah = addr.city || addr.town || addr.municipality || addr.county || addr.regency || addr.state_district || '';
+
+            let namaRingkas = '';
+            if (namaJalan && namaDaerah) {
+              namaRingkas = `${namaJalan}, ${namaDaerah}`;
+            } else if (namaJalan) {
+              namaRingkas = namaJalan;
+            } else if (namaDaerah) {
+              namaRingkas = namaDaerah;
+            } else if (data.display_name) {
+              namaRingkas = data.display_name.split(',').slice(0, 2).join(',').trim();
+            }
+
+            const alamatAsli = data.display_name || namaRingkas || 'Lokasi saat ini (Garut)';
+
+            // 3. Hubungkan Hasil Reverse Geocoding ke UI:
+            // Disisipkan sebagai isi input "Cari alamat atau area", teks penanda peta, dan alamat pratinjau tepat di bawah kotak peta
+            if (locSearchInput) locSearchInput.value = alamatAsli;
+            if (locPreviewAddr) locPreviewAddr.textContent = alamatAsli;
+            if (mapPreviewTag) mapPreviewTag.textContent = namaRingkas || alamatAsli;
+            if (lokasiBarang) lokasiBarang.value = namaRingkas || alamatAsli;
+
+            if (window.KM && KM.ui) KM.ui.toast('Alamat dan peta berhasil diperbarui');
+          } else {
+            throw new Error('Alamat tidak ditemukan');
+          }
+        } catch (geoErr) {
+          console.warn('Reverse Geocoding error:', geoErr);
+          // 3. Hubungkan fallback reverse geocoding ke penanda dan alamat pratinjau di bawah kotak peta
+          const fallbackAlamat = 'Lokasi saat ini (Garut)';
+          if (locSearchInput) locSearchInput.value = fallbackAlamat;
+          if (locPreviewAddr) locPreviewAddr.textContent = fallbackAlamat;
+          if (mapPreviewTag) mapPreviewTag.textContent = fallbackAlamat;
+          if (lokasiBarang && !lokasiBarang.value) {
+            lokasiBarang.value = fallbackAlamat;
+          }
+          if (window.KM && KM.ui) KM.ui.toast('Lokasi didapatkan (peta aktif)');
+        }
       },
       (err) => {
         console.warn('GPS Penjual tidak dapat diakses:', err.code, err.message);
@@ -395,6 +499,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  if (locSearchInput) {
+    locSearchInput.addEventListener('input', () => {
+      if (locPreviewAddr) {
+        locPreviewAddr.textContent = locSearchInput.value;
+      }
+      const mapPreviewTag = document.getElementById('mapPreviewTag') || document.querySelector('.map-tag');
+      if (mapPreviewTag) {
+        mapPreviewTag.textContent = locSearchInput.value;
+      }
+    });
+  }
+
   if (btnGpsCurrent) {
     btnGpsCurrent.addEventListener('click', () => {
       ambilGpsPenjual();
@@ -406,7 +522,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (realGpsCoords) {
         if (lokasiLat) lokasiLat.value = realGpsCoords.lat.toFixed(6);
         if (lokasiLng) lokasiLng.value = realGpsCoords.lng.toFixed(6);
-        if (lokasiBarang) lokasiBarang.value = 'Titik dari lokasi saat ini';
+        if (lokasiBarang) {
+          lokasiBarang.value = locSearchInput?.value || locPreviewAddr?.textContent || 'Titik dari lokasi saat ini';
+        }
       } else {
         if (lokasiLat && !lokasiLat.value) lokasiLat.value = String(DEFAULT_CAMPUS_LAT);
         if (lokasiLng && !lokasiLng.value) lokasiLng.value = String(DEFAULT_CAMPUS_LNG);

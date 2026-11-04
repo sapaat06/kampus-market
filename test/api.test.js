@@ -1,4 +1,5 @@
 process.env.DB = ':memory:';
+process.env.TURSO_DATABASE_URL = ':memory:';
 process.env.ADMIN_KEY = 'k';
 import assert from 'node:assert/strict';
 const { app } = await import('../src/server.js');
@@ -23,6 +24,11 @@ const call = async (method, path, body, headers = {}) => {
 };
 const A = { 'x-admin-key': 'k' };
 
+// uji endpoint GET /health untuk Render
+const health = await call('GET', '/health');
+assert.equal(health.s, 200);
+assert.equal(health.j.status, 'ok');
+
 // frontend disajikan + header keamanan
 const home = await call('GET', '/');
 assert.equal(home.s, 200);
@@ -38,7 +44,7 @@ assert.match(swalVendor.h.get('content-type') ?? '', /javascript/);
 assert.match(String(swalVendor.j), /Swal/);
 
 // semua halaman memakai script eksternal (wajib untuk CSP script-src 'self')
-for (const page of ['index', 'welcome', 'masuk', 'beranda', 'cari', 'kos', 'filter-kos', 'detail', 'chat', 'unggah', 'status-pinjam', 'profil', 'verifikasi', 'status-verifikasi', 'admin']) {
+for (const page of ['index', 'welcome', 'masuk', 'daftar', 'masuk-kost', 'daftar-kost', 'beranda', 'cari', 'kos', 'filter-kos', 'kos-owner', 'detail', 'chat', 'unggah', 'status-pinjam', 'profil', 'verifikasi', 'status-verifikasi', 'admin']) {
   const p = await call('GET', `/${page}.html`);
   assert.equal(p.s, 200, page);
   assert.doesNotMatch(p.j, /<script(?!\s+[^>]*src=)/i, page);
@@ -88,7 +94,7 @@ assert.equal(loginPending.s, 403);
 assert.match(loginPending.j.error, /belum disetujui|tinjauan admin/i);
 
 // Verifikasi Budi agar akun disetujui untuk login
-db.prepare("UPDATE mahasiswa SET status_verifikasi='terverifikasi' WHERE email='b@x.id'").run();
+await db.prepare("UPDATE mahasiswa SET status_verifikasi='terverifikasi' WHERE email='b@x.id'").run();
 
 const login = await call('POST', '/api/login', { email: 'B@X.ID', password: 'rahasia123' });
 assert.equal(login.s, 200);
@@ -193,7 +199,7 @@ assert.equal(loginDitolak.s, 403);
 assert.match(loginDitolak.j.error, /ditolak oleh admin/i);
 
 // Kembalikan ke terverifikasi agar tes berikutnya berjalan
-db.prepare("UPDATE mahasiswa SET status_verifikasi='terverifikasi' WHERE id_mahasiswa=?").run(listMhs.j[0].id_mahasiswa);
+await db.prepare("UPDATE mahasiswa SET status_verifikasi='terverifikasi' WHERE id_mahasiswa=?").run(listMhs.j[0].id_mahasiswa);
 
 // uji statistik admin dinamis
 const statsRes = await call('GET', '/api/admin/stats');
@@ -440,7 +446,56 @@ const mPemilik = await call('POST', '/api/register', {
   nama: 'Pemilik Kost', email: 'pemilik@itg.ac.id', password: 'password123', role: 'pemilik_kost'
 });
 assert.equal(mPemilik.s, 201);
-const UPemilik = { authorization: `Bearer ${mPemilik.j.token}` };
+assert.equal(mPemilik.j.role, 'pemilik_kost');
+assert.equal(mPemilik.j.status_akun, 'pending');
+assert.match(mPemilik.j.pesan, /sedang direview oleh Admin/i);
+
+// Uji login saat status pemilik_kost masih pending
+const loginPendingKost = await call('POST', '/api/login', { email: 'pemilik@itg.ac.id', password: 'password123' });
+assert.equal(loginPendingKost.s, 403);
+assert.equal(loginPendingKost.j.error, 'Akun Pemilik Kost Anda belum diverifikasi oleh Admin. Silakan tunggu.');
+
+// Admin melihat daftar pemilik kost pending
+const listPendingKost = await call('GET', '/api/admin/pemilik-kost/pending', null, A);
+assert.equal(listPendingKost.s, 200);
+assert.ok(listPendingKost.j.pemilik_kost.some(u => u.email === 'pemilik@itg.ac.id'));
+
+// Admin menyetujui akun pemilik kost
+const approveKostUser = await call('PATCH', `/api/admin/pemilik-kost/${mPemilik.j.id_mahasiswa}/approve`, null, A);
+assert.equal(approveKostUser.s, 200);
+assert.equal(approveKostUser.j.user.status_akun, 'approved');
+
+// Setelah disetujui, pemilik kost dapat login
+const loginSuccessKost = await call('POST', '/api/login', { email: 'pemilik@itg.ac.id', password: 'password123' });
+assert.equal(loginSuccessKost.s, 200);
+assert.equal(loginSuccessKost.j.role, 'pemilik_kost');
+
+// Uji validasi intended_role di pintu login (role tidak sesuai)
+const wrongDoorMhsToKost = await call('POST', '/api/login', {
+  email: 'penjual@itg.ac.id',
+  password: 'password123',
+  intended_role: 'pemilik_kost'
+});
+assert.equal(wrongDoorMhsToKost.s, 403);
+assert.equal(wrongDoorMhsToKost.j.error, 'Role tidak sesuai dengan pintu login');
+
+const wrongDoorKostToMhs = await call('POST', '/api/login', {
+  email: 'pemilik@itg.ac.id',
+  password: 'password123',
+  intended_role: 'mahasiswa'
+});
+assert.equal(wrongDoorKostToMhs.s, 403);
+assert.equal(wrongDoorKostToMhs.j.error, 'Role tidak sesuai dengan pintu login');
+
+const correctDoorKost = await call('POST', '/api/login', {
+  email: 'pemilik@itg.ac.id',
+  password: 'password123',
+  intended_role: 'pemilik_kost'
+});
+assert.equal(correctDoorKost.s, 200);
+assert.equal(correctDoorKost.j.role, 'pemilik_kost');
+
+const UPemilik = { authorization: `Bearer ${loginSuccessKost.j.token}` };
 const kosMulti = await call('POST', '/api/kos', {
   nama_kos: 'Kos Multi Foto',
   alamat: 'Jl. Kampus No. 1',
@@ -448,10 +503,291 @@ const kosMulti = await call('POST', '/api/kos', {
   foto: ['/img/kos1.png', '/img/kos2.png', '/img/kos3.png', '/img/kos4.png', '/img/kos5.png', '/img/kos6.png']
 }, UPemilik);
 assert.equal(kosMulti.s, 201);
+assert.equal(kosMulti.j.status_postingan, 'pending');
+assert.match(kosMulti.j.pesan, /menunggu persetujuan Admin/i);
+
 const detailKos = await call('GET', `/api/kos/${kosMulti.j.id}`);
 const fotoKos = JSON.parse(detailKos.j.foto);
 assert.equal(fotoKos.length, 5);
 assert.deepEqual(fotoKos, ['/img/kos1.png', '/img/kos2.png', '/img/kos3.png', '/img/kos4.png', '/img/kos5.png']);
+
+// Filter tipe kos (Putra, Putri, Campur, Semua)
+const kPutra = await call('POST', '/api/kos', {
+  nama_kos: 'Kos Garuda Putra', alamat: 'Jl. Garuda No. 1', harga_bulan: 750000, jenis_kelamin: 'putra'
+}, UPemilik);
+assert.equal(kPutra.s, 201);
+assert.equal(kPutra.j.status_postingan, 'pending');
+
+const kPutri = await call('POST', '/api/kos', {
+  nama_kos: 'Kos Melati Putri', alamat: 'Jl. Melati No. 2', harga_bulan: 850000, tipe_kos: 'putri'
+}, UPemilik);
+assert.equal(kPutri.s, 201);
+assert.equal(kPutri.j.status_postingan, 'pending');
+
+// Sebelum diapprove Admin, kos berstatus pending TIDAK boleh tayang di pencarian publik
+const publicBeforeApprove = await call('GET', '/api/kos?tipe=putra');
+assert.equal(publicBeforeApprove.s, 200);
+assert.equal(publicBeforeApprove.j.some(k => k.id_kos === kPutra.j.id), false);
+
+// Pemilik kost tetap bisa melihat kos pending miliknya di /api/kos/miliku
+const milikuRes = await call('GET', '/api/kos/miliku', null, UPemilik);
+assert.equal(milikuRes.s, 200);
+assert.ok(milikuRes.j.some(k => k.id_kos === kPutra.j.id));
+
+// Admin melihat antrean postingan kos pending
+const pendingKosList = await call('GET', '/api/admin/kos/pending', null, A);
+assert.equal(pendingKosList.s, 200);
+assert.ok(pendingKosList.j.kos.some(k => k.id_kos === kPutra.j.id));
+
+// Admin menyetujui postingan kos kPutra, kPutri, dan kosMulti
+const appKos1 = await call('PATCH', `/api/admin/kos/${kPutra.j.id}/approve`, null, A);
+assert.equal(appKos1.s, 200);
+assert.equal(appKos1.j.kos.status_postingan, 'approved');
+
+const appKos2 = await call('PATCH', `/api/admin/kos/${kPutri.j.id}/approve`, null, A);
+assert.equal(appKos2.s, 200);
+assert.equal(appKos2.j.kos.status_postingan, 'approved');
+
+const appKos3 = await call('PATCH', `/api/admin/kos/${kosMulti.j.id}/approve`, null, A);
+assert.equal(appKos3.s, 200);
+assert.equal(appKos3.j.kos.status_postingan, 'approved');
+
+// Uji reject postingan kos
+const kDitolak = await call('POST', '/api/kos', {
+  nama_kos: 'Kos Fiktif Ditolak', alamat: 'Jl. Misterius No. 0', harga_bulan: 500000
+}, UPemilik);
+const rejKosRes = await call('PATCH', `/api/admin/kos/${kDitolak.j.id}/reject`, { alasan: 'Alamat tidak ditemukan' }, A);
+assert.equal(rejKosRes.s, 200);
+assert.equal(rejKosRes.j.kos.status_postingan, 'rejected');
+
+// Pemilik kost: kelola pengajuan sewa kos dan approval
+await db.prepare(`
+  INSERT OR REPLACE INTO pengajuan_sewa_kos (id_pengajuan, id_kos, id_pemilik, nama_penyewa, email_penyewa, status)
+  VALUES (1, 1, 1, 'Rina Maharani', 'rina@itg.ac.id', 'pending')
+`).run();
+
+const listPengajuanPending = await call('GET', '/api/kos/pengajuan', null, UPemilik);
+assert.equal(listPengajuanPending.s, 200);
+assert.equal(listPengajuanPending.j.length, 1);
+assert.equal(listPengajuanPending.j[0].status, 'pending');
+
+// PUT /api/transaksi/:id/approve mengeksekusi UPDATE status ke approved
+const approveTxKosPut = await call('PUT', '/api/transaksi/1/approve', null, UPemilik);
+assert.equal(approveTxKosPut.s, 200);
+assert.equal(approveTxKosPut.j.status, 'approved');
+
+// Setelah disetujui, query daftar antrean baru tidak me-return pesanan approved (harus kosong)
+const listPengajuanSetelahApprove = await call('GET', '/api/kos/pengajuan', null, UPemilik);
+assert.equal(listPengajuanSetelahApprove.s, 200);
+assert.equal(listPengajuanSetelahApprove.j.length, 0);
+
+// Pengujian tolak / reject pengajuan sewa kos
+await db.prepare(`
+  INSERT OR REPLACE INTO pengajuan_sewa_kos (id_pengajuan, id_kos, id_pemilik, nama_penyewa, email_penyewa, status)
+  VALUES (2, 1, 1, 'Budi Santoso', 'budi@itg.ac.id', 'pending')
+`).run();
+const tolakTxKosPut = await call('PUT', '/api/transaksi/2/reject', { alasan: 'Kamar penuh' }, UPemilik);
+assert.equal(tolakTxKosPut.s, 200);
+assert.equal(tolakTxKosPut.j.status, 'rejected');
+
+// Uji reject akun pemilik kost
+const mDitolak = await call('POST', '/api/register', {
+  nama: 'Akun Palsu', email: 'palsu@itg.ac.id', password: 'password123', role: 'pemilik_kost'
+});
+await call('PATCH', `/api/admin/users/${mDitolak.j.id_mahasiswa}/reject`, { alasan: 'KTP tidak valid' }, A);
+const loginRejected = await call('POST', '/api/login', { email: 'palsu@itg.ac.id', password: 'password123' });
+assert.equal(loginRejected.s, 403);
+assert.match(loginRejected.j.error, /ditolak oleh admin/i);
+
+const filterPutra = await call('GET', '/api/kos?tipe=putra');
+assert.equal(filterPutra.s, 200);
+assert.ok(filterPutra.j.length >= 1);
+assert.ok(filterPutra.j.every(k => k.tipe_kos === 'putra' || k.jenis_kelamin === 'putra'));
+
+const filterPutri = await call('GET', '/api/kos?tipe=putri');
+assert.equal(filterPutri.s, 200);
+assert.ok(filterPutri.j.length >= 1);
+assert.ok(filterPutri.j.every(k => k.tipe_kos === 'putri' || k.jenis_kelamin === 'putri'));
+
+const filterCampur = await call('GET', '/api/kos?tipe=campur');
+assert.equal(filterCampur.s, 200);
+assert.ok(filterCampur.j.length >= 1);
+assert.ok(filterCampur.j.every(k => k.tipe_kos === 'campur' || k.jenis_kelamin === 'campur'));
+
+const filterSemua = await call('GET', '/api/kos?tipe=semua');
+assert.equal(filterSemua.s, 200);
+const listTanpaFilter = await call('GET', '/api/kos');
+assert.equal(listTanpaFilter.s, 200);
+assert.equal(filterSemua.j.length, listTanpaFilter.j.length);
+
+const filterGenderAlias = await call('GET', '/api/kos?gender=putra');
+assert.equal(filterGenderAlias.s, 200);
+assert.equal(filterGenderAlias.j.length, filterPutra.j.length);
+
+const badGeo = await call('GET', '/api/reverse-geocode?lat=abc&lon=def');
+assert.equal(badGeo.s, 400);
+
+// ==========================================
+// Uji Fitur Pengajuan Sewa & Pesanan Masuk Pemilik Kost
+// ==========================================
+// 1. Mahasiswa mengajukan sewa kos via POST /api/sewa dengan payload kos_id
+const sewaKosReq = await call('POST', '/api/sewa', {
+  kos_id: kPutra.j.id,
+  kamar: 'Kamar B-01',
+  durasi_bulan: 3,
+  total_harga: 2250000
+}, U);
+assert.equal(sewaKosReq.s, 201);
+assert.equal(sewaKosReq.j.status, 'pending');
+assert.equal(sewaKosReq.j.kos_id, kPutra.j.id);
+assert.equal(sewaKosReq.j.pemilik_id, mPemilik.j.id_mahasiswa);
+assert.ok(sewaKosReq.j.user_id);
+
+// Pastikan data tersimpan di pengajuan_sewa_kos dan pesanan
+const dbOrder = await db.prepare('SELECT * FROM pengajuan_sewa_kos WHERE id_pengajuan=?').get(sewaKosReq.j.id_pengajuan);
+assert.ok(dbOrder);
+assert.equal(dbOrder.status, 'pending');
+assert.equal(dbOrder.pemilik_id, mPemilik.j.id_mahasiswa);
+
+// 2. Pemilik kost mengambil daftar pesanan masuk via GET /api/pesanan-masuk
+const pesananMasukOwner = await call('GET', '/api/pesanan-masuk', null, UPemilik);
+assert.equal(pesananMasukOwner.s, 200);
+assert.ok(Array.isArray(pesananMasukOwner.j));
+assert.ok(pesananMasukOwner.j.some(p => p.id_pengajuan === sewaKosReq.j.id_pengajuan));
+
+// 3. Role guard: Mahasiswa dilarang mengakses GET /api/pesanan-masuk (403)
+const pesananMasukForbiddenMhs = await call('GET', '/api/pesanan-masuk', null, U);
+assert.equal(pesananMasukForbiddenMhs.s, 403);
+
+// 4. Pemilik menyetujui pesanan sewa
+const approvePesanan = await call('PATCH', `/api/kos/pengajuan/${sewaKosReq.j.id_pengajuan}/terima`, null, UPemilik);
+assert.equal(approvePesanan.s, 200);
+assert.equal(approvePesanan.j.status, 'approved');
+
+// Setelah disetujui, pesanan tidak lagi muncul di antrean pending
+const pesananSetelahApprove = await call('GET', '/api/pesanan-masuk', null, UPemilik);
+assert.equal(pesananSetelahApprove.s, 200);
+assert.ok(!pesananSetelahApprove.j.some(p => p.id_pengajuan === sewaKosReq.j.id_pengajuan));
+
+// ==========================================
+// Uji Fitur Manajemen Stok Kamar & Auto-generate (kamar_kos) (BUG 2 & BUG 3)
+// ==========================================
+// 1. Pemilik Kost mengunggah properti baru dengan jumlah_kamar = 3
+const newKosReq = await call('POST', '/api/kos', {
+  nama_kos: 'Kos Harmoni Cendekia',
+  alamat: 'Jl. Sukagalih No. 45 Garut',
+  harga_bulan: 750000,
+  jumlah_kamar: 3,
+  tipe_kos: 'campur'
+}, UPemilik);
+assert.equal(newKosReq.s, 201);
+const newKosId = newKosReq.j.id;
+
+// Verifikasi di backend tabel kamar_kos: otomatis membuat 3 baris ("Kamar 01", "Kamar 02", "Kamar 03") dengan status 'available'
+const dbRooms = await db.prepare('SELECT * FROM kamar_kos WHERE kos_id=? ORDER BY id ASC').all(newKosId);
+assert.equal(dbRooms.length, 3);
+assert.equal(dbRooms[0].nomor_kamar, 'Kamar 01');
+assert.equal(dbRooms[0].status, 'available');
+assert.equal(dbRooms[1].nomor_kamar, 'Kamar 02');
+assert.equal(dbRooms[1].status, 'available');
+assert.equal(dbRooms[2].nomor_kamar, 'Kamar 03');
+assert.equal(dbRooms[2].status, 'available');
+
+// Single source of truth: kamar_tersedia dihitung dari room status available
+const kosDetailBefore = await call('GET', `/api/kos/${newKosId}`);
+assert.equal(kosDetailBefore.j.kamar_tersedia, 3);
+
+// 2. Fetch list kamar via endpoint GET /api/kos/:id/kamar
+const apiRooms = await call('GET', `/api/kos/${newKosId}/kamar`);
+assert.equal(apiRooms.s, 200);
+assert.equal(apiRooms.j.length, 3);
+assert.ok(apiRooms.j.every(r => r.status === 'available'));
+
+// 3. Mahasiswa mengajukan sewa spesifik pada "Kamar 02" -> status kamar menjadi 'pending'
+const sewaKamar2 = await call('POST', '/api/sewa', {
+  kos_id: newKosId,
+  kamar: 'Kamar 02',
+  durasi_bulan: 6,
+  total_harga: 4500000
+}, U);
+assert.equal(sewaKamar2.s, 201);
+assert.equal(sewaKamar2.j.status, 'pending');
+
+// Verifikasi status kamar menjadi pending
+const room2AfterSewa = await db.prepare("SELECT status FROM kamar_kos WHERE kos_id=? AND nomor_kamar='Kamar 02'").get(newKosId);
+assert.equal(room2AfterSewa.status, 'pending');
+
+// 4. Validasi server side (BUG 3): Coba submit sewa ulang pada kamar yang sama (Kamar 02) saat pending -> HARUS ditolak HTTP 409
+const doubleBookingPending = await call('POST', '/api/sewa', {
+  kos_id: newKosId,
+  kamar: 'Kamar 02',
+  durasi_bulan: 3,
+  total_harga: 2250000
+}, U);
+assert.equal(doubleBookingPending.s, 409);
+assert.match(doubleBookingPending.j.error, /Kamar sudah dipesan/i);
+
+// 5. Pemilik Kost menyetujui (approve) pesanan tersebut -> status kamar menjadi 'booked'
+const approveKamar2 = await call('PATCH', `/api/kos/pengajuan/${sewaKamar2.j.id_pengajuan}/terima`, null, UPemilik);
+assert.equal(approveKamar2.s, 200);
+assert.equal(approveKamar2.j.status, 'approved');
+
+// 6. Verifikasi penguncian kamar di database: status menjadi 'booked'
+const dbRoomsAfter = await db.prepare('SELECT * FROM kamar_kos WHERE kos_id=? ORDER BY id ASC').all(newKosId);
+const room1 = dbRoomsAfter.find(r => r.nomor_kamar === 'Kamar 01');
+const room2 = dbRoomsAfter.find(r => r.nomor_kamar === 'Kamar 02');
+const room3 = dbRoomsAfter.find(r => r.nomor_kamar === 'Kamar 03');
+
+assert.equal(room1.status, 'available');
+assert.equal(room2.status, 'booked'); // Terkunci menjadi 'booked'
+assert.equal(room3.status, 'available');
+
+// Sisa kamar tersedia pada kos otomatis tersinkronisasi menjadi 2
+const dbKosAfter = await db.prepare('SELECT kamar_tersedia FROM kos WHERE id_kos=?').get(newKosId);
+assert.equal(dbKosAfter.kamar_tersedia, 2);
+
+// 7. Coba submit sewa ulang pada kamar yang sudah 'booked' -> HARUS ditolak HTTP 409
+const doubleBookingBooked = await call('POST', '/api/sewa', {
+  kos_id: newKosId,
+  kamar: 'Kamar 02',
+  durasi_bulan: 1,
+  total_harga: 750000
+}, U);
+assert.equal(doubleBookingBooked.s, 409);
+assert.match(doubleBookingBooked.j.error, /Kamar sudah dipesan/i);
+
+// 8. Alur tolak: Mahasiswa ajukan Kamar 01 -> Pemilik tolak -> Kamar 01 kembali available
+const sewaKamar1 = await call('POST', '/api/sewa', {
+  kos_id: newKosId,
+  kamar: 'Kamar 01',
+  durasi_bulan: 1,
+  total_harga: 750000
+}, U);
+assert.equal(sewaKamar1.s, 201);
+assert.equal((await db.prepare("SELECT status FROM kamar_kos WHERE kos_id=? AND nomor_kamar='Kamar 01'").get(newKosId)).status, 'pending');
+
+const tolakKamar1 = await call('PATCH', `/api/kos/pengajuan/${sewaKamar1.j.id_pengajuan}/tolak`, null, UPemilik);
+assert.equal(tolakKamar1.s, 200);
+assert.equal((await db.prepare("SELECT status FROM kamar_kos WHERE kos_id=? AND nomor_kamar='Kamar 01'").get(newKosId)).status, 'available');
+
+// kamar_tersedia kembali menjadi 2
+const kosDetailFinal = await call('GET', `/api/kos/${newKosId}`);
+assert.equal(kosDetailFinal.j.kamar_tersedia, 2);
+
+// ==========================================
+// Uji Endpoint Foto & Cloudinary (Multer memoryStorage)
+// ==========================================
+const fd = new FormData();
+fd.append('foto', new Blob(['test-image-binary-data'], { type: 'image/png' }), 'sample.png');
+const upRes = await fetch(base + '/api/upload', {
+  method: 'POST',
+  body: fd,
+});
+assert.equal(upRes.status, 200);
+const upJson = await upRes.json();
+assert.equal(upJson.ok, true);
+assert.ok(upJson.secure_url);
+assert.ok(Array.isArray(upJson.urls) && upJson.urls.length === 1);
 
 srv.close();
 console.log('semua cek lolos');

@@ -8,6 +8,25 @@ window.KM = (() => {
 
   const TOKEN_KEY = 'km_token'; // token Bearer dari /login dan /register
   const SESI_KEY = 'km_sesi'; // penanda UI bahwa pengguna sudah masuk
+  const ROLE_KEY = 'role';
+  const KM_ROLE_KEY = 'km_role';
+
+  const role = {
+    get: () => localStorage.getItem(ROLE_KEY) || localStorage.getItem(KM_ROLE_KEY) || '',
+    set: (r) => {
+      if (!r) {
+        localStorage.removeItem(ROLE_KEY);
+        localStorage.removeItem(KM_ROLE_KEY);
+      } else {
+        localStorage.setItem(ROLE_KEY, r);
+        localStorage.setItem(KM_ROLE_KEY, r);
+      }
+    },
+    clear: () => {
+      localStorage.removeItem(ROLE_KEY);
+      localStorage.removeItem(KM_ROLE_KEY);
+    },
+  };
 
   const token = {
     get: () => localStorage.getItem(TOKEN_KEY) || '',
@@ -20,7 +39,11 @@ window.KM = (() => {
     set: () => localStorage.setItem(SESI_KEY, '1'),
     // Sesi mati: penanda UI dan token dibuang bersamaan supaya tidak
     // ada kondisi "kelihatan login" padahal tokennya sudah tidak berlaku.
-    clear: () => { localStorage.removeItem(SESI_KEY); token.clear(); },
+    clear: () => {
+      localStorage.removeItem(SESI_KEY);
+      token.clear();
+      role.clear();
+    },
   };
 
   // api() selalu melempar Error ber-status kalau gagal, jadi pemanggil cukup
@@ -31,9 +54,21 @@ window.KM = (() => {
     const t = token.get();
     if (t) h.authorization = 'Bearer ' + t; // dipakai APK; di web cookie tetap jalan
 
+    // Normalisasi path agar tidak ada duplikasi /api jika pemanggil menyertakan /api
+    const rawPath = String(path || '').trim();
+    let normalizedPath;
+    if (rawPath.startsWith('/api/') || rawPath === '/api') {
+      normalizedPath = rawPath;
+    } else {
+      normalizedPath = '/api' + (rawPath.startsWith('/') ? rawPath : '/' + rawPath);
+    }
+    // Karena dijalankan lewat Dev Tunnels, pastikan URL target selalu relatif
+    // (misal '/api/chat/room' atau '/api/saya') saat window.KM_API kosong.
+    const url = API ? (API + normalizedPath) : normalizedPath;
+
     let r;
     try {
-      r = await fetch(API + '/api' + path, {
+      r = await fetch(url, {
         method,
         credentials: 'same-origin',
         headers: h,
@@ -46,6 +81,8 @@ window.KM = (() => {
     const j = await r.json().catch(() => ({}));
     // /login dan /register mengembalikan token: simpan otomatis di satu tempat.
     if (r.ok && typeof j.token === 'string') { token.set(j.token); sesi.set(); }
+    if (r.ok && j.role) { role.set(j.role); }
+    if (r.ok && j.user && j.user.role) { role.set(j.user.role); }
     if (r.status === 401) sesi.clear();
     if (!r.ok) throw Object.assign(new Error(j.error ?? 'Terjadi kesalahan'), { status: r.status });
     return j;
@@ -57,8 +94,18 @@ window.KM = (() => {
   const del = (path, opts) => api(path, { ...opts, method: 'DELETE' });
 
   const logout = async () => {
+    const yakin = await ui.konfirmasi({
+      judul: 'Keluar dari akun?',
+      teks: 'Kamu perlu masuk kembali untuk mengakses fitur KampusCircle.',
+      teksYa: 'Ya, Keluar',
+      teksBatal: 'Batal',
+      danger: true,
+    });
+    if (!yakin) return;
+    ui.loading('Keluar dari akun...');
     try { await api('/logout', { method: 'POST' }); } catch { /* cookie mungkin sudah mati */ }
     sesi.clear();
+    ui.tutup();
     location.href = '/masuk.html';
   };
 
@@ -73,6 +120,113 @@ window.KM = (() => {
   const pesan = (el, teks, jenis = 'err') => {
     el.textContent = teks;
     el.className = 'msg ' + jenis;
+  };
+
+  // ---------------------------------------------------------------------------
+  // SweetAlert2 terpusat. Semua notifikasi aplikasi memakai helper ini supaya
+  // warna, tombol, dan perilakunya konsisten (teal #008F83).
+  // ---------------------------------------------------------------------------
+  const TEMA = {
+    teal: '#008F83',
+    tealDark: '#007A68',
+    red: '#DC2626',
+    grey: '#64748B',
+    ink: '#0F172A',
+  };
+  const adaSwal = () => typeof window.Swal !== 'undefined';
+
+  const ui = {
+    sukses(judul, teks = '') {
+      if (!adaSwal()) return Promise.resolve();
+      return Swal.fire({
+        icon: 'success',
+        title: judul || 'Berhasil',
+        text: teks,
+        confirmButtonText: 'Oke',
+        confirmButtonColor: TEMA.teal,
+        timer: teks ? undefined : 1600,
+        timerProgressBar: !teks,
+      });
+    },
+    error(judul, teks = '') {
+      if (!adaSwal()) { console.error(judul, teks); return Promise.resolve(); }
+      return Swal.fire({
+        icon: 'error',
+        title: judul || 'Terjadi Kesalahan',
+        text: teks,
+        confirmButtonText: 'Tutup',
+        confirmButtonColor: TEMA.teal,
+      });
+    },
+    info(judul, teks = '') {
+      if (!adaSwal()) return Promise.resolve();
+      return Swal.fire({
+        icon: 'info',
+        title: judul,
+        text: teks,
+        confirmButtonText: 'Mengerti',
+        confirmButtonColor: TEMA.teal,
+      });
+    },
+    peringatan(judul, teks = '') {
+      if (!adaSwal()) return Promise.resolve();
+      return Swal.fire({
+        icon: 'warning',
+        title: judul,
+        text: teks,
+        confirmButtonText: 'Oke',
+        confirmButtonColor: TEMA.teal,
+      });
+    },
+    toast(judul, icon = 'success') {
+      if (!adaSwal()) return Promise.resolve();
+      return Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon,
+        title: judul,
+        showConfirmButton: false,
+        timer: 2200,
+        timerProgressBar: true,
+      });
+    },
+    async konfirmasi({
+      judul = 'Apakah Anda yakin?',
+      teks = '',
+      teksYa = 'Ya',
+      teksBatal = 'Batal',
+      danger = false,
+      icon = 'warning',
+    } = {}) {
+      if (!adaSwal()) return window.confirm(teks ? `${judul}\n\n${teks}` : judul);
+      const r = await Swal.fire({
+        icon,
+        title: judul,
+        text: teks,
+        showCancelButton: true,
+        confirmButtonText: teksYa,
+        cancelButtonText: teksBatal,
+        confirmButtonColor: danger ? TEMA.red : TEMA.teal,
+        cancelButtonColor: TEMA.grey,
+        reverseButtons: true,
+        focusCancel: danger,
+      });
+      return Boolean(r.isConfirmed);
+    },
+    loading(judul = 'Memproses...') {
+      if (!adaSwal()) return;
+      Swal.fire({
+        title: judul,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => Swal.showLoading(),
+      });
+    },
+    tutup() {
+      if (adaSwal()) Swal.close();
+    },
+    get TEMA() { return { ...TEMA }; },
   };
 
   const thumb = (b) =>
@@ -122,11 +276,98 @@ window.KM = (() => {
 
   const getFoto = (f) => getFotos(f)[0] || null;
 
+  function getRole() {
+    return role.get();
+  }
+
+  function getHomeUrl() {
+    const userRole = role.get();
+    return userRole === 'pemilik_kost' ? 'kos-owner.html' : 'beranda.html';
+  }
+
+  function goToHome() {
+    const userRole = localStorage.getItem('role') || localStorage.getItem('km_role');
+    if (userRole === 'pemilik_kost') {
+      window.location.href = 'kos-owner.html';
+    } else {
+      window.location.href = 'beranda.html';
+    }
+  }
+
+  function adjustRoleBasedUI() {
+    const userRole = localStorage.getItem('role') || localStorage.getItem('km_role');
+    const isOwner = userRole === 'pemilik_kost';
+    const homeTarget = isOwner ? 'kos-owner.html' : 'beranda.html';
+
+    // 1. Tombol Kembali di Header dan link yang mengarah ke beranda
+    const backElements = document.querySelectorAll(
+      '.btn-header-back, #chatBackHome, #backBtn, a.back, a[href="/beranda.html"], a[href="beranda.html"], [data-nav="home"]'
+    );
+    backElements.forEach((el) => {
+      if (el.tagName === 'A') {
+        const href = el.getAttribute('href') || '';
+        if (href.includes('beranda') || href.includes('kos-owner')) {
+          el.setAttribute('href', homeTarget);
+        }
+      }
+      el.addEventListener('click', (e) => {
+        if (el.id === 'backBtn' && window.history.length > 1 && document.referrer.includes(window.location.host)) {
+          return;
+        }
+        e.preventDefault();
+        goToHome();
+      });
+    });
+
+    // 2. Item Navigasi Bawah (Bottom Navigation Bar)
+    const navItems = document.querySelectorAll('.bottom-nav-bar a, .nav a, .owner-bottom-nav a');
+    navItems.forEach((link) => {
+      const text = (link.textContent || '').trim().toLowerCase();
+      const href = link.getAttribute('href') || '';
+      if (text.includes('beranda') || href.includes('beranda') || href.includes('kos-owner')) {
+        link.setAttribute('href', homeTarget);
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          goToHome();
+        });
+      }
+    });
+
+    // 3. Tombol Tambah di Bottom Navigation untuk pemilik_kost
+    if (isOwner) {
+      const plusButtons = document.querySelectorAll(
+        '.floating-plus-btn, #chatFloatingPlus, #navProfilPlus, a[href="/unggah.html"], a[href="unggah.html"], .nav a.item.center'
+      );
+      plusButtons.forEach((btn) => {
+        btn.setAttribute('href', 'kos-owner.html?action=tambah-properti');
+        btn.setAttribute('aria-label', 'Unggah Properti Kost');
+        btn.setAttribute('title', 'Tambah Properti Kost');
+      });
+    }
+  }
+
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', adjustRoleBasedUI);
+    } else {
+      adjustRoleBasedUI();
+    }
+  }
+
+  window.goToHome = goToHome;
+  window.getHomeUrl = getHomeUrl;
+
   // Nama lama dipertahankan supaya halaman lama tidak perlu diubah semua.
   return {
     api, get, post, patch, del, token, sesi, logout, esc, rp, pesan, thumb, wajibLogin, nav,
+    ui,
     getFotos, getFoto,
     adaSesi: sesi.ada,
     simpanSesi: sesi.set,
+    role,
+    getRole,
+    getHomeUrl,
+    goToHome,
+    adjustRoleBasedUI,
   };
 })();

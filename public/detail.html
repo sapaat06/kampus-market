@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<script src="/vendor/sweetalert2.all.min.js"></script>
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KampusCircle — Detail Barang</title>
@@ -128,11 +129,29 @@
     flex-shrink: 0;
     margin-top: 4px;
   }
-  .photo-frame img {
+  .photo-track {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    touch-action: pan-y;
+  }
+  .photo-track::-webkit-scrollbar { display: none; }
+  .photo-track img {
+    flex: 0 0 100%;
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    user-select: none;
+    -webkit-user-drag: none;
   }
   .carousel-dots {
     display: flex;
@@ -141,11 +160,15 @@
     align-items: center;
     margin: 14px 0 18px;
   }
+  .carousel-dots[hidden] { display: none; }
   .carousel-dots .dot {
     width: 6px;
     height: 6px;
+    padding: 0;
+    border: 0;
     border-radius: 50%;
     background: #CBD5E1;
+    cursor: pointer;
     transition: all 0.2s;
   }
   .carousel-dots .dot.active {
@@ -161,6 +184,14 @@
     align-items: center;
     margin-bottom: 16px;
   }
+
+  /* Utility classes Tailwind */
+  .mt-4 { margin-top: 1rem !important; }
+  .mt-5 { margin-top: 1.25rem !important; }
+  .flex { display: flex !important; }
+  .justify-center { justify-content: center !important; }
+  .items-center { align-items: center !important; }
+  .gap-1\.5 { gap: 0.375rem !important; }
   .badge-chip {
     height: 32px;
     padding: 0 16px;
@@ -173,6 +204,14 @@
   }
   .badge-chip.orange {
     background: #F7942D;
+    color: #FFFFFF;
+  }
+  .badge-chip.mint {
+    background: #008F83;
+    color: #FFFFFF;
+  }
+  .badge-chip.purple {
+    background: #7C3AED;
     color: #FFFFFF;
   }
   .badge-chip.outline {
@@ -195,41 +234,108 @@
     font-size: 24px;
     font-weight: 800;
     color: #008F83;
-    margin-bottom: 18px;
+    margin-bottom: 14px;
     line-height: 1;
   }
 
-  /* Notice Highlight Card */
-  .notice-card {
-    background: #DCFCE7;
+  /* Price Box Cards */
+  .price-box-card {
+    border-radius: 16px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1.5px solid #E2E8F0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  }
+  .price-box-card .pbc-lbl {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 1px;
+  }
+  .price-box-card .pbc-sub {
+    font-size: 11px;
+    color: #64748B;
+  }
+  .price-box-card .pbc-val {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .price-box-card.sewa {
+    border-color: #FED7AA;
+    background: #FFF7ED;
+  }
+  .price-box-card.sewa .pbc-lbl {
+    color: #9A3412;
+  }
+  .price-box-card.sewa .pbc-val {
+    color: #EA580C;
+  }
+  .price-box-card.sewa .pbc-unit {
+    font-size: 13px;
+    font-weight: 700;
+    color: #9A3412;
+  }
+  .price-box-card.beli {
+    border-color: #A7F3D0;
+    background: #F0FDF4;
+  }
+  .price-box-card.beli .pbc-lbl {
+    color: #166534;
+  }
+  .price-box-card.beli .pbc-val {
+    color: #008F83;
+  }
+  .price-box-card.pinjam {
+    border-color: #DDD6FE;
+    background: #F5F3FF;
+  }
+  .price-box-card.pinjam .pbc-lbl {
+    color: #6D28D9;
+  }
+  .price-box-card.pinjam .pbc-val {
+    color: #7C3AED;
+    font-size: 20px;
+  }
+
+  /* Status Notice Card */
+  .status-notice-card {
     border-radius: 14px;
     padding: 12px 14px;
     display: flex;
     gap: 10px;
     align-items: flex-start;
     margin-bottom: 14px;
+    background: #FEF3C7;
+    border: 1.5px solid #FCD34D;
+    color: #92400E;
   }
-  .notice-card svg {
+  .status-notice-card.danger {
+    background: #FEE2E2;
+    border-color: #FCA5A5;
+    color: #991B1B;
+  }
+  .status-notice-card svg {
     width: 20px;
     height: 20px;
-    stroke: #166534;
+    stroke: currentColor;
     fill: none;
     stroke-width: 2.2;
     margin-top: 1px;
     flex-shrink: 0;
   }
-  .notice-card .notice-content {
+  .status-notice-card .notice-content {
     flex: 1;
   }
-  .notice-card .notice-title {
+  .status-notice-card .notice-title {
     font-size: 13.5px;
     font-weight: 700;
-    color: #166534;
     margin-bottom: 2px;
   }
-  .notice-card .notice-sub {
+  .status-notice-card .notice-sub {
     font-size: 11.5px;
-    color: #166534;
     line-height: 1.4;
   }
 
@@ -529,34 +635,59 @@
       </button>
     </div>
 
-    <!-- Photo Container -->
+    <!-- Photo Container: slider horizontal, isi + dots dirender oleh JS -->
     <div class="photo-frame" id="heroImgWrap">
-      <img id="heroImg" src="/img/kalkulator-casio.png" alt="Foto Produk">
+      <div class="photo-track" id="heroTrack">
+        <img src="/img/kalkulator-casio.png" alt="Foto Produk">
+      </div>
       <div id="heroSvgPlaceholder" style="display:none"></div>
     </div>
-    <div class="carousel-dots" id="carouselDots">
-      <div class="dot active"></div>
-      <div class="dot"></div>
-      <div class="dot"></div>
-    </div>
+    <div class="carousel-dots flex justify-center items-center gap-1.5" id="dotsContainer" aria-label="Navigasi foto"></div>
 
     <!-- Badges Row -->
-    <div class="badges-row" id="badgesRow">
+    <div class="badges-row mt-4" id="badgesRow">
       <span class="badge-chip orange" id="badgeMode">Sewa</span>
       <span class="badge-chip outline" id="badgeKondisi">Kondisi Baik</span>
       <span class="badge-chip outline" id="badgeTersedia">Tersedia</span>
     </div>
 
-    <!-- Title & Price -->
+    <!-- Title & Dynamic Price Boxes -->
     <h1 class="item-title" id="itemTitle">Kalkulator Casio fx-991ID Plus</h1>
-    <div class="price-val" id="priceVal">Rp5.000/hari</div>
+    <span id="priceVal" style="display:none">Rp5.000/hari</span>
 
-    <!-- Notice Card -->
-    <div class="notice-card" id="noticeCard">
-      <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    <!-- Kotak Harga Sewa (Hanya tampil jika tipe Sewa) -->
+    <div class="price-box-card sewa" id="boxHargaSewa">
+      <div>
+        <div class="pbc-lbl">Biaya Sewa</div>
+        <div class="pbc-sub">Sesuai durasi yang kamu butuhkan</div>
+      </div>
+      <div class="pbc-val" id="priceValSewa">Rp5.000<span class="pbc-unit">/hari</span></div>
+    </div>
+
+    <!-- Kotak Harga Beli (Hanya tampil jika tipe Beli) -->
+    <div class="price-box-card beli" id="boxHargaBeli" style="display:none;">
+      <div>
+        <div class="pbc-lbl">Harga Beli</div>
+        <div class="pbc-sub">Kepemilikan permanen selamanya</div>
+      </div>
+      <div class="pbc-val" id="priceValBeli">Rp180.000</div>
+    </div>
+
+    <!-- Kotak Pinjam (Hanya tampil jika tipe Pinjam) -->
+    <div class="price-box-card pinjam" id="boxHargaPinjam" style="display:none;">
+      <div>
+        <div class="pbc-lbl">Peminjaman Bebas Biaya</div>
+        <div class="pbc-sub">Berbagi sesama komunitas mahasiswa</div>
+      </div>
+      <div class="pbc-val" id="priceValPinjam">Gratis</div>
+    </div>
+
+    <!-- Status Notice Card (Hanya muncul jika barang tidak tersedia / terjual / sedang disewa) -->
+    <div class="status-notice-card" id="statusNoticeCard" style="display:none;">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       <div class="notice-content">
-        <div class="notice-title" id="noticeTitle">Deposit Rp50.000</div>
-        <div class="notice-sub" id="noticeSub">Dikembalikan setelah kondisi barang dikonfirmasi.</div>
+        <div class="notice-title" id="statusNoticeTitle">Status Barang</div>
+        <div class="notice-sub" id="statusNoticeSub">Informasi ketersediaan barang.</div>
       </div>
     </div>
 
@@ -613,10 +744,70 @@
         </div>
       </div>
 
-      <!-- Lokasi Serah Terima -->
+      <!-- Titik Serah Terima (Ditentukan oleh Penjual) -->
       <div class="form-field">
-        <label class="form-label" for="lokasiTemu">Titik serah terima di kampus</label>
-        <input class="form-input-box" id="lokasiTemu" value="Lobi Fakultas Teknik" placeholder="Masukkan lokasi temu">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+          <label class="form-label" style="margin:0">Titik serah terima di kampus</label>
+          <span style="font-size:10px;font-weight:700;color:#007A68;background:#DCFCE7;padding:2px 8px;border-radius:999px">✓ Ditentukan Penjual</span>
+        </div>
+        <div class="lokasi-fixed-card" id="lokasiTemuCard" style="display:flex;align-items:center;gap:10px;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:10px 14px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:#DDF1EC;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="#007A68" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div id="lokasiTemuText" style="font-size:13px;font-weight:700;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Lobi Fakultas Teknik</div>
+            <div style="font-size:11px;color:#64748B;">Lokasi tetap sesuai yang disepakati oleh penjual</div>
+          </div>
+        </div>
+        <input type="hidden" id="lokasiTemu" value="Lobi Fakultas Teknik">
+      </div>
+
+      <!-- Pilihan Metode Pembayaran (COD vs Payment di Aplikasi) -->
+      <div class="form-field" id="metodeBayarGroup">
+        <label class="form-label">Pilih metode pembayaran</label>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <!-- COD Card -->
+          <div class="pay-option-card selected" id="optPayCOD" role="button" tabindex="0" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1.5px solid #008F83;background:#F0FDF4;border-radius:12px;cursor:pointer;transition:all .15s ease;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:34px;height:34px;border-radius:8px;background:#DCFCE7;display:flex;align-items:center;justify-content:center;color:#007A68;flex-shrink:0;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+                  <circle cx="12" cy="12" r="2"></circle>
+                  <path d="M6 12h.01M18 12h.01"></path>
+                </svg>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:700;color:#0F172A;">COD (Bayar di Tempat)</div>
+                <div style="font-size:11px;color:#64748B;">Bayar tunai langsung saat temu serah terima</div>
+              </div>
+            </div>
+            <div id="radioCOD" style="width:18px;height:18px;border-radius:50%;border:2px solid #008F83;display:flex;align-items:center;justify-content:center;">
+              <div style="width:10px;height:10px;border-radius:50%;background:#008F83;"></div>
+            </div>
+          </div>
+
+          <!-- Payment Aplikasi Card -->
+          <div class="pay-option-card" id="optPayApp" role="button" tabindex="0" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1.5px solid #E2E8F0;background:#FFFFFF;border-radius:12px;cursor:pointer;transition:all .15s ease;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:34px;height:34px;border-radius:8px;background:#E0F2FE;display:flex;align-items:center;justify-content:center;color:#0284C7;flex-shrink:0;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                  <line x1="1" y1="10" x2="23" y2="10"></line>
+                </svg>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:700;color:#0F172A;">Pembayaran di Aplikasi</div>
+                <div style="font-size:11px;color:#64748B;">Transfer langsung via QRIS / Dompet Digital</div>
+              </div>
+            </div>
+            <div id="radioApp" style="width:18px;height:18px;border-radius:50%;border:2px solid #CBD5E1;display:flex;align-items:center;justify-content:center;">
+              <div style="width:10px;height:10px;border-radius:50%;background:transparent;"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Ringkasan Biaya -->
@@ -626,13 +817,13 @@
           <span id="billPriceLabel">Rp5.000 × 3 hari</span>
           <span id="billPriceVal" class="bold">Rp15.000</span>
         </div>
-        <div class="bill-row" id="billRowDeposit">
-          <span>Deposit (dapat kembali)</span>
-          <span class="bold">Rp50.000</span>
+        <div class="bill-row" id="billRowMetode">
+          <span>Metode pembayaran</span>
+          <span id="billMetodeVal" class="bold" style="color:#007A68">COD (Bayar di Tempat)</span>
         </div>
         <div class="bill-row bold" style="border-top:1px dashed #CBD5E1;padding-top:6px;margin-top:2px">
           <span>Total</span>
-          <span id="modalTotal" style="color:#008F83">Rp65.000</span>
+          <span id="modalTotal" style="color:#008F83">Rp15.000</span>
         </div>
       </div>
 

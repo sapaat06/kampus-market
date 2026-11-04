@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<script src="/vendor/sweetalert2.all.min.js"></script>
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CampusCircle — Transaksi Pembelian</title>
@@ -205,11 +206,13 @@
     background: #FFFFFF;
     border: 1px solid #E2E8F0;
     border-radius: 16px;
-    height: 252px;
+    min-height: 252px;
+    height: auto;
     padding: 16px 20px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    gap: 4px;
     box-sizing: border-box;
     margin-bottom: 21px;
   }
@@ -376,6 +379,9 @@
       <span class="status-pill" id="badgeStatus">Selesai / Hak Milik</span>
     </div>
 
+    <!-- COD Verification Section -->
+    <div id="codSection"></div>
+
     <!-- Details Card -->
     <div class="details-card">
       <div class="detail-row">
@@ -393,6 +399,10 @@
       <div class="detail-row">
         <span class="detail-label">Harga jual</span>
         <span class="detail-val" id="valHarga">Rp3.200.000</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Metode pembayaran</span>
+        <span class="detail-val" id="valMetode" style="color:#008F83">COD (Bayar di Tempat)</span>
       </div>
       <div class="detail-row">
         <span class="detail-label">Serah terima</span>
@@ -450,6 +460,7 @@
   </nav>
 </div>
 
+<script src="/js/cod.js"></script>
 <script type="module" src="/js/status-beli.js"></script>
 </body>
 </html>

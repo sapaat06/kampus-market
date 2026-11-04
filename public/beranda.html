@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<script src="/vendor/sweetalert2.all.min.js"></script>
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KampusCircle — Beranda</title>
@@ -9,11 +10,12 @@
 <style>
   .beranda-body {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     scrollbar-width: none;
     display: flex;
     flex-direction: column;
-    padding-bottom: 74px;
+    padding-bottom: 80px;
     background: #F8FAFC;
   }
   .beranda-body::-webkit-scrollbar { display: none; }
@@ -432,10 +434,92 @@
     border-radius: 2px;
     pointer-events: none;
   }
+
+  /* Modals */
+  .modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    z-index: 200;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+  }
+  .modal-overlay.open {
+    display: flex !important;
+  }
+  .modal-sheet {
+    background: #FFFFFF;
+    border-radius: 24px 24px 0 0;
+    padding: 16px 20px 28px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: slideUp 0.25s ease-out;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .modal-handle {
+    width: 36px;
+    height: 4px;
+    background: #CBD5E1;
+    border-radius: 2px;
+    margin: 0 auto 6px;
+  }
+  .modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .modal-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .modal-close {
+    background: #F1F5F9;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .campus-opt {
+    width: 100%;
+    text-align: left;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0F172A;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .campus-opt:hover, .campus-opt:active {
+    border-color: #008F83;
+    background: #F0FDF4;
+    color: #008F83;
+  }
 </style>
 </head>
 <body>
-<div class="app-frame">
+<div class="phone app-frame">
   <div class="beranda-body scroll">
     <div class="teal-header-hero">
       <div class="status-bar-white">
@@ -462,17 +546,17 @@
       </div>
 
       <!-- Search bar 1: Kos -->
-      <div class="search-pill-box" onclick="location.href='/kos.html'" style="cursor:pointer">
+      <div class="search-pill-box" id="searchKosBox">
         <svg class="search-lead-icon" viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-4a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5z"/></svg>
-        <input type="text" placeholder="Cari kos terdekat • harga bulanan..." readonly style="cursor:pointer">
-        <svg class="search-tail-filter" viewBox="0 0 24 24" onclick="event.stopPropagation(); location.href='/filter-kos.html'"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        <input id="searchKosInput" type="search" placeholder="Cari kos terdekat • harga bulanan..." autocomplete="off">
+        <svg class="search-tail-filter" id="filterKosBtn" viewBox="0 0 24 24" aria-label="Filter Kos"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
       </div>
 
       <!-- Search bar 2: Barang -->
       <div class="search-pill-box">
         <svg class="search-lead-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input id="searchBarang" type="search" placeholder="Cari buku, laptop, alat praktikum..." autocomplete="off">
-        <svg class="search-tail-filter" viewBox="0 0 24 24" onclick="location.href='/cari.html'"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        <svg class="search-tail-filter" id="filterBarangBtn" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
       </div>
 
       <!-- Mode Chips -->
@@ -486,28 +570,28 @@
 
     <!-- 4 Category Circles -->
     <div class="category-section" id="categoryList">
-      <button class="cat-item-btn cat" data-cat="1" type="button">
+      <button class="cat-item-btn cat" data-cat="2" type="button">
         <div class="cat-circle mint box">
           <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         </div>
         <span class="cat-label">Buku &<br>Modul</span>
       </button>
 
-      <button class="cat-item-btn cat" data-cat="2" type="button">
+      <button class="cat-item-btn cat" data-cat="1" type="button">
         <div class="cat-circle peach box">
           <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
         </div>
         <span class="cat-label">Elektronik</span>
       </button>
 
-      <button class="cat-item-btn cat" data-cat="3" type="button">
+      <button class="cat-item-btn cat" data-cat="4" type="button">
         <div class="cat-circle mint box">
           <svg viewBox="0 0 24 24"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><line x1="8.5" y1="2" x2="15.5" y2="2"/></svg>
         </div>
         <span class="cat-label">Alat<br>Praktikum</span>
       </button>
 
-      <button class="cat-item-btn cat" data-cat="kos" type="button">
+      <button class="cat-item-btn cat" data-cat="3" type="button">
         <div class="cat-circle peach box">
           <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v1H8V6a4 4 0 0 1 4-4z"/><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 18v4"/><path d="M8 7l-2 5h12l-2-5"/></svg>
         </div>

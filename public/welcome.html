@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<script src="/vendor/sweetalert2.all.min.js"></script>
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KampusCircle — Teman Setia Kebutuhan Kampus</title>
@@ -21,9 +22,7 @@
   <div class="onboarding-wrap">
     <div class="brand-top-bar">
       <div class="brand-logo-text">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="#008F83" style="margin-right:2px">
-          <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm0 8.5L4.5 9 12 4.91 19.5 9 12 11.5z"/>
-        </svg>
+        <img src="/img/logo-mark.png?v=3" alt="Logo KampusCircle" class="brand-logo-img">
         <span class="brand-teal">Kampus</span><span class="brand-orange">Circle</span>
       </div>
       <div style="cursor:pointer;color:var(--text-dark)">
@@ -65,8 +64,8 @@
     <p class="onboarding-note">Satu akun untuk mencari dan berbagi barang. Khusus komunitas mahasiswa terverifikasi.</p>
 
     <div class="onboarding-actions">
-      <button id="btnMulaiBergabung" class="btn-primary" onclick="location.href='/verifikasi.html'">Mulai bergabung</button>
-      <button id="btnKeMasuk" class="btn-ghost" onclick="location.href='/masuk.html'">Sudah punya akun? Masuk</button>
+      <a id="btnMulaiBergabung" class="btn-primary" href="/verifikasi.html">Mulai bergabung</a>
+      <a id="btnKeMasuk" class="btn-ghost" href="/masuk.html">Sudah punya akun? Masuk</a>
     </div>
 
     <div class="home-indicator-bar"></div>

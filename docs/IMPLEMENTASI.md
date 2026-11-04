@@ -65,16 +65,48 @@ Seluruh aset grafis yang dibutuhkan desain Figma telah diekstraksi dan disediaka
 
 ---
 
-## 5. Hasil Uji & Keamanan (Test Report)
-- Perintah: `npm test` (`node test/api.test.js`)
-- Hasil:
-  ```
-  > kampus-market@1.0.0 test
-  > node test/api.test.js
+## 6. Implementasi Desain Role Admin (`docs/Desain/Admin/0. Mobile Admin.png`)
+Halaman admin (`public/admin.html` & `public/js/pages/admin.js`) telah diimplementasikan penuh sesuai master desain Figma mobile 360x800:
+1. **Layar Kunci Admin (Lock Screen)**: Tampilan otentikasi kunci admin (`ADMIN_KEY`) yang elegan dengan logo KampusCircle, pesan status error, dan hint pengembang.
+2. **Beranda / Dashboard Admin**:
+   - Header profil Ayu Pratama (ADM-001) dengan avatar asli dan badge *Akses Administratif*.
+   - Headline *"Lingkaran yang aman, dimulai dari sini"*.
+   - 2x2 Metric Grid (Total Pengguna, Mahasiswa Terverifikasi, Produk Menunggu Moderasi, Kost Menunggu Verifikasi).
+   - Card Green Point (total poin beredar, transaksi ramah lingkungan, tombol pintas *Kelola Green Point*).
+   - Card daftar *"Butuh tindakan"* dengan aksi cepat periksa mahasiswa dan selesaikan transaksi.
+3. **Tab Verifikasi**:
+   - Sub-tab pill *Mahasiswa* dan *Kost*.
+   - Search bar live filter & status chips (*Pending*, *Verified*, *Ditolak*).
+   - Modal Fullscreen *Detail Mahasiswa*: Informasi lengkap, preview Kartu Tanda Mahasiswa (KTM) sintetis/unggah, tombol *Setujui* dan *Tolak*.
+   - Modal Sheet *Setujui Mahasiswa*: Konfirmasi bonus +15 Green Point sekali pakai.
+   - Modal Sheet *Penolakan Mahasiswa*: Pilihan alasan (KTM buram, identitas tidak sesuai, dokumen tidak valid) + catatan tambahan.
+   - Tab Kost: Kartu properti dengan foto kamar, harga, rating, kamar tersedia, tombol edit & detail.
+4. **Tab Green Point**:
+   - Statistik Green Point live (Poin beredar, User teraktif Dimas, Transaksi ramah lingkungan, Mahasiswa terverifikasi).
+   - Form aturan Green Point (Poin sewa, Poin pinjam gratis, Bonus verifikasi, dan toggle *Auto-Credit*).
+5. **Tab Moderasi**:
+   - Moderasi produk & transaksi sewa/beli/pinjam.
+   - Filter chips *Pending*, *Selesai*, *Batal*.
+   - Tombol *Setujui / Selesai* (+poin) dan *Batalkan / Tolak* dengan modal pilihan alasan.
+6. **Tab Akun Admin & Notifikasi**:
+   - Profil Administrator, alert *Akses ditetapkan server*, informasi hak akses.
+   - Bottom sheet *Notifikasi Admin* dengan tombol *Tandai sudah dibaca*.
+   - Tombol *Kunci Akses Admin (Keluar)*.
+7. **Kepatuhan Arsitektur & Keamanan**:
+   - 100% bebas inline `<script>` (memenuhi CSP `script-src 'self'`).
+   - Berjalan pada layout mobile-first 360x800 `.phone`.
+   - Menggunakan token CSS resmi (`--primary: #007A68`, font Poppins).
 
-  semua cek lolos
-  ```
-- Kepatuhan Keamanan & Batasan Arsitektur:
-  - **CSP Strict**: Semua file HTML di `public/` bebas inline `<script>` (mematuhi `script-src 'self'`).
-  - **Integritas Role Lain**: `public/admin.html` dan `public/kos-owner.html` **100% TIDAK TERSENTUH**.
-  - **Integritas Backend**: `src/` (kecuali bug fix join kos), `.env`, `legacy/`, `scratch/`, dan skema database SQLite tidak berubah.
+---
+
+## 7. Implementasi Desain Beranda & Dashboard Role Kost (`docs/Desain/Kost/2. Role Kost.png`)
+Halaman dashboard pemilik kost (`public/kos-owner.html` & `public/js/kos-owner.js`) telah dirombak penuh sesuai acuan master Figma `01-beranda-kost.png`:
+1. **Header & Identitas Pemilik**: Logo KampusCircle, lonceng notifikasi, profil Bu Rani dengan avatar resmi dan badge *"Mode Pemilik Kost"*.
+2. **Headline**: *"Hunian terkelola, penyewa nyaman."*
+3. **2x2 Metric Grid**: Total Properti (1), Kamar Terisi (8), Kamar Kosong (2), Pendapatan Bulan Ini (Rp9,6 jt).
+4. **Notice Pengajuan Sewa**: Banner pengajuan baru Rina Maharani (Kamar A-09 · Mulai 1 Nov 2026) dengan tombol *"Lihat Pengajuan Sewa"*.
+5. **Modal Pengajuan Sewa**: Bottom sheet konfirmasi terima atau tolak pengajuan sewa penyewa.
+6. **Daftar Penyewa Aktif**: Kartu penyewa aktif (Nadia Putri, Salsa Aulia) dengan status lunas, periode sewa, dan tombol chat langsung ke `/chat.html`.
+7. **Tab Properti & Manajemen**: Daftar properti kost (`Kos Ananda Dago`), status published terverifikasi, tombol detail properti, dan form modal tambah properti baru.
+8. **Tab Akun**: Profil Bu Rani, tombol switcher mode `User / Penyewa` dan `Owner / Pemilik Kost`, serta opsi logout.
+9. **Bottom Navigation**: 5 Tab navigasi terintegrasi (Beranda, Properti, Penyewa, Chat, Akun).

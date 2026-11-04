@@ -8,10 +8,17 @@
 <style>
   .daftar-body {
     flex: 1;
-    overflow-y: hidden;
-    padding: 14px 20px 0;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px 20px 36px;
     display: flex;
     flex-direction: column;
+    scrollbar-width: none;
+  }
+  .daftar-body::-webkit-scrollbar {
+    display: none;
   }
   .status-bar {
     height: 24px;
@@ -94,6 +101,33 @@
     outline: none;
     border-color: var(--primary);
   }
+  .password-input-wrap {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+  }
+  .password-input-wrap .form-input {
+    padding-right: 44px;
+  }
+  .eye-toggle-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #64748B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    transition: color 0.15s ease;
+  }
+  .eye-toggle-btn:hover {
+    color: var(--primary);
+  }
   .form-helper {
     font-size: 11px;
     color: var(--text-muted);
@@ -173,7 +207,7 @@
 </style>
 </head>
 <body>
-<div class="app-frame">
+<div class="phone app-frame">
   <div class="daftar-body">
     <div class="status-bar">
       <span>09.41</span>
@@ -185,7 +219,7 @@
     </div>
 
     <div class="top-header">
-      <img src="/img/logo-campuscircle.png" alt="KampusCircle" class="header-logo-img" onclick="location.href='/'" style="cursor:pointer">
+      <a href="/"><img src="/img/logo-campuscircle.png?v=3" alt="KampusCircle" class="header-logo-img" style="cursor:pointer"></a>
       <button class="bell-btn" type="button" aria-label="Notifikasi">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -197,10 +231,24 @@
     <div class="headline-title">Yuk, jadi bagian dari<br>KampusCirle!</div>
     <div class="headline-sub">Buat akun untuk mulai mencari dan berbagi kebutuhan kampusmu.</div>
 
-    <form id="formDaftar" onsubmit="event.preventDefault(); location.href='/verifikasi.html';">
+    <form id="formDaftar" action="/verifikasi.html" method="POST">
+      <div class="form-group">
+        <label class="form-label">Pilihan Pendaftaran</label>
+        <div style="display:flex;gap:8px;margin-bottom:6px">
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#FFFFFF;border:1.5px solid var(--border-light);border-radius:var(--radius-md);cursor:pointer;font-size:12px;font-weight:600;color:var(--text-dark)">
+            <input type="radio" name="roleDaftar" id="roleMhs" value="mahasiswa" checked style="accent-color:var(--primary);width:16px;height:16px">
+            <span>Daftar sebagai Mahasiswa</span>
+          </label>
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#FFFFFF;border:1.5px solid var(--border-light);border-radius:var(--radius-md);cursor:pointer;font-size:12px;font-weight:600;color:var(--text-dark)">
+            <input type="radio" name="roleDaftar" id="roleKost" value="pemilik_kost" style="accent-color:var(--primary);width:16px;height:16px">
+            <span>Daftar sebagai Pemilik Kost</span>
+          </label>
+        </div>
+      </div>
+
       <div class="form-group">
         <label class="form-label" for="daftarNama">Nama lengkap</label>
-        <input id="daftarNama" class="form-input" type="text" placeholder="Masukkan nama sesuai identitas mahasiswa" required>
+        <input id="daftarNama" class="form-input" type="text" placeholder="Masukkan nama sesuai identitas" required>
       </div>
 
       <div class="form-group">
@@ -209,14 +257,33 @@
       </div>
 
       <div class="form-group">
+        <label class="form-label" for="daftarNoHp">Nomor WhatsApp</label>
+        <input id="daftarNoHp" class="form-input" type="tel" inputmode="numeric" placeholder="Masukkan nomor WA aktif (contoh: 081234567890)" required>
+      </div>
+
+      <div class="form-group">
         <label class="form-label" for="daftarPass">Kata sandi</label>
-        <input id="daftarPass" class="form-input" type="password" placeholder="Buat kata sandi" required minlength="8">
+        <div class="password-input-wrap">
+          <input id="daftarPass" class="form-input" type="password" placeholder="Buat kata sandi" required minlength="8">
+          <button type="button" class="eye-toggle-btn" id="eyeDaftarPass" aria-label="Tampilkan kata sandi">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
         <div class="form-helper">Minimal 8 karakter, kombinasi huruf dan angka.</div>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="daftarPass2">Konfirmasi kata sandi</label>
-        <input id="daftarPass2" class="form-input" type="password" placeholder="Ulangi kata sandi" required minlength="8">
+        <div class="password-input-wrap">
+          <input id="daftarPass2" class="form-input" type="password" placeholder="Ulangi kata sandi" required minlength="8">
+          <button type="button" class="eye-toggle-btn" id="eyeDaftarPass2" aria-label="Tampilkan kata sandi">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <label class="agree-row">
@@ -235,9 +302,17 @@
           <div class="mint-desc">Identitas aktif membantu lingkaran kampus</div>
         </div>
       </div>
+
+      <div style="margin-top: 14px; text-align: center;">
+        <span style="font-size: 11px; color: #64748B;">Khusus pemilik hunian:</span>
+        <a href="/daftar-kost.html" style="font-size: 11px; font-weight: 700; color: #007A68; text-decoration: none; margin-left: 4px;">Daftar di Portal Pemilik Kost →</a>
+      </div>
     </form>
     <div class="home-indicator"></div>
   </div>
 </div>
+<script src="/vendor/sweetalert2.all.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/daftar.js"></script>
 </body>
 </html>

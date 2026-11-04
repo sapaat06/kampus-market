@@ -8,6 +8,13 @@
     "seed": "node --env-file-if-exists=.env seed.js",
     "test": "node test/api.test.js"
   },
-  "engines": { "node": ">=22.13" },
-  "dependencies": { "express": "^5.1.0" }
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.18.0",
+    "cloudinary": "^2.11.0",
+    "express": "^5.1.0",
+    "multer": "^2.5.0"
+  }
 }

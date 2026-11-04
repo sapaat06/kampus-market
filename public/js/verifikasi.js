@@ -9,6 +9,7 @@
   const passwordHelp = document.getElementById('passwordHelp');
   const password2Help = document.getElementById('password2Help');
   const noHpInput = document.getElementById('noHp');
+  const noHpHelp = document.getElementById('noHpHelp');
   const roleSelect = document.getElementById('role');
   const uploadBox = document.getElementById('uploadBox');
   const fileInput = document.getElementById('fileInput');
@@ -19,6 +20,13 @@
   const formMsg = document.getElementById('formMsg');
   const submitBtn = document.getElementById('submitBtn');
   const backBtn = document.getElementById('backBtn');
+
+  // Manual Campus Elements
+  const btnToggleManualCampus = document.getElementById('btnToggleManualCampus');
+  const selectCampusWrap = document.getElementById('selectCampusWrap');
+  const manualCampusWrap = document.getElementById('manualCampusWrap');
+  const campusManual = document.getElementById('campusManual');
+  const btnBatalManual = document.getElementById('btnBatalManual');
 
   const COLOR_PRIMARY = '#007A68';
   const COLOR_MUTED = '#5F6B69';
@@ -38,11 +46,12 @@
   function pasangToggle(btnId, input) {
     const btn = document.getElementById(btnId);
     if (!btn || !input) return;
-    btn.addEventListener('click', function() {
-      const tampil = input.type === 'password';
-      input.type = tampil ? 'text' : 'password';
-      btn.innerHTML = '<svg viewBox="0 0 24 24">' + (tampil ? eyeOpen : eyeOff) + '</svg>';
-      btn.setAttribute('aria-label', tampil ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi');
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const tampil = input.type === 'text';
+      input.type = tampil ? 'password' : 'text';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (tampil ? eyeOpen : eyeOff) + '</svg>';
+      btn.setAttribute('aria-label', tampil ? 'Tampilkan kata sandi' : 'Sembunyikan kata sandi');
     });
   }
   pasangToggle('eyePassword', passwordInput);
@@ -50,42 +59,171 @@
 
   const sama = () => password2Input.value !== '' && password2Input.value === passwordInput.value;
 
+  function bukaManualKampus() {
+    if (manualCampusWrap) manualCampusWrap.style.display = 'block';
+    if (campusManual) campusManual.focus();
+    if (btnToggleManualCampus) btnToggleManualCampus.textContent = 'Pilih dari list';
+    updateKtmPreview();
+    updateSubmit();
+  }
+
+  function tutupManualKampus() {
+    if (manualCampusWrap) manualCampusWrap.style.display = 'none';
+    if (campusManual) campusManual.value = '';
+    if (campusSelect && campusSelect.value === '__manual__') {
+      campusSelect.value = 'Institut Teknologi Garut';
+    }
+    if (btnToggleManualCampus) btnToggleManualCampus.textContent = 'Ketik manual';
+    updateKtmPreview();
+    updateSubmit();
+  }
+
+  btnToggleManualCampus?.addEventListener('click', function(e) {
+    e.preventDefault();
+    if (manualCampusWrap && manualCampusWrap.style.display !== 'none') {
+      tutupManualKampus();
+    } else {
+      bukaManualKampus();
+    }
+  });
+
+  btnBatalManual?.addEventListener('click', function(e) {
+    e.preventDefault();
+    tutupManualKampus();
+  });
+
+  campusManual?.addEventListener('input', function() {
+    updateKtmPreview();
+    updateSubmit();
+  });
+
+  function getNamaKampus() {
+    const isManual = manualCampusWrap && manualCampusWrap.style.display !== 'none';
+    if (isManual) {
+      return campusManual ? campusManual.value.trim() : '';
+    }
+    return (campusSelect && campusSelect.value !== '__manual__') ? campusSelect.value : '';
+  }
+
   function updateSubmit(){
     const nameOk = nameInput.value.trim().length > 0;
-    const campusOk = campusSelect.value !== '';
+    const campusOk = getNamaKampus().length > 0;
     const emailVal = emailInput.value.trim();
     const emailOk = emailVal !== '' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal);
-    const passOk = passwordInput.value.length >= 8;
-    const ok = nameOk && campusOk && emailOk && passOk && sama();
+    const noHpVal = noHpInput ? noHpInput.value.replace(/\D/g, '') : '';
+    const noHpOk = noHpVal.length >= 10;
+    const passOk = passwordInput && passwordInput.value.length >= 8;
+    const matchOk = password2Input && password2Input.value.length >= 8 && password2Input.value === passwordInput.value;
+
+    const ok = nameOk && campusOk && emailOk && noHpOk && passOk && matchOk;
     submitBtn.disabled = !ok;
     submitBtn.style.background = ok ? COLOR_PRIMARY : COLOR_DISABLED;
     submitBtn.style.cursor = ok ? 'pointer' : 'not-allowed';
   }
 
+  const nimInput = document.getElementById('nim');
+  function updateKtmPreview() {
+    if (!chosenFile && uploadSub) {
+      const nm = nameInput.value.trim() || 'Mahasiswa Aktif';
+      const ni = (nimInput ? nimInput.value.trim() : '');
+      uploadSub.textContent = ni ? (nm + ' · ' + ni) : nm;
+      const kName = getNamaKampus() || 'Institut Teknologi Garut';
+      if (uploadTitle) uploadTitle.textContent = kName;
+    }
+  }
+
   nameInput.addEventListener('input', function(){
     nameInput.setAttribute('aria-invalid', nameInput.value.trim().length === 0 ? 'true' : 'false');
+    updateKtmPreview();
     updateSubmit();
   });
+  if (nimInput) {
+    nimInput.addEventListener('input', updateKtmPreview);
+  }
   campusSelect.addEventListener('change', function(){
-    campusSelect.setAttribute('aria-invalid', campusSelect.value === '' ? 'true' : 'false');
-    updateSubmit();
+    if (campusSelect.value === '__manual__') {
+      bukaManualKampus();
+    } else {
+      if (manualCampusWrap) manualCampusWrap.style.display = 'none';
+      if (btnToggleManualCampus) btnToggleManualCampus.textContent = 'Ketik manual';
+      campusSelect.setAttribute('aria-invalid', campusSelect.value === '' ? 'true' : 'false');
+      updateKtmPreview();
+      updateSubmit();
+    }
   });
 
   passwordInput.addEventListener('input', function() {
-    const passLenOk = passwordInput.value.length >= 8;
-    passwordInput.setAttribute('aria-invalid', passLenOk ? 'false' : 'true');
-    password2Help.textContent = password2Input.value && !sama() ? 'Kata sandi belum sama.' : 'Ulangi kata sandi yang sama.';
-    password2Help.classList.toggle('bad', password2Input.value !== '' && !sama());
+    const len = passwordInput.value.length;
+    if (len > 0 && len < 8) {
+      if (passwordHelp) {
+        passwordHelp.textContent = 'Minimal 8 karakter.';
+        passwordHelp.style.display = 'block';
+      }
+      passwordInput.style.borderColor = COLOR_ERROR;
+    } else {
+      if (passwordHelp) passwordHelp.style.display = 'none';
+      passwordInput.style.borderColor = len >= 8 ? COLOR_PRIMARY : COLOR_BORDER;
+    }
+
+    if (password2Input.value.length > 0) {
+      if (password2Input.value !== passwordInput.value) {
+        if (password2Help) {
+          password2Help.textContent = 'Kata sandi konfirmasi tidak cocok.';
+          password2Help.style.display = 'block';
+        }
+        password2Input.style.borderColor = COLOR_ERROR;
+      } else {
+        if (password2Help) password2Help.style.display = 'none';
+        password2Input.style.borderColor = COLOR_PRIMARY;
+      }
+    }
     updateSubmit();
   });
+
   password2Input.addEventListener('input', function() {
-    const cocok = sama();
-    password2Input.setAttribute('aria-invalid', cocok ? 'false' : 'true');
-    password2Help.textContent = cocok ? 'Kata sandi sudah sama.' : (password2Input.value ? 'Kata sandi belum sama.' : 'Ulangi kata sandi yang sama.');
-    password2Help.classList.toggle('bad', password2Input.value !== '' && !cocok && password2Input.value.length >= passwordInput.value.length);
+    const len = password2Input.value.length;
+    if (len > 0 && password2Input.value !== passwordInput.value) {
+      if (password2Help) {
+        password2Help.textContent = 'Kata sandi konfirmasi tidak cocok.';
+        password2Help.style.display = 'block';
+      }
+      password2Input.style.borderColor = COLOR_ERROR;
+    } else {
+      if (password2Help) password2Help.style.display = 'none';
+      password2Input.style.borderColor = len >= 8 ? COLOR_PRIMARY : COLOR_BORDER;
+    }
     updateSubmit();
   });
-  noHpInput.addEventListener('input', updateSubmit);
+
+  noHpInput.addEventListener('input', function() {
+    this.value = this.value.replace(/\D/g, '');
+    const len = this.value.length;
+    if (len > 0 && len < 10) {
+      if (noHpHelp) {
+        noHpHelp.textContent = 'Nomor WhatsApp minimal 10 digit angka.';
+        noHpHelp.style.display = 'block';
+      }
+      this.style.borderColor = COLOR_ERROR;
+    } else {
+      if (noHpHelp) noHpHelp.style.display = 'none';
+      this.style.borderColor = len >= 10 ? COLOR_PRIMARY : COLOR_BORDER;
+    }
+    updateSubmit();
+  });
+
+  noHpInput.addEventListener('blur', function() {
+    const len = this.value.length;
+    if (len > 0 && len < 10) {
+      if (noHpHelp) {
+        noHpHelp.textContent = 'Nomor WhatsApp minimal 10 digit angka.';
+        noHpHelp.style.display = 'block';
+      }
+      this.style.borderColor = COLOR_ERROR;
+    } else {
+      if (noHpHelp) noHpHelp.style.display = 'none';
+    }
+    updateSubmit();
+  });
 
   emailInput.addEventListener('input', function(){
     emailInput.style.borderColor = COLOR_PRIMARY;
@@ -124,6 +262,9 @@
 
   uploadBox.addEventListener('click', function(e){
     if(e.target && e.target.id === 'removeFile'){ return; }
+    fileInput.click();
+  });
+  document.getElementById('btnUbahFoto')?.addEventListener('click', function(){
     fileInput.click();
   });
   uploadBox.addEventListener('keydown', function(e){
@@ -198,6 +339,11 @@
   function tampilPesan(teks){
     formMsg.textContent = teks;
     formMsg.style.display = teks ? 'block' : 'none';
+    if (teks) {
+      setTimeout(function(){
+        formMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
+    }
   }
 
   form.addEventListener('submit', async function(ev){
@@ -208,14 +354,35 @@
     const nama = nameInput.value.trim();
     const email = emailInput.value.trim().toLowerCase();
     const password = passwordInput.value;
-    const no_hp = noHpInput.value.trim();
-    const kampus = campusSelect.value;
+    const no_hp = (noHpInput ? noHpInput.value.replace(/\D/g, '') : '').trim();
+    const kampus = getNamaKampus();
     const role = roleSelect ? roleSelect.value : 'pelanggan';
 
     if (!nama) { tampilPesan('Nama lengkap wajib diisi.'); nameInput.focus(); return; }
-    if (!kampus) { tampilPesan('Pilih kampusmu.'); campusSelect.focus(); return; }
-    if (password.length < 8) { tampilPesan('Kata sandi minimal 8 karakter.'); passwordInput.focus(); return; }
-    if (!sama()) { tampilPesan('Kata sandi dan ulangannya belum sama.'); password2Input.focus(); return; }
+    if (!kampus) {
+      tampilPesan('Pilih atau ketik nama kampusmu.');
+      if (manualCampusWrap && manualCampusWrap.style.display !== 'none') campusManual?.focus();
+      else campusSelect?.focus();
+      return;
+    }
+    if (no_hp.length < 10) {
+      tampilPesan('Nomor WhatsApp minimal 10 digit angka.');
+      if (noHpHelp) noHpHelp.style.display = 'block';
+      noHpInput?.focus();
+      return;
+    }
+    if (password.length < 8) {
+      tampilPesan('Kata sandi minimal 8 karakter.');
+      if (passwordHelp) passwordHelp.style.display = 'block';
+      passwordInput?.focus();
+      return;
+    }
+    if (password !== password2Input.value) {
+      tampilPesan('Kata sandi dan ulangannya belum sama.');
+      if (password2Help) password2Help.style.display = 'block';
+      password2Input?.focus();
+      return;
+    }
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Mendaftarkan...';
@@ -228,21 +395,33 @@
         if (ktm.length > 800000) throw new Error('Foto KTM terlalu besar setelah dikompres. Coba foto lain.');
       }
 
-      await KM.post('/register', { nama, email, password, no_hp, kampus, ktm, role });
+      await KM.post('/register', { nama, email, password, no_hp, whatsapp_number: no_hp, kampus, ktm, role });
 
       const now = new Date();
       const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
       const dateStr = now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear() + ' · ' + String(now.getHours()).padStart(2,'0') + '.' + String(now.getMinutes()).padStart(2,'0');
       sessionStorage.setItem('kc_name', nama);
+      sessionStorage.setItem('kc_email', email);
       sessionStorage.setItem('kc_date', dateStr);
 
+      await KM.ui.sukses('Pendaftaran Berhasil', 'Akun kamu berhasil dibuat. Selanjutnya verifikasi KTM akan diperiksa admin.');
       location.href = '/status-verifikasi.html';
     } catch (err) {
-      tampilPesan(err.message);
+      let msg = err.message || 'Terjadi kesalahan saat pendaftaran.';
+      if (msg.includes('data sudah ada') || msg.includes('UNIQUE') || msg.includes('sudah terdaftar')) {
+        msg = 'Email kampus sudah terdaftar. Silakan gunakan email lain atau langsung masuk.';
+      }
+      tampilPesan(msg);
+      KM.ui.error('Pendaftaran Gagal', msg);
       submitBtn.textContent = 'Kirim verifikasi';
       updateSubmit();
     }
   });
 
   updateSubmit();
+
+  try {
+    const vBody = document.querySelector('.verif-body');
+    if (vBody) vBody.scrollTop = 0;
+  } catch (_e) {}
 })();

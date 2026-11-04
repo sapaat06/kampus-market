@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<script src="/vendor/sweetalert2.all.min.js"></script>
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KampusCircle — Verifikasi Mahasiswa</title>
@@ -9,10 +10,17 @@
 <style>
   .verif-body {
     flex: 1;
-    overflow-y: hidden;
-    padding: 10px 20px 10px;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    padding: 10px 20px 80px;
     display: flex;
     flex-direction: column;
+    scrollbar-width: none;
+  }
+  .verif-body::-webkit-scrollbar {
+    display: none;
   }
 
   .status-bar {
@@ -111,6 +119,38 @@
   .form-input:focus {
     outline: none;
     border-color: var(--primary);
+  }
+
+  .password-input-wrap {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+  }
+  .password-input-wrap .form-input {
+    padding-right: 44px;
+  }
+  .eye-toggle-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #64748B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    transition: color 0.15s ease;
+  }
+  .eye-toggle-btn:hover {
+    color: var(--primary);
+  }
+  .form-helper {
+    font-size: 11px;
+    line-height: 1.3;
   }
 
   /* KTM Section */
@@ -224,7 +264,7 @@
 </style>
 </head>
 <body>
-<div class="app-frame">
+<div class="phone app-frame">
   <div class="verif-body">
     <div class="status-bar">
       <span>09.41</span>
@@ -258,17 +298,22 @@
     <form id="daftarForm" novalidate>
       <div class="form-group">
         <label class="form-label" for="name">Nama lengkap</label>
-        <input id="name" class="form-input" type="text" value="Rina Maharani" placeholder="Masukkan nama lengkap" required>
+        <input id="name" class="form-input" type="text" value="" placeholder="Masukkan nama lengkap" required>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="nim">NIM</label>
-        <input id="nim" class="form-input" type="text" value="DEMO-2023-001" placeholder="Masukkan NIM" required>
+        <input id="nim" class="form-input" type="text" value="" placeholder="Masukkan NIM (contoh: 2106001)" required>
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="campus">Kampus</label>
-        <div style="position:relative">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <label class="form-label" for="campus" style="margin:0">Kampus</label>
+          <button type="button" id="btnToggleManualCampus" style="background:none;border:none;color:var(--primary);font-size:11.5px;font-weight:600;cursor:pointer;padding:0;">
+            Ketik manual
+          </button>
+        </div>
+        <div id="selectCampusWrap" style="position:relative">
           <select id="campus" class="form-input" style="appearance:none;-webkit-appearance:none;padding-right:36px;cursor:pointer" required>
             <option value="Institut Teknologi Garut" selected>Institut Teknologi Garut</option>
             <option value="Institut Teknologi Bandung">Institut Teknologi Bandung</option>
@@ -276,33 +321,40 @@
             <option value="Universitas Indonesia">Universitas Indonesia</option>
             <option value="Institut Pertanian Bogor">Institut Pertanian Bogor</option>
             <option value="Universitas Gadjah Mada">Universitas Gadjah Mada</option>
+            <option value="__manual__">+ Ketik Nama Kampus Lainnya...</option>
           </select>
           <svg viewBox="0 0 24 24" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--text-muted);fill:none;stroke-width:2;pointer-events:none"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div id="manualCampusWrap" style="display:none;margin-top:8px;position:relative">
+          <input id="campusManual" class="form-input" type="text" placeholder="Ketik nama kampusmu (contoh: Universitas Telkom)" value="" style="padding-right:75px">
+          <button type="button" id="btnBatalManual" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:#F1F5F9;border:1px solid #CBD5E1;border-radius:6px;font-size:11px;font-weight:600;color:#475569;padding:4px 8px;cursor:pointer;">
+            Pilih list
+          </button>
         </div>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="prodi">Program studi</label>
-        <input id="prodi" class="form-input" type="text" value="Teknik Informatika" placeholder="Masukkan program studi" required>
+        <input id="prodi" class="form-input" type="text" value="" placeholder="Masukkan program studi (contoh: Teknik Informatika)" required>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="email">Email kampus (alternatif)</label>
-        <input id="email" class="form-input" type="email" value="rina@mahasiswa.itg.ac.id" placeholder="nama@mahasiswa.ac.id" required>
+        <input id="email" class="form-input" type="email" value="" placeholder="nama@mahasiswa.itg.ac.id" required>
         <div id="emailHelp" style="display:none"></div>
       </div>
 
-      <!-- Hidden compatibility inputs for register logic -->
-      <input type="password" id="password" value="Password123!" style="display:none">
-      <input type="password" id="password2" value="Password123!" style="display:none">
-      <div id="passwordHelp" style="display:none"></div>
-      <div id="password2Help" style="display:none"></div>
-      <input type="tel" id="noHp" value="081234567890" style="display:none">
+      <div class="form-group">
+        <label class="form-label" for="noHp">Nomor WhatsApp</label>
+        <input id="noHp" class="form-input" type="tel" inputmode="numeric" placeholder="Masukkan nomor WA aktif (contoh: 081234567890)" required>
+        <div id="noHpHelp" class="form-helper" style="display:none;color:#DC2626;font-size:11px;margin-top:3px;">Nomor WhatsApp minimal 10 digit angka.</div>
+      </div>
+
       <select id="role" style="display:none"><option value="pelanggan" selected>pelanggan</option></select>
 
       <div class="ktm-header-row">
         <span class="ktm-section-title">Kartu mahasiswa</span>
-        <button type="button" class="ktm-action-btn" id="btnUbahFoto" onclick="document.getElementById('fileInput').click()">Ubah Foto</button>
+        <button type="button" class="ktm-action-btn" id="btnUbahFoto">Ubah Foto</button>
       </div>
 
       <div id="uploadBox" class="ktm-card-box" tabindex="0" role="button" aria-label="Kartu mahasiswa">
@@ -313,7 +365,7 @@
           </div>
           <div class="ktm-info-col">
             <div class="ktm-inst-name" id="uploadTitle">Institut Teknologi Garut</div>
-            <div class="ktm-student-name" id="uploadSub">Rina Maharani · 2106001</div>
+            <div class="ktm-student-name" id="uploadSub">Mahasiswa Aktif</div>
             <div class="ktm-student-nim">Kartu Tanda Mahasiswa Aktif</div>
           </div>
           <div id="uploadIconRight" style="display:flex;align-items:center">
@@ -323,6 +375,34 @@
         <input id="fileInput" type="file" accept="image/png,image/jpeg" style="display:none">
       </div>
       <div id="uploadError" style="display:none;margin-top:6px;font-size:12px;color:var(--error)" role="alert">File harus JPG/PNG dan maksimal 5 MB.</div>
+
+      <!-- Password & Konfirmasi Password (Paling Bawah Form) -->
+      <div class="form-group" style="margin-top:14px;">
+        <label class="form-label" for="password">Password</label>
+        <div class="password-input-wrap">
+          <input id="password" class="form-input" type="password" placeholder="Ketik kata sandi Anda (minimal 8 karakter)" required minlength="8">
+          <button type="button" class="eye-toggle-btn" id="eyePassword" aria-label="Tampilkan kata sandi">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <div id="passwordHelp" class="form-helper" style="display:none;color:#DC2626;font-size:11px;margin-top:3px;">Minimal 8 karakter.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password2">Konfirmasi Password</label>
+        <div class="password-input-wrap">
+          <input id="password2" class="form-input" type="password" placeholder="Ketik ulang kata sandi" required minlength="8">
+          <button type="button" class="eye-toggle-btn" id="eyePassword2" aria-label="Tampilkan kata sandi">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <div id="password2Help" class="form-helper" style="display:none;color:#DC2626;font-size:11px;margin-top:3px;">Kata sandi konfirmasi tidak cocok.</div>
+      </div>
+
       <div id="formMsg" class="form-error-msg" role="alert"></div>
 
       <div class="btn-submit-wrap">

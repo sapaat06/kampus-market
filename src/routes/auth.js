@@ -3,6 +3,7 @@ import { db } from '../db.js';
 import { err, str, optStr, emailOf, posInt, oneOf } from '../util.js';
 import { hash, verify, makeToken, user, admin } from '../auth.js';
 import { limit } from '../limit.js';
+import { upload, uploadToCloudinary } from '../upload.js';
 
 export const router = Router();
 
@@ -28,7 +29,7 @@ const passwordOf = (v) => {
   return v;
 };
 
-router.post('/register', limit({ name: 'register', max: 10, windowMs: 3600e3 }), (req, res) => {
+router.post('/register', limit({ name: 'register', max: 10, windowMs: 3600e3 }), upload.single('ktm'), async (req, res) => {
   const nama = str(req.body?.nama, 'nama', 100);
   const email = emailOf(req.body?.email);
   const password = passwordOf(req.body?.password);
@@ -43,51 +44,115 @@ router.post('/register', limit({ name: 'register', max: 10, windowMs: 3600e3 }),
     whatsapp_number = rawHp;
   }
 
-  const ktm = optStr(req.body?.ktm, 'ktm', 800_000); // data URL hasil kompresi di browser
+  // KTM bisa dikirim via multipart file atau data URL base64, simpan secure_url ke Cloudinary jika tersedia
+  let rawKtm = req.file ? req.file.buffer : optStr(req.body?.ktm, 'ktm', 800_000);
+  const ktm = rawKtm ? await uploadToCloudinary(rawKtm, req.file?.mimetype) : null;
   const kampus = optStr(req.body?.kampus, 'kampus', 120);
-  const role = oneOf(req.body?.role ?? 'pelanggan', 'role', ['pelanggan', 'pemilik_kost']);
-  const existing = db.prepare('SELECT id_mahasiswa FROM mahasiswa WHERE LOWER(TRIM(email))=LOWER(TRIM(?))').get(email);
+  const rawRole = req.body?.role ?? 'mahasiswa';
+  let role = 'mahasiswa';
+  if (rawRole === 'pemilik_kost' || rawRole === 'pemilik' || rawRole === 'kost') {
+    role = 'pemilik_kost';
+  } else if (rawRole === 'admin') {
+    role = 'admin';
+  } else if (rawRole === 'pelanggan') {
+    role = 'pelanggan';
+  } else {
+    role = 'mahasiswa';
+  }
+
+  const status_akun = 'pending';
+  const status_verifikasi = 'pending';
+
+  const existing = await db.prepare('SELECT id_mahasiswa FROM mahasiswa WHERE LOWER(TRIM(email))=LOWER(TRIM(?))').get(email);
   if (existing) throw err(409, 'Email kampus sudah terdaftar. Silakan gunakan email lain atau langsung masuk.');
-  const r = db.prepare(
-    'INSERT INTO mahasiswa (nama,email,no_hp,whatsapp_number,password_hash,ktm,kampus,role,submitted_at) VALUES (?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)'
-  ).run(nama, email, no_hp, whatsapp_number, hash(password), ktm, kampus, role);
+  const r = await db.prepare(
+    'INSERT INTO mahasiswa (nama,email,no_hp,whatsapp_number,password_hash,ktm,kampus,role,status_akun,status_verifikasi,submitted_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)'
+  ).run(nama, email, no_hp, whatsapp_number, hash(password), ktm, kampus, role, status_akun, status_verifikasi);
   const id = Number(r.lastInsertRowid);
-  res.status(201).json({ id_mahasiswa: id, token: mulaiSesi(res, id) });
+  const pesan = role === 'pemilik_kost'
+    ? 'Pendaftaran berhasil. Akun Anda sedang direview oleh Admin.'
+    : 'Pendaftaran berhasil. Silakan verifikasi KTM Anda.';
+  res.status(201).json({
+    id_mahasiswa: id,
+    id: id,
+    role: role,
+    status_akun: status_akun,
+    status_verifikasi: status_verifikasi,
+    token: mulaiSesi(res, id),
+    pesan: pesan,
+    message: pesan
+  });
 });
 
-router.post('/login', limit({ name: 'login', max: 10, windowMs: 900e3 }), (req, res) => {
+router.post('/login', limit({ name: 'login', max: process.env.NODE_ENV === 'production' ? 10 : 100, windowMs: 900e3 }), async (req, res) => {
   const email = emailOf(req.body?.email);
   const password = req.body?.password;
   if (typeof password !== 'string') throw err(400, 'password harus teks');
-  const m = db.prepare('SELECT id_mahasiswa, password_hash, role, status_verifikasi, alasan_penolakan, is_banned FROM mahasiswa WHERE email=?').get(email);
+  const m = await db.prepare('SELECT id_mahasiswa, nama, password_hash, role, status_akun, status_verifikasi, alasan_penolakan, is_banned FROM mahasiswa WHERE LOWER(TRIM(email))=LOWER(TRIM(?))').get(email);
   if (!m || !verify(password, m.password_hash)) throw err(401, 'email atau password salah');
   if (m.is_banned) throw err(403, 'Akun Anda telah diblokir oleh admin.');
 
-  // Validasi status verifikasi pendaftaran akun
-  const status = String(m.status_verifikasi || 'pending').toLowerCase().trim();
+  // Validasi Keamanan Lapis Dua: intended_role dari pintu login frontend
+  const intended_role = req.body?.intended_role;
+  if (intended_role) {
+    const userRole = m.role || 'mahasiswa';
+    const isMahasiswa = userRole === 'mahasiswa' || userRole === 'pelanggan';
+    const isPemilik = userRole === 'pemilik_kost';
+    const isAdmin = userRole === 'admin';
 
-  // Tolak login jika akun masih pending
-  if (status === 'pending') {
-    throw err(403, 'Akun Anda sedang dalam tinjauan admin dan belum disetujui. Silakan tunggu verifikasi.');
+    if (intended_role === 'mahasiswa' || intended_role === 'pelanggan') {
+      if (!isMahasiswa && !isAdmin) {
+        throw err(403, 'Role tidak sesuai dengan pintu login');
+      }
+    } else if (intended_role === 'pemilik_kost') {
+      if (!isPemilik && !isAdmin) {
+        throw err(403, 'Role tidak sesuai dengan pintu login');
+      }
+    } else if (intended_role === 'admin') {
+      if (!isAdmin) {
+        throw err(403, 'Role tidak sesuai dengan pintu login');
+      }
+    } else if (intended_role !== userRole && !isAdmin) {
+      throw err(403, 'Role tidak sesuai dengan pintu login');
+    }
   }
 
+  // Validasi status verifikasi pendaftaran akun dan status_akun
+  const statusAkun = String(m.status_akun || '').toLowerCase().trim();
+  const statusVerif = String(m.status_verifikasi || '').toLowerCase().trim();
+
+  const isApproved = statusAkun === 'approved' || statusVerif === 'terverifikasi' || statusVerif === 'verified';
+  const isRejected = !isApproved && (statusAkun === 'rejected' || statusVerif === 'ditolak' || statusVerif === 'rejected');
+
   // Tolak login jika akun ditolak oleh admin
-  if (status === 'ditolak' || status === 'rejected') {
+  if (isRejected) {
     const alasan = m.alasan_penolakan ? ` Alasan: ${m.alasan_penolakan}` : '';
     throw err(403, `Mohon maaf, pendaftaran akun Anda ditolak oleh admin.${alasan}`);
   }
 
-  // Hanya status 'terverifikasi', 'verified', atau 'approved' yang boleh masuk
-  if (status !== 'terverifikasi' && status !== 'verified' && status !== 'approved') {
-    throw err(403, 'Akun Anda belum disetujui untuk masuk.');
+  // Tolak login jika belum disetujui (masih pending)
+  if (!isApproved) {
+    if (m.role === 'pemilik_kost') {
+      throw err(403, 'Akun Pemilik Kost Anda belum diverifikasi oleh Admin. Silakan tunggu.');
+    }
+    throw err(403, 'Akun Anda sedang dalam tinjauan admin dan belum disetujui. Silakan tunggu verifikasi.');
   }
 
-  res.json({ token: mulaiSesi(res, m.id_mahasiswa), role: m.role });
+  res.json({
+    token: mulaiSesi(res, m.id_mahasiswa),
+    role: m.role,
+    status_akun: m.status_akun || 'approved',
+    status_verifikasi: m.status_verifikasi,
+    user: {
+      id: m.id_mahasiswa,
+      id_mahasiswa: m.id_mahasiswa,
+      nama: m.nama,
+      email: email,
+      role: m.role
+    }
+  });
 });
 
-// P0: alur "lupa kata sandi" lama mengubah kata sandi siapa pun yang tahu
-// emailnya. Dinonaktifkan sampai ada verifikasi identitas (OTP/email).
-// Endpoint tetap ada supaya klien lama mendapat pesan jelas, bukan 404.
 router.post('/reset-password', limit({ name: 'reset-pw', max: 5, windowMs: 900e3 }), (_req, _res) => {
   throw err(503, 'atur ulang kata sandi belum tersedia; hubungi admin kampus');
 });
@@ -97,42 +162,80 @@ router.post('/logout', (_req, res) => {
   res.json({ ok: true });
 });
 
-router.get(['/saya', '/me'], user, (req, res) => {
-  const m = db.prepare(
+router.get(['/saya', '/me'], user, async (req, res) => {
+  const m = await db.prepare(
     'SELECT id_mahasiswa,nama,email,no_hp,whatsapp_number,ktm,kampus,status_verifikasi,foto,role FROM mahasiswa WHERE id_mahasiswa=?'
   ).get(req.uid);
   if (!m) throw err(404, 'akun tidak ada');
-  m.green_points = db.prepare('SELECT COALESCE(SUM(jumlah_poin),0) s FROM poin WHERE id_mahasiswa=?').get(req.uid).s;
-  m.riwayat_poin = db.prepare('SELECT * FROM poin WHERE id_mahasiswa=? ORDER BY id_poin DESC').all(req.uid);
-  m.transaksi = db.prepare(
+  const gpRow = await db.prepare('SELECT COALESCE(SUM(jumlah_poin),0) s FROM poin WHERE id_mahasiswa=?').get(req.uid);
+  m.green_points = gpRow ? gpRow.s : 0;
+  m.riwayat_poin = await db.prepare('SELECT * FROM poin WHERE id_mahasiswa=? ORDER BY id_poin DESC').all(req.uid);
+  const txRows = await db.prepare(
     `SELECT t.*, b.nama_barang FROM transaksi t JOIN barang b USING (id_barang)
      WHERE t.id_mahasiswa=? ORDER BY t.id_transaksi DESC`
-  ).all(req.uid).map(txItem => {
+  ).all(req.uid);
+
+  for (const txItem of txRows) {
     const isCod = /cod|cash|bayar\s*di\s*tempat|tunai/i.test(txItem.metode_pembayaran || '');
     if (isCod && (!txItem.cod_pin || String(txItem.cod_pin).trim() === '')) {
       const generatedPin = String(Math.floor(1000 + Math.random() * 9000));
-      db.prepare('UPDATE transaksi SET cod_pin=? WHERE id_transaksi=?').run(generatedPin, txItem.id_transaksi);
+      await db.prepare('UPDATE transaksi SET cod_pin=? WHERE id_transaksi=?').run(generatedPin, txItem.id_transaksi);
       txItem.cod_pin = generatedPin;
     }
-    return { ...txItem, is_pembeli: true };
-  });
-  const pRecord = db.prepare('SELECT id_penjual FROM penjual WHERE email=?').get(m.email);
+  }
+  m.transaksi = txRows.map(txItem => ({ ...txItem, is_pembeli: true }));
+
+  const pRecord = await db.prepare('SELECT id_penjual FROM penjual WHERE email=?').get(m.email);
   if (pRecord) {
-    m.transaksi_penjualan = db.prepare(
+    const pRows = await db.prepare(
       `SELECT t.*, b.nama_barang, m2.nama AS nama_pembeli
        FROM transaksi t
        JOIN barang b USING (id_barang)
        JOIN mahasiswa m2 ON t.id_mahasiswa = m2.id_mahasiswa
        WHERE b.id_penjual=? ORDER BY t.id_transaksi DESC`
-    ).all(pRecord.id_penjual).map(txItem => ({ ...txItem, cod_pin: null, is_penjual: true }));
+    ).all(pRecord.id_penjual);
+    m.transaksi_penjualan = pRows.map(txItem => ({ ...txItem, cod_pin: null, is_penjual: true }));
   } else {
     m.transaksi_penjualan = [];
   }
+
+  // Pengajuan sewa kos milik akun ini
+  try {
+    const kosSewas = await db.prepare(`
+      SELECT p.*, k.foto AS foto_kos, k.alamat AS alamat_kos, k.harga_bulan
+      FROM pengajuan_sewa_kos p
+      LEFT JOIN kos k USING (id_kos)
+      WHERE p.email_penyewa = ?
+      ORDER BY p.id_pengajuan DESC
+    `).all(m.email);
+    m.pengajuan_kos = kosSewas;
+
+    const mappedKosTxs = kosSewas.map(pk => ({
+      id_transaksi: `KST-${pk.id_pengajuan}`,
+      id_pengajuan: pk.id_pengajuan,
+      id_kos: pk.id_kos,
+      id_barang: null,
+      jenis_transaksi: 'sewa',
+      nama_barang: `${pk.nama_kos} (${pk.kamar})`,
+      foto: pk.foto_kos || '/img/kos-damar-asri.png',
+      harga_sewa: pk.harga_bulan || Math.round(pk.total_harga / (pk.durasi_bulan || 1)),
+      total_harga: pk.total_harga,
+      durasi_sewa: `${pk.durasi_bulan} bulan`,
+      periode_sewa: pk.periode,
+      status: pk.status,
+      lokasi: pk.alamat_kos || 'Institut Teknologi Garut',
+      tanggal_transaksi: pk.created_at,
+      is_kos: true,
+      is_pembeli: true
+    }));
+    m.transaksi = [...mappedKosTxs, ...m.transaksi];
+  } catch (_e) {}
+
   res.json(m);
 });
 
 // Cek status verifikasi publik (bisa via sesi user atau query nama / email)
-router.get('/status-verifikasi', (req, res) => {
+router.get('/status-verifikasi', async (req, res) => {
   let m = null;
   const bearer = (req.get('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
   const rawCookie = req.headers?.cookie || '';
@@ -145,13 +248,13 @@ router.get('/status-verifikasi', (req, res) => {
   const match = /^(\d{1,15})\./.exec(tokenStr);
   if (match) {
     const uid = Number(match[1]);
-    m = db.prepare('SELECT id_mahasiswa, nama, email, status_verifikasi, role FROM mahasiswa WHERE id_mahasiswa=?').get(uid);
+    m = await db.prepare('SELECT id_mahasiswa, nama, email, status_verifikasi, role FROM mahasiswa WHERE id_mahasiswa=?').get(uid);
   }
   if (!m && typeof req.query.email === 'string' && req.query.email.trim()) {
-    m = db.prepare('SELECT id_mahasiswa, nama, email, status_verifikasi, role FROM mahasiswa WHERE LOWER(TRIM(email))=LOWER(TRIM(?))').get(req.query.email.trim());
+    m = await db.prepare('SELECT id_mahasiswa, nama, email, status_verifikasi, role FROM mahasiswa WHERE LOWER(TRIM(email))=LOWER(TRIM(?))').get(req.query.email.trim());
   }
   if (!m && typeof req.query.nama === 'string' && req.query.nama.trim()) {
-    m = db.prepare('SELECT id_mahasiswa, nama, email, status_verifikasi, role FROM mahasiswa WHERE LOWER(TRIM(nama))=LOWER(TRIM(?))').get(req.query.nama.trim());
+    m = await db.prepare('SELECT id_mahasiswa, nama, email, status_verifikasi, role FROM mahasiswa WHERE LOWER(TRIM(nama))=LOWER(TRIM(?))').get(req.query.nama.trim());
   }
   if (!m) {
     return res.json({ status_verifikasi: 'pending' });
@@ -159,32 +262,37 @@ router.get('/status-verifikasi', (req, res) => {
   res.json(m);
 });
 
-// Mahasiswa: unggah/hapus foto profil
-router.patch('/profil/foto', user, (req, res) => {
-  const foto = optStr(req.body?.foto, 'foto', 800_000);
-  if (!foto) db.prepare('UPDATE mahasiswa SET foto=NULL WHERE id_mahasiswa=?').run(req.uid);
-  else db.prepare('UPDATE mahasiswa SET foto=? WHERE id_mahasiswa=?').run(foto, req.uid);
+// Mahasiswa: unggah/hapus foto profil (mendukung multipart file atau base64 ke Cloudinary)
+router.patch('/profil/foto', user, upload.single('foto'), async (req, res) => {
+  let rawFoto = req.file ? req.file.buffer : optStr(req.body?.foto, 'foto', 800_000);
+  const foto = rawFoto ? await uploadToCloudinary(rawFoto, req.file?.mimetype) : null;
+  if (!foto) await db.prepare('UPDATE mahasiswa SET foto=NULL WHERE id_mahasiswa=?').run(req.uid);
+  else await db.prepare('UPDATE mahasiswa SET foto=? WHERE id_mahasiswa=?').run(foto, req.uid);
   res.json({ ok: true, foto: foto || null });
 });
-router.delete('/profil/foto', user, (req, res) => {
-  db.prepare('UPDATE mahasiswa SET foto=NULL WHERE id_mahasiswa=?').run(req.uid);
+
+router.delete('/profil/foto', user, async (req, res) => {
+  await db.prepare('UPDATE mahasiswa SET foto=NULL WHERE id_mahasiswa=?').run(req.uid);
   res.json({ ok: true, foto: null });
 });
-router.post('/verifikasi', user, (req, res) => {
-  const ktm = str(req.body?.ktm, 'ktm', 500);
-  db.prepare("UPDATE mahasiswa SET ktm=?, status_verifikasi='pending', submitted_at=CURRENT_TIMESTAMP WHERE id_mahasiswa=?").run(ktm, req.uid);
+
+router.post('/verifikasi', user, upload.single('ktm'), async (req, res) => {
+  let rawKtm = req.file ? req.file.buffer : (req.body?.ktm ? str(req.body?.ktm, 'ktm', 800_000) : null);
+  if (!rawKtm) throw err(400, 'ktm wajib diunggah');
+  const ktm = await uploadToCloudinary(rawKtm, req.file?.mimetype);
+  await db.prepare("UPDATE mahasiswa SET ktm=?, status_verifikasi='pending', submitted_at=CURRENT_TIMESTAMP WHERE id_mahasiswa=?").run(ktm, req.uid);
   res.json({ ok: true, status_verifikasi: 'pending' });
 });
 
 // Admin: daftar semua mahasiswa beserta status verifikasi
-router.get('/mahasiswa', admin, (_req, res) => {
-  res.json(db.prepare(
+router.get('/mahasiswa', admin, async (_req, res) => {
+  res.json(await db.prepare(
     'SELECT id_mahasiswa, nama, email, no_hp, whatsapp_number, ktm, kampus, status_verifikasi, alasan_penolakan, is_banned, submitted_at, created_at FROM mahasiswa ORDER BY id_mahasiswa DESC'
   ).all());
 });
 
 // Admin: ubah status verifikasi mahasiswa (terverifikasi / ditolak / pending)
-const handleVerifikasiMahasiswa = (req, res) => {
+const handleVerifikasiMahasiswa = async (req, res) => {
   const id = posInt(Number(req.params.id), 'id_mahasiswa');
   let rawStatus = String(req.body?.status_verifikasi ?? req.body?.status ?? '').toLowerCase().trim();
   if (rawStatus === 'verified' || rawStatus === 'approve' || rawStatus === 'setujui' || rawStatus === 'izinkan') rawStatus = 'terverifikasi';
@@ -192,18 +300,19 @@ const handleVerifikasiMahasiswa = (req, res) => {
   const status = oneOf(rawStatus, 'status_verifikasi', ['pending', 'terverifikasi', 'ditolak']);
   const alasan = req.body?.alasan_penolakan || req.body?.alasan || req.body?.catatan ? String(req.body.alasan_penolakan || req.body.alasan || req.body.catatan).trim().slice(0, 500) : null;
 
-  const r = db.prepare('UPDATE mahasiswa SET status_verifikasi=?, alasan_penolakan=? WHERE id_mahasiswa=?')
-    .run(status, status === 'ditolak' ? (alasan || 'Dokumen belum memenuhi kriteria') : null, id);
+  const statusAkun = status === 'terverifikasi' ? 'approved' : (status === 'ditolak' ? 'rejected' : 'pending');
+  const r = await db.prepare('UPDATE mahasiswa SET status_verifikasi=?, status_akun=?, alasan_penolakan=? WHERE id_mahasiswa=?')
+    .run(status, statusAkun, status === 'ditolak' ? (alasan || 'Dokumen belum memenuhi kriteria') : null, id);
   if (r.changes === 0) throw err(404, 'mahasiswa tidak ada');
 
   if (status === 'terverifikasi') {
-    const existingPoin = db.prepare("SELECT id_poin FROM poin WHERE id_mahasiswa=? AND keterangan='Bonus Verifikasi KTM'").get(id);
+    const existingPoin = await db.prepare("SELECT id_poin FROM poin WHERE id_mahasiswa=? AND keterangan='Bonus Verifikasi KTM'").get(id);
     if (!existingPoin) {
-      db.prepare("INSERT INTO poin (id_mahasiswa, id_transaksi, jumlah_poin, kategori, keterangan) VALUES (?, NULL, 15, 'bonus', 'Bonus Verifikasi KTM')").run(id);
+      await db.prepare("INSERT INTO poin (id_mahasiswa, id_transaksi, jumlah_poin, kategori, keterangan) VALUES (?, NULL, 15, 'bonus', 'Bonus Verifikasi KTM')").run(id);
     }
   }
 
-  const m = db.prepare('SELECT id_mahasiswa, nama, email, no_hp, whatsapp_number, ktm, kampus, status_verifikasi, alasan_penolakan, is_banned, submitted_at, created_at FROM mahasiswa WHERE id_mahasiswa=?').get(id);
+  const m = await db.prepare('SELECT id_mahasiswa, nama, email, no_hp, whatsapp_number, ktm, kampus, status_verifikasi, alasan_penolakan, is_banned, submitted_at, created_at FROM mahasiswa WHERE id_mahasiswa=?').get(id);
   res.json({
     ok: true,
     ...m,

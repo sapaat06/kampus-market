@@ -1,12 +1,17 @@
 // public/js/profil.js
-// Handles user profile display, live Green Points metrics from /api/saya, badge info, and logout
+// Handles user profile display, live Green Points metrics from /api/saya, badge info, my items management, and logout
+
+function escHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   const userName = document.getElementById('userName');
   const userDept = document.getElementById('userDept');
   const greenPointsVal = document.getElementById('greenPointsVal');
+  const greenPointCard = document.getElementById('greenPointCard');
+  const greenProgress = document.getElementById('greenProgress');
   const progressFill = document.getElementById('progressFill');
-  const levelName = document.getElementById('levelName');
   const levelNext = document.getElementById('levelNext');
   const statDipinjamkan = document.getElementById('statDipinjamkan');
   const statDisewakan = document.getElementById('statDisewakan');
@@ -26,37 +31,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (data.prodi && userDept) {
       userDept.textContent = `${data.prodi} · Angkatan ${data.angkatan || '2023'}`;
     }
-    if (greenPointsVal) {
-      const pts = Number(data.green_points || 350);
-      greenPointsVal.textContent = pts.toLocaleString('id-ID');
 
-      // Calculate level dynamically based on real points
-      if (pts >= 1500) {
-        levelName.textContent = 'Campus Hero';
-        levelNext.textContent = 'Level Maksimal Tercapai!';
-        progressFill.style.width = '100%';
-      } else if (pts >= 500) {
-        const sisa = 1500 - pts;
-        levelName.textContent = 'Circle Helper';
-        levelNext.textContent = `${sisa} poin lagi ke Campus Hero`;
-        const pct = Math.min(Math.round((pts / 1500) * 100), 95);
-        progressFill.style.width = `${pct}%`;
-      } else {
-        const sisa = 500 - pts;
-        levelName.textContent = 'Level 2: Green Contributor';
-        levelNext.textContent = `${pts}/500 Poin Menuju Level 3`;
-        const pct = Math.max(Math.min(Math.round((pts / 500) * 100), 95), 15);
-        progressFill.style.width = `${pct}%`;
-      }
+    // Poin Hijau hanya untuk mahasiswa. Akun pemilik kost tidak boleh
+    // melihat komponen ini sama sekali.
+    const role = String(data.role || 'pelanggan').toLowerCase();
+    const isOwner = role === 'pemilik_kost';
+    const isMahasiswa = role === 'mahasiswa' || role === 'pelanggan';
+    const homeTarget = isOwner ? 'kos-owner.html' : 'beranda.html';
+
+    const navProfilHome = document.getElementById('navProfilHome');
+    if (navProfilHome) {
+      navProfilHome.setAttribute('href', homeTarget);
+      navProfilHome.addEventListener('click', (e) => {
+        e.preventDefault();
+        goToHome();
+      });
     }
 
-    // Direct link to Dompet Green Point
-    const greenCard = document.querySelector('.green-card');
-    if (greenCard) {
-      greenCard.style.cursor = 'pointer';
-      greenCard.addEventListener('click', () => {
-        window.location.href = '/green-point.html';
-      });
+    const navProfilPlus = document.getElementById('navProfilPlus');
+    if (navProfilPlus && isOwner) {
+      navProfilPlus.setAttribute('href', 'kos-owner.html?action=tambah-properti');
+      navProfilPlus.setAttribute('aria-label', 'Unggah Properti Kost');
+    }
+
+    if (isOwner) {
+      const secBarangSaya = document.getElementById('secBarangSaya');
+      if (secBarangSaya) secBarangSaya.style.display = 'none';
+    }
+
+    if (greenPointCard) greenPointCard.hidden = !isMahasiswa;
+
+    if (isMahasiswa && greenPointsVal) {
+      const pts = Number(data.green_points || 0);
+      const TARGET = 500;
+      const sisa = Math.max(TARGET - pts, 0);
+      const pct = Math.max(0, Math.min(Math.round((pts / TARGET) * 100), 100));
+
+      greenPointsVal.textContent = pts.toLocaleString('id-ID');
+      if (progressFill) progressFill.style.width = `${pct}%`;
+      if (greenProgress) greenProgress.setAttribute('aria-valuenow', String(pts));
+      if (levelNext) {
+        levelNext.textContent = pts >= TARGET
+          ? 'Lencana Sahabat Bumi sudah terbuka. Terus kumpulkan poin!'
+          : `${sisa} poin lagi menuju lencana Sahabat Bumi`;
+      }
+
+      // Direct link to Dompet Green Point
+      if (greenPointCard) {
+        greenPointCard.style.cursor = 'pointer';
+        greenPointCard.addEventListener('click', () => {
+          window.location.href = '/green-point.html';
+        });
+      }
     }
 
     if (data.transaksi && Array.isArray(data.transaksi)) {
@@ -128,7 +154,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
   } catch (_e) {
-    // Preserve default fallback values
+    KM.ui.error('Gagal Memuat Profil', 'Data profil tidak bisa diambil. Periksa koneksi kamu atau masuk kembali.');
   }
 
   const avatarCircle = document.getElementById('avatarCircle');
@@ -140,10 +166,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = async () => {
+        KM.ui.loading('Mengunggah foto...');
         try {
           const resp = await KM.patch('/profil/foto', { foto: reader.result });
           if (resp?.foto) avatarCircle.innerHTML = `<img src="${resp.foto}" alt="foto" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-        } catch (e) { console.warn(e); }
+          KM.ui.tutup();
+          await KM.ui.sukses('Foto Profil Diperbarui');
+        } catch (e) {
+          KM.ui.tutup();
+          KM.ui.error('Gagal Mengunggah Foto', e.message || 'Foto profil tidak bisa disimpan. Coba lagi.');
+        }
       };
       reader.readAsDataURL(file);
     });
@@ -156,7 +188,145 @@ document.addEventListener('DOMContentLoaded', async () => {
   badgeCircles.forEach(badge => {
     badge.addEventListener('click', () => {
       const label = badge.parentElement.querySelector('.badge-label')?.textContent || 'Lencana';
-      alert(`🏆 Lencana "${label}" telah Anda buka berkat kontribusi aktif dalam berbagi barang di KampusCircle!`);
+      KM.ui.info('Lencana Terbuka! 🏆', `Lencana "${label}" telah Anda buka berkat kontribusi aktif dalam berbagi barang di KampusCircle!`);
     });
   });
+
+  // Section Kelola Barang Unggahan Saya & Up Lagi
+  const myItemsList = document.getElementById('myItemsList');
+  async function muatBarangSaya() {
+    if (!myItemsList) return;
+    try {
+      const items = await KM.get('/barang-saya');
+
+      // Tampilkan notifikasi jika baru saja mengunggah barang
+      const uploadSuccessMsg = sessionStorage.getItem('kc_toast_profil');
+      let bannerHtml = '';
+      if (uploadSuccessMsg) {
+        bannerHtml = `
+          <div id="uploadSuccessBanner" style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:12px;padding:10px 14px;color:#065F46;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;animation:fadeIn 0.3s ease;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>${escHtml(uploadSuccessMsg)}</span>
+          </div>
+        `;
+        sessionStorage.removeItem('kc_toast_profil');
+        setTimeout(() => {
+          const sec = document.getElementById('secBarangSaya');
+          if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+        }, 300);
+      }
+
+      if (!items || items.length === 0) {
+        myItemsList.innerHTML = bannerHtml + `
+          <div style="font-size:12px;color:#94A3B8;text-align:center;padding:16px 0;background:#FFFFFF;border-radius:12px;border:1px dashed #CBD5E1;">
+            Kamu belum mengunggah barang apa pun.<br>
+            <a href="/unggah.html" style="color:#008F83;font-weight:700;text-decoration:none;display:inline-block;margin-top:6px;">Mulai Unggah Barang Sekarang</a>
+          </div>`;
+        return;
+      }
+
+      myItemsList.innerHTML = bannerHtml + items.map(item => {
+        const isTerjual = item.status === 'terjual';
+        const isDisewa = item.status === 'disewa';
+        const isDipinjam = item.status === 'dipinjam';
+
+        let badgeBg = '#DCFCE7', badgeColor = '#166534', badgeText = '✓ Aktif di Beranda';
+        let statusLink = `/detail.html?id=${item.id_barang}`;
+        let statusLinkText = 'Lihat di Katalog';
+        let userNotes = '';
+
+        if (isTerjual) {
+          badgeBg = '#FEE2E2';
+          badgeColor = '#991B1B';
+          badgeText = 'Sudah Terjual';
+          statusLink = item.id_transaksi ? `/status-beli.html?id_transaksi=${item.id_transaksi}` : `/detail.html?id=${item.id_barang}`;
+          statusLinkText = 'Cek Detail Penjualan';
+          if (item.nama_pembeli_penyewa) {
+            userNotes = `<div style="font-size:11px;color:#0F172A;margin-top:2px;">Pembeli: <b>${escHtml(item.nama_pembeli_penyewa)}</b></div>`;
+          }
+        } else if (isDisewa) {
+          badgeBg = '#FEF3C7';
+          badgeColor = '#B45309';
+          badgeText = 'Sedang Disewa';
+          statusLink = item.id_transaksi ? `/status-sewa.html?id_transaksi=${item.id_transaksi}` : `/detail.html?id=${item.id_barang}`;
+          statusLinkText = 'Cek Status Sewa';
+          if (item.nama_pembeli_penyewa) {
+            userNotes = `<div style="font-size:11px;color:#0F172A;margin-top:2px;">Penyewa: <b>${escHtml(item.nama_pembeli_penyewa)}</b></div>`;
+          }
+        } else if (isDipinjam) {
+          badgeBg = '#EDE9FE';
+          badgeColor = '#6D28D9';
+          badgeText = 'Sedang Dipinjam';
+          statusLink = item.id_transaksi ? `/status-pinjam.html?id_transaksi=${item.id_transaksi}` : `/detail.html?id=${item.id_barang}`;
+          statusLinkText = 'Cek Status Pinjam';
+          if (item.nama_pembeli_penyewa) {
+            userNotes = `<div style="font-size:11px;color:#0F172A;margin-top:2px;">Peminjam: <b>${escHtml(item.nama_pembeli_penyewa)}</b></div>`;
+          }
+        }
+
+        const priceText = item.harga_jual ? `Rp${Number(item.harga_jual).toLocaleString('id-ID')}` : (item.harga_sewa ? `Rp${Number(item.harga_sewa).toLocaleString('id-ID')}/hari` : 'Gratis Pinjam');
+        const fotoSrc = (item.foto && !item.foto.includes('AARCAAEAAEDASIAAhEBAxEB')) ? (typeof KM !== 'undefined' && KM.getFoto ? KM.getFoto(item.foto) : item.foto) : '/img/kalkulator-casio.png';
+
+        const canUpLagi = isDisewa || isDipinjam;
+
+        return `
+          <div class="my-item-card" style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+            <div style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;" onclick="window.location.href='${statusLink}'">
+              <div style="width:56px;height:56px;border-radius:10px;background:#F1F5F9;overflow:hidden;flex-shrink:0;">
+                <img src="${fotoSrc}" alt="${escHtml(item.nama_barang)}" style="width:100%;height:100%;object-fit:cover;">
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;gap:6px;">
+                  <span style="font-size:10px;font-weight:700;color:${badgeColor};background:${badgeBg};padding:2px 7px;border-radius:6px;">${badgeText}</span>
+                  <span style="font-size:11px;font-weight:700;color:#008F83;">${priceText}</span>
+                </div>
+                <div style="font-size:13px;font-weight:700;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(item.nama_barang)}</div>
+                <div style="font-size:11px;color:#64748B;">Lokasi: ${escHtml(item.lokasi || 'Fakultas Teknik')}</div>
+                ${userNotes}
+              </div>
+            </div>
+
+            <!-- Action Link Button -->
+            <div style="display:flex;align-items:center;gap:8px;padding-top:4px;border-top:1px dashed #F1F5F9;">
+              <a href="${statusLink}" style="flex:1;height:32px;background:#F8FAFC;border:1px solid #CBD5E1;color:#0F172A;border-radius:8px;font-size:11.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:5px;text-decoration:none;transition:background .15s;">
+                <span>${statusLinkText}</span>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </a>
+              ${canUpLagi ? `
+                <button class="btn-up-lagi" data-id="${item.id_barang}" style="flex:1.2;height:32px;background:#008F83;color:#FFFFFF;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:background .15s;">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+                  Up Lagi ke Beranda
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Add click event for "Up Lagi" buttons
+      document.querySelectorAll('.btn-up-lagi').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          btn.disabled = true;
+          btn.textContent = 'Memproses Up Lagi...';
+          try {
+            const resp = await KM.post('/barang/' + id + '/up');
+            await KM.ui.sukses('Barang Di-up Lagi', resp.pesan || 'Barang berhasil di-up lagi dan tampil kembali di beranda!');
+            muatBarangSaya();
+          } catch (err) {
+            KM.ui.error('Gagal Up Lagi', err.message || 'Barang tidak bisa di-up. Coba lagi sebentar lagi.');
+            btn.disabled = false;
+            btn.textContent = 'Up Lagi ke Beranda';
+          }
+        });
+      });
+    } catch (_err) {
+      myItemsList.innerHTML = `<div style="font-size:12px;color:#94A3B8;text-align:center;padding:12px;">Gagal memuat barang saya.</div>`;
+      KM.ui.error('Gagal Memuat Barang', 'Daftar barang kamu tidak bisa dimuat. Periksa koneksi kamu.');
+    }
+  }
+
+  muatBarangSaya();
 });

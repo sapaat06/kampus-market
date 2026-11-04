@@ -85,7 +85,9 @@ html, body {
   margin: 0;
   padding: 0;
   background: var(--bg-page);
-  min-height: 100vh;
+  min-height: 100%;
+  height: 100%;
+  overflow-x: hidden;
   display: flex;
   justify-content: center;
   font-family: var(--font-main);
@@ -94,10 +96,11 @@ html, body {
 }
 
 /* Mobile Frame Container */
-.phone {
+.phone, .app-frame, .phone-frame {
   width: 100%;
   max-width: 440px;
   min-height: 100vh;
+  min-height: 100dvh;
   height: 100dvh;
   background: var(--bg-white);
   margin: 0 auto;
@@ -171,7 +174,9 @@ html, body {
 /* Common Buttons */
 .btn-primary {
   width: 100%;
-  height: 48px;
+  height: 44px;
+  min-height: 44px;
+  flex-shrink: 0;
   background: var(--primary);
   border: none;
   border-radius: var(--radius-md);
@@ -185,9 +190,11 @@ html, body {
   cursor: pointer;
   font-family: inherit;
   transition: background 0.15s;
+  text-decoration: none;
 }
 .btn-primary:hover {
   background: var(--primary-hover);
+  color: #fff;
 }
 .btn-primary:active {
   background: var(--primary-active);
@@ -200,7 +207,9 @@ html, body {
 
 .btn-secondary {
   width: 100%;
-  height: 48px;
+  height: 44px;
+  min-height: 44px;
+  flex-shrink: 0;
   background: var(--mint-bg);
   border: none;
   border-radius: var(--radius-md);
@@ -214,6 +223,7 @@ html, body {
   cursor: pointer;
   font-family: inherit;
   transition: background 0.15s;
+  text-decoration: none;
 }
 .btn-secondary:hover {
   background: #c7e9e1;
@@ -221,8 +231,10 @@ html, body {
 
 .btn-ghost {
   width: 100%;
-  height: 48px;
-  background: transparent;
+  height: 44px;
+  min-height: 44px;
+  flex-shrink: 0;
+  background: #FFFFFF;
   border: 1.5px solid var(--primary);
   border-radius: var(--radius-md);
   color: var(--primary);
@@ -234,10 +246,12 @@ html, body {
   gap: 8px;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s;
+  text-decoration: none;
 }
 .btn-ghost:hover {
   background: var(--mint-bg);
+  color: var(--primary);
 }
 
 .btn-danger {
@@ -385,15 +399,18 @@ html, body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 0 16px 12px;
-  overflow: hidden;
+  padding: 0 16px 14px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   background: #F8FAFC;
 }
 .brand-top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 48px;
+  height: 38px;
   flex-shrink: 0;
   padding: 0 4px;
 }
@@ -402,7 +419,16 @@ html, body {
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
+  line-height: 1;
+}
+.brand-logo-text .brand-logo-img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  margin-right: 3px;
+  flex-shrink: 0;
+  display: inline-block;
 }
 .brand-logo-text .brand-teal { color: #008F83; }
 .brand-logo-text .brand-orange { color: #F7942D; }
@@ -412,46 +438,52 @@ html, body {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 0;
-  height: 275px;
+  margin: 0 auto 4px;
+  height: 130px;
+  max-height: 18vh;
+  flex-shrink: 1;
 }
 .onboarding-hero-box img {
-  width: 330px;
-  height: 275px;
+  max-width: 190px;
+  width: auto;
+  height: 100%;
   object-fit: contain;
 }
 
 .onboarding-title {
-  font-size: 24px;
+  font-size: 19px;
   font-weight: 800;
   color: #0F172A;
   text-align: center;
-  line-height: 1.25;
-  margin: 4px 0 6px;
+  line-height: 1.2;
+  margin: 2px 0 3px;
+  flex-shrink: 0;
 }
 .onboarding-sub {
-  font-size: 13px;
+  font-size: 12px;
   color: #64748B;
   text-align: center;
-  line-height: 1.4;
-  margin-bottom: 14px;
+  line-height: 1.3;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .onboarding-cards {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  margin-bottom: 14px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 .service-pill-card {
-  border-radius: 14px;
-  padding: 10px 4px;
+  border-radius: 12px;
+  padding: 6px 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 4px;
+  gap: 2px;
 }
 .service-pill-card.mint {
   background: #DCFCE7;
@@ -460,8 +492,8 @@ html, body {
   background: #FFF1DE;
 }
 .service-pill-card .service-icon {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -470,43 +502,50 @@ html, body {
   stroke: #166534;
   fill: none;
   stroke-width: 2;
+  width: 18px;
+  height: 18px;
 }
 .service-pill-card.peach .service-icon svg {
   stroke: #9A3412;
   fill: none;
   stroke-width: 2;
+  width: 18px;
+  height: 18px;
 }
 .service-pill-card .service-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #0F172A;
 }
 .service-pill-card .service-desc {
-  font-size: 10px;
+  font-size: 9.5px;
   color: #64748B;
 }
 
 .onboarding-note {
-  font-size: 11px;
+  font-size: 10.5px;
   color: #64748B;
   text-align: center;
-  line-height: 1.4;
-  margin: 0 4px 14px;
+  line-height: 1.3;
+  margin: 0 4px 8px;
+  flex-shrink: 0;
 }
 
 .onboarding-actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
   margin-top: auto;
   width: 100%;
+  flex-shrink: 0;
+  padding-bottom: 8px;
 }
 .home-indicator-bar {
   width: 134px;
   height: 4px;
   background: #0F172A;
   border-radius: 999px;
-  margin: 10px auto 0;
+  margin: 4px auto 0;
   flex-shrink: 0;
 }
 
@@ -634,3 +673,15 @@ html, body {
   color: #64748B;
   margin: 10px 0 14px;
 }
+
+/* Utilities */
+.mb-6 {
+  margin-bottom: 24px !important;
+}
+.mt-4 { margin-top: 1rem !important; }
+.mt-5 { margin-top: 1.25rem !important; }
+.flex { display: flex !important; }
+.justify-center { justify-content: center !important; }
+.items-center { align-items: center !important; }
+.gap-1\.5 { gap: 0.375rem !important; }
+

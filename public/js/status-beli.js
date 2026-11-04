@@ -23,6 +23,7 @@ async function initBeli() {
   const valTgl = document.getElementById('valTgl');
   const valPenjual = document.getElementById('valPenjual');
   const valHarga = document.getElementById('valHarga');
+  const valMetode = document.getElementById('valMetode');
   const valLokasi = document.getElementById('valLokasi');
 
   if (backBtn) {
@@ -47,16 +48,31 @@ async function initBeli() {
   let activeTx = null;
 
   try {
-    const me = await KM.get('/saya');
-    if (me && me.transaksi && me.transaksi.length > 0) {
-      if (txId) {
-        activeTx = me.transaksi.find(t => String(t.id_transaksi) === String(txId) && t.jenis_transaksi === 'beli');
-      }
-      if (!activeTx) {
-        activeTx = me.transaksi.find(t => t.jenis_transaksi === 'beli');
+    if (txId) {
+      try {
+        const single = await KM.get('/transaksi/' + txId);
+        if (single) activeTx = single;
+      } catch (_e) {}
+    }
+
+    if (!activeTx) {
+      const me = await KM.get('/saya');
+      const allTx = [
+        ...((me && Array.isArray(me.transaksi)) ? me.transaksi : []),
+        ...((me && Array.isArray(me.transaksi_penjualan)) ? me.transaksi_penjualan : [])
+      ];
+      if (allTx.length > 0) {
+        if (txId) {
+          activeTx = allTx.find(t => String(t.id_transaksi) === String(txId) && t.jenis_transaksi === 'beli');
+        }
+        if (!activeTx) {
+          activeTx = allTx.find(t => t.jenis_transaksi === 'beli');
+        }
       }
     }
-  } catch (_e) {}
+  } catch (_e) {
+    KM.ui.error('Gagal Memuat Transaksi', 'Data transaksi pembelian tidak bisa diambil. Periksa koneksi kamu atau masuk kembali.');
+  }
 
   if (activeTx) {
     if (itemTitle && activeTx.nama_barang) itemTitle.textContent = activeTx.nama_barang;
@@ -64,8 +80,25 @@ async function initBeli() {
     if (itemPrice) itemPrice.textContent = hargaFmt;
     if (valHarga) valHarga.textContent = hargaFmt;
     if (valTxId) valTxId.textContent = `KC-B${activeTx.id_transaksi}`;
-    if (badgeStatus) badgeStatus.textContent = activeTx.status === 'selesai' ? 'Selesai / Hak Milik' : 'Sedang Diproses';
+
+    // Pemetaan status transaksi yang akurat
+    const st = activeTx.status || 'pending';
+    let statusText = 'Sedang Diproses';
+    if (st === 'completed' || st === 'selesai') statusText = 'Selesai / Hak Milik';
+    else if (st === 'accepted') statusText = 'Pesanan Diterima (Siap Bertemu)';
+    else if (st === 'pending') statusText = 'Menunggu Konfirmasi Penjual';
+    else if (st === 'cancelled' || st === 'batal') statusText = 'Dibatalkan';
+    if (badgeStatus) badgeStatus.textContent = statusText;
+
     if (activeTx.lokasi && valLokasi) valLokasi.textContent = activeTx.lokasi;
+    const lastMetode = sessionStorage.getItem('kc_last_payment_method');
+    if (valMetode) valMetode.textContent = activeTx.metode_pembayaran || lastMetode || 'COD (Bayar di Tempat)';
+
+    // Render komponen alur COD & Kode Verifikasi Pertemuan
+    const codContainer = document.getElementById('codSection');
+    if (codContainer && typeof window.renderCodFlow === 'function') {
+      window.renderCodFlow(codContainer, activeTx, () => initBeli());
+    }
 
     if (activeTx.id_barang) {
       try {

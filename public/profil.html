@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<script src="/vendor/sweetalert2.all.min.js"></script>
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KampusCircle — Profil Mahasiswa</title>
@@ -168,17 +169,16 @@
     margin: 18px 20px 0;
     background: #FFFFFF;
     border-radius: 16px;
-    height: 104px;
-    padding: 12px 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-    border: 1px solid #F1F5F9;
+    padding: 16px;
+    border: 1px solid #E2E8F0;
     box-sizing: border-box;
     position: relative;
     z-index: 5;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    gap: 14px;
   }
+  .green-card[hidden] { display: none !important; }
   .green-top {
     display: flex;
     justify-content: space-between;
@@ -188,18 +188,20 @@
     font-size: 12px;
     font-weight: 600;
     color: #64748B;
+    letter-spacing: 0.1px;
   }
   .green-points-wrap {
     display: flex;
     align-items: baseline;
-    gap: 4px;
-    margin-top: 2px;
+    gap: 5px;
+    margin-top: 4px;
   }
   .green-val {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 800;
-    color: #008F83;
+    color: #047857;
     line-height: 1;
+    letter-spacing: -0.5px;
   }
   .green-unit {
     font-size: 13px;
@@ -209,45 +211,49 @@
   .leaf-badge {
     width: 44px;
     height: 44px;
-    border-radius: 50%;
-    background: #DCFCE7;
+    border-radius: 9999px;
+    background: #ECFDF5;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
   }
-  .leaf-badge svg { width: 22px; height: 22px; stroke: #008F83; fill: none; stroke-width: 2; }
+  .leaf-badge svg {
+    width: 22px;
+    height: 22px;
+    stroke: #047857;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
 
   .progress-wrap {
-    margin-top: 12px;
+    margin-top: 0;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
   }
   .progress-track {
-    height: 8px;
+    height: 6px;
     border-radius: 9999px;
-    background: #F1F5F9;
+    background: #DCFCE7;
     overflow: hidden;
     position: relative;
   }
   .progress-fill {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 70%;
+    height: 100%;
+    width: 0%;
     border-radius: 9999px;
-    background: linear-gradient(90deg, #F7942D, #FBBF24);
+    background: #F59E0B;
+    transition: width 0.4s ease;
   }
-  .progress-labels {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 10.5px;
+  .progress-hint {
+    font-size: 11px;
+    line-height: 1.45;
+    color: #64748B;
+    font-weight: 500;
   }
-  .level-curr { color: #008F83; font-weight: 700; }
-  .level-next { color: #64748B; font-weight: 500; }
 
   /* 3 Stats Grid */
   .stats-row {
@@ -510,29 +516,26 @@
       </div>
     </div>
 
-    <!-- Green Points Card -->
-    <div class="green-card">
+    <!-- Green Points Card: hanya dirender untuk role mahasiswa -->
+    <div class="green-card" id="greenPointCard" hidden>
       <div class="green-top">
         <div>
-          <div class="green-lbl">Dompet Green Point</div>
+          <div class="green-lbl">Poin Hijau</div>
           <div class="green-points-wrap">
-            <span class="green-val" id="greenPointsVal">350</span>
-            <span class="green-unit">Poin</span>
+            <span class="green-val" id="greenPointsVal">0</span>
+            <span class="green-unit">poin</span>
           </div>
         </div>
-        <div class="leaf-badge">
+        <div class="leaf-badge" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="M20 4c-8 0-14 4-14 10a6 6 0 0 0 6 6c6 0 8-6 8-16Z"/><path d="M4 21c2-5 6-8 12-10"/></svg>
         </div>
       </div>
 
       <div class="progress-wrap">
-        <div class="progress-track">
+        <div class="progress-track" id="greenProgress" role="progressbar" aria-label="Progres Poin Hijau" aria-valuemin="0" aria-valuemax="500" aria-valuenow="0">
           <div class="progress-fill" id="progressFill"></div>
         </div>
-        <div class="progress-labels">
-          <span class="level-curr" id="levelName">Level 2: Green Contributor</span>
-          <span class="level-next" id="levelNext">350/500 Poin Menuju Level 3</span>
-        </div>
+        <div class="progress-hint" id="levelNext">0 poin lagi menuju lencana Sahabat Bumi</div>
       </div>
     </div>
 
@@ -618,11 +621,21 @@
         </div>
       </div>
     </div>
+    <!-- Section Kelola Barang Unggahan Saya & Up Lagi -->
+    <div class="sec-wrap" id="secBarangSaya" style="margin-top: 18px; margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <div class="sec-heading" style="margin: 0;">Barang Unggahan Saya</div>
+        <a href="/unggah.html" style="font-size: 11px; font-weight: 700; color: #008F83; text-decoration: none;">+ Unggah Baru</a>
+      </div>
+      <div id="myItemsList" style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-size: 12px; color: #94A3B8; text-align: center; padding: 14px 0;">Memuat postingan barang...</div>
+      </div>
+    </div>
   </div>
 
   <!-- Bottom Navigation -->
   <nav class="nav">
-    <a href="/beranda.html" class="item">
+    <a href="/beranda.html" class="item" id="navProfilHome" data-nav="home">
       <div class="box">
         <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/></svg>
       </div>
@@ -634,7 +647,7 @@
       </div>
       <span class="lbl">Cari</span>
     </a>
-    <a href="/unggah.html" class="item center" aria-label="Unggah Barang">
+    <a href="/unggah.html" class="item center" id="navProfilPlus" aria-label="Unggah Barang">
       <div class="circle">
         <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
       </div>

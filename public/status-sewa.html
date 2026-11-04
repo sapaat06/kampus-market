@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<script src="/vendor/sweetalert2.all.min.js"></script>
 <script src="/js/api.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CampusCircle — Transaksi Sewa & Pinjam</title>
@@ -346,6 +347,52 @@
   }
   .step-header { font-size: 12px; font-weight: 700; color: #0F172A; }
   .step-sub { font-size: 11px; color: #64748B; margin-top: 1px; }
+
+  /* Transaction List & Card Spacing */
+  .transaction-list {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 24px;
+  }
+  .tx-card-group, .mb-6 {
+    margin-bottom: 24px !important;
+  }
+  .tx-card-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 24px;
+    border-bottom: 1.5px dashed #CBD5E1;
+  }
+  .tx-card-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0 !important;
+    padding-bottom: 0;
+  }
+  .btn-kembalikan {
+    width: 100%;
+    height: 44px;
+    border-radius: 12px;
+    background: #008F83;
+    color: #FFFFFF;
+    border: none;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 4px 12px rgba(0,143,131,0.2);
+    transition: background .15s, transform .15s;
+  }
+  .btn-kembalikan:active {
+    transform: scale(0.98);
+    background: #007A68;
+  }
+  .btn-kembalikan.disabled {
+    background: #E2E8F0;
+    color: #94A3B8;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
 
   /* Return Modal / Screen 20 */
   .modal-overlay {
@@ -708,6 +755,7 @@
   </nav>
 </div>
 
+<script src="/js/cod.js"></script>
 <script type="module" src="/js/status-sewa.js"></script>
 </body>
 </html>

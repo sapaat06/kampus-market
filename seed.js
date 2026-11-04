@@ -2,7 +2,8 @@
 import { db, tx } from './src/db.js';
 import { hash } from './src/auth.js';
 
-if (db.prepare('SELECT COUNT(*) n FROM kategori').get().n > 0) {
+const existingKategori = await db.prepare('SELECT COUNT(*) n FROM kategori').get();
+if (existingKategori && existingKategori.n > 0) {
   console.log('Data sudah ada, seed dilewati.');
   process.exit(0);
 }
@@ -36,14 +37,14 @@ const barang = [
   [5, 3, 'Tenda Camping 2 Orang', 'Lengkap pasak dan flysheet.', 25000, null, 'baik'],
 ];
 
-tx(() => {
+await tx(async () => {
   const k = db.prepare('INSERT INTO kategori (nama_kategori,deskripsi) VALUES (?,?)');
   const p = db.prepare('INSERT INTO penjual (nama,email,no_hp) VALUES (?,?,?)');
   const b = db.prepare('INSERT INTO barang (id_kategori,id_penjual,nama_barang,deskripsi,harga_sewa,harga_jual,kondisi) VALUES (?,?,?,?,?,?,?)');
-  kategori.forEach((r) => k.run(...r));
-  penjual.forEach((r) => p.run(...r));
-  barang.forEach((r) => b.run(...r));
-  db.prepare('INSERT INTO mahasiswa (nama,email,no_hp,password_hash,status_verifikasi) VALUES (?,?,?,?,?)')
+  for (const r of kategori) await k.run(...r);
+  for (const r of penjual) await p.run(...r);
+  for (const r of barang) await b.run(...r);
+  await db.prepare('INSERT INTO mahasiswa (nama,email,no_hp,password_hash,status_verifikasi) VALUES (?,?,?,?,?)')
     .run('Mahasiswa Demo', 'demo@kampus.ac.id', '081234567890', hash('demo12345'), 'terverifikasi');
 });
 

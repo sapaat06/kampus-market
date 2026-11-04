@@ -2,6 +2,7 @@ import express from 'express';
 import { join } from 'node:path';
 import { err } from './util.js';
 import { limit } from './limit.js';
+import { upload, uploadStream } from './upload.js';
 import { router as auth } from './routes/auth.js';
 import { router as barang } from './routes/barang.js';
 import { router as transaksi } from './routes/transaksi.js';
@@ -12,15 +13,17 @@ import { router as adminRouter } from './routes/admin.js';
 
 export const app = express();
 app.disable('x-powered-by');
-const trustProxy = process.env.TRUST_PROXY;
-if (trustProxy) app.set('trust proxy', trustProxy === 'true' ? true : Number(trustProxy) || trustProxy);
+
+// Reverse proxy trust untuk Render & HTTPS session cookie
+app.set('trust proxy', 1);
 
 const CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'", // dipakai untuk warna thumb dan satu style di admin
-  "img-src 'self' data:",
-  "connect-src 'self'",
+  "img-src 'self' data: https:",
+  "connect-src 'self' https://nominatim.openstreetmap.org",
+  "frame-src 'self' https://www.openstreetmap.org https://*.openstreetmap.org https://maps.google.com https://www.google.com",
   "font-src 'self'",
   "object-src 'none'",
   "base-uri 'none'",
@@ -41,9 +44,14 @@ app.use((req, res, next) => {
   next();
 });
 
+// Endpoint Health Check untuk Render
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 app.use(express.json({ limit: '5mb' })); // KTM dan foto barang dikirim sebagai data URL
 
-const apiPrefixes = ['/api', '/chat', '/auth'];
+const apiPrefixes = ['/api', '/chat', '/auth', '/admin'];
 
 app.use(apiPrefixes, (_req, res, next) => { res.set('cache-control', 'no-store'); next(); });
 
@@ -66,18 +74,39 @@ app.use(apiPrefixes, limit({ name: 'api', max: 300, windowMs: 60e3 }));
 const adminLimit = limit({ name: 'admin', max: 120, windowMs: 900e3 });
 app.use(['/api', '/admin'], (req, res, next) => req.get('x-admin-key') !== undefined ? adminLimit(req, res, next) : next());
 
+// Endpoint mandiri unggah foto (Cloudinary via multer memoryStorage + upload_stream)
+app.post(['/api/upload', '/upload'], upload.array('foto', 5), async (req, res, next) => {
+  try {
+    const files = req.files || [];
+    if (!files.length && req.file) files.push(req.file);
+    if (!files.length) return next(err(400, 'tidak ada file foto yang diunggah'));
+    const urls = [];
+    for (const f of files) {
+      const url = await uploadStream(f.buffer, { mimetype: f.mimetype });
+      urls.push(url);
+    }
+    res.json({ ok: true, urls, secure_url: urls[0], url: urls[0] });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // Mounting eksplisit untuk chat & auth router
 app.use('/api/chat', chat);
 app.use('/chat', chat);
 app.use('/api/auth', auth);
 app.use('/auth', auth);
+app.use(['/sewa', '/pesanan-masuk'], kos);
 
 // Mounting utama API
 app.use('/api', auth, barang, transaksi, estimasi, kos, adminRouter);
-app.use(['/api', '/api/chat', '/chat', '/api/auth', '/auth'], (_req, _res, next) => next(err(404, 'endpoint tidak ada')));
+app.use('/admin', adminRouter);
+app.use(['/api', '/api/chat', '/chat', '/api/auth', '/auth', '/admin', '/sewa', '/pesanan-masuk'], (_req, _res, next) => next(err(404, 'endpoint tidak ada')));
 app.use(express.static(join(import.meta.dirname, '..', 'public')));
 
 app.use((e, _req, res, _next) => {
+  if (e.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'payload terlalu besar: maksimal 5MB per file' });
+  if (e.code === 'LIMIT_FILE_COUNT') return res.status(400).json({ error: 'maksimal 5 foto' });
   if (e.type === 'entity.parse.failed') return res.status(400).json({ error: 'JSON tidak valid' });
   if (e.type === 'entity.too.large') return res.status(413).json({ error: 'payload terlalu besar' });
   if (e.status) return res.status(e.status).json({ error: e.message });
@@ -90,6 +119,6 @@ app.use((e, _req, res, _next) => {
 });
 
 if (import.meta.filename === process.argv[1]) {
-  const port = process.env.PORT ?? 3000;
+  const port = process.env.PORT || 3000;
   app.listen(port, () => console.log(`Kampus Market jalan di http://localhost:${port}`));
 }
