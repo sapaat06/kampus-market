@@ -507,7 +507,12 @@
         </div>
         <div class="user-texts">
           <div class="user-name" id="userName">Rina Maharani</div>
-          <div class="user-dept" id="userDept">Teknik Informatika · Angkatan 2023</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div class="user-dept" id="userDept">Teknik Informatika · Angkatan 2023</div>
+            <button type="button" id="btnEditDataDiri" style="background:transparent;border:none;cursor:pointer;color:rgba(255,255,255,0.85);padding:2px;display:flex;align-items:center;justify-content:center;" title="Edit Data Diri" aria-label="Edit Program Studi dan Angkatan">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </button>
+          </div>
           <div class="badge-ktm" id="badgeKtm">
             <svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
             <span>KTM Terverifikasi</span>
@@ -686,6 +691,35 @@
       <button type="button" id="btnBatalFoto" style="width:100%;height:44px;border-radius:12px;border:1px solid #E2E8F0;background:#F8FAFC;color:#64748B;font-size:14px;font-weight:600;cursor:pointer;">
         Batal
       </button>
+    </div>
+  </div>
+
+  <!-- Bottom Sheet: Edit Data Diri (NOMOR 6) -->
+  <div class="filter-sheet-overlay" id="modalEditDataDiri" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:9999;align-items:flex-end;justify-content:center;">
+    <div class="filter-sheet-panel" style="background:#FFFFFF;width:100%;max-width:390px;border-radius:24px 24px 0 0;padding:20px 20px 32px;display:flex;flex-direction:column;gap:16px;box-shadow:0 -4px 20px rgba(0,0,0,0.15);box-sizing:border-box;">
+      <div style="width:40px;height:4px;border-radius:2px;background:#CBD5E1;margin:0 auto 4px;"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:16px;font-weight:700;color:#0F172A;">Edit Data Diri</span>
+        <button type="button" id="btnCloseDataDiri" style="background:transparent;border:none;cursor:pointer;color:#64748B;font-size:20px;padding:4px;">&times;</button>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label for="inputProdi" style="font-size:12px;font-weight:600;color:#334155;">Program Studi</label>
+        <input type="text" id="inputProdi" class="form-input" style="width:100%;height:44px;border:1.5px solid #CBD5E1;border-radius:12px;padding:0 14px;font-size:13.5px;color:#0F172A;box-sizing:border-box;" placeholder="Contoh: Teknik Informatika" maxlength="60">
+        <span id="errorProdi" style="display:none;font-size:11px;color:#DC2626;"></span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label for="selectAngkatan" style="font-size:12px;font-weight:600;color:#334155;">Tahun Angkatan</label>
+        <select id="selectAngkatan" class="form-select" style="width:100%;height:44px;border:1.5px solid #CBD5E1;border-radius:12px;padding:0 14px;font-size:13.5px;color:#0F172A;background:#FFFFFF;box-sizing:border-box;">
+        </select>
+        <span id="errorAngkatan" style="display:none;font-size:11px;color:#DC2626;"></span>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:6px;">
+        <button type="button" id="btnBatalDataDiri" style="flex:1;height:44px;border-radius:12px;border:1.5px solid #E2E8F0;background:#F8FAFC;color:#64748B;font-size:14px;font-weight:600;cursor:pointer;">Batal</button>
+        <button type="button" id="btnSimpanDataDiri" style="flex:1.5;height:44px;border-radius:12px;border:none;background:#007A68;color:#FFFFFF;font-size:14px;font-weight:600;cursor:pointer;">Simpan</button>
+      </div>
     </div>
   </div>
 </div>

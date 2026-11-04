@@ -984,5 +984,46 @@ assert.match(String(apiJsRes.j), /function goBack/);
   assert.equal(mockThumbRight.style.left, '100%');
 }
 
+// Uji Edit Data Diri: Angkatan dan Prodi (NOMOR 6)
+{
+  const currentYear = new Date().getFullYear();
+
+  // 1. Update dari user yang belum login -> 401
+  const resNoAuth = await call('PATCH', '/api/saya/data-diri', { prodi: 'Teknik Industri', angkatan: 2024 });
+  assert.equal(resNoAuth.s, 401, 'update data diri tanpa login harus 401');
+
+  // 2. Ambil data awal user dan status_verifikasi
+  const userAwal = (await call('GET', '/api/saya', null, U)).j;
+  const statusVerifAwal = userAwal.status_verifikasi;
+  const roleAwal = userAwal.role;
+
+  // 3. Simpan perubahan valid -> 200
+  const resValid = await call('PATCH', '/api/saya/data-diri', { prodi: 'Teknik Informatika', angkatan: currentYear - 1 }, U);
+  assert.equal(resValid.s, 200, 'update data diri valid harus 200');
+  assert.equal(resValid.j.prodi, 'Teknik Informatika');
+  assert.equal(resValid.j.angkatan, currentYear - 1);
+
+  // 4. Cek perubahan tersimpan dan status_verifikasi / role tidak rusak
+  const userSetelahnya = (await call('GET', '/api/saya', null, U)).j;
+  assert.equal(userSetelahnya.prodi, 'Teknik Informatika');
+  assert.equal(userSetelahnya.angkatan, currentYear - 1);
+  assert.equal(userSetelahnya.status_verifikasi, statusVerifAwal, 'status_verifikasi tidak boleh berubah');
+  assert.equal(userSetelahnya.role, roleAwal, 'role tidak boleh berubah');
+
+  // 5. Angkatan tidak valid (400)
+  assert.equal((await call('PATCH', '/api/saya/data-diri', { prodi: 'Sistem Informasi', angkatan: 'bukan-angka' }, U)).s, 400, 'angkatan non-angka harus 400');
+  assert.equal((await call('PATCH', '/api/saya/data-diri', { prodi: 'Sistem Informasi', angkatan: 1990 }, U)).s, 400, 'angkatan terlalu lampau harus 400');
+  assert.equal((await call('PATCH', '/api/saya/data-diri', { prodi: 'Sistem Informasi', angkatan: currentYear + 5 }, U)).s, 400, 'angkatan masa depan harus 400');
+
+  // 6. Prodi terlalu pendek (< 2 karakter) -> 400
+  assert.equal((await call('PATCH', '/api/saya/data-diri', { prodi: 'A', angkatan: currentYear }, U)).s, 400, 'prodi < 2 karakter harus 400');
+
+  // 7. Prodi terlalu panjang (> 60 karakter) -> 400
+  assert.equal((await call('PATCH', '/api/saya/data-diri', { prodi: 'P'.repeat(61), angkatan: currentYear }, U)).s, 400, 'prodi > 60 karakter harus 400');
+
+  // 8. Prodi karakter aneh / berbahaya -> 400
+  assert.equal((await call('PATCH', '/api/saya/data-diri', { prodi: '<script>alert(1)</script>', angkatan: currentYear }, U)).s, 400, 'prodi berisi script harus 400');
+}
+
 srv.close();
 console.log('semua cek lolos');

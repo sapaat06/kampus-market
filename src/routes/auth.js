@@ -166,7 +166,7 @@ router.post('/logout', (_req, res) => {
 
 router.get(['/saya', '/me'], user, async (req, res) => {
   const m = await db.prepare(
-    'SELECT id_mahasiswa,nama,email,no_hp,whatsapp_number,ktm,kampus,status_verifikasi,foto,role FROM mahasiswa WHERE id_mahasiswa=?'
+    'SELECT id_mahasiswa,nama,email,no_hp,whatsapp_number,ktm,kampus,status_verifikasi,foto,role,prodi,angkatan FROM mahasiswa WHERE id_mahasiswa=?'
   ).get(req.uid);
   if (!m) throw err(404, 'akun tidak ada');
   const gpRow = await db.prepare('SELECT COALESCE(SUM(jumlah_poin),0) s FROM poin WHERE id_mahasiswa=?').get(req.uid);
@@ -351,6 +351,53 @@ router.delete(['/profil/foto', '/saya/foto'], user, async (req, res) => {
   await db.prepare('UPDATE mahasiswa SET foto=NULL WHERE id_mahasiswa=?').run(req.uid);
   res.json({ ok: true, foto: null });
 });
+
+// Mahasiswa: perbarui data diri (program studi dan tahun angkatan)
+const handleUpdateDataDiri = async (req, res) => {
+  const currentYear = new Date().getFullYear();
+  const minYear = currentYear - 8;
+  const maxYear = currentYear;
+
+  // Validasi prodi
+  const rawProdi = req.body?.prodi;
+  if (typeof rawProdi !== 'string') {
+    throw err(400, 'Program studi wajib diisi');
+  }
+  const cleanProdi = rawProdi.trim().replace(/\s+/g, ' ');
+  if (cleanProdi.length < 2 || cleanProdi.length > 60) {
+    throw err(400, 'Program studi harus antara 2 sampai 60 karakter');
+  }
+  if (!/^[a-zA-Z0-9\s.,()&/-]+$/.test(cleanProdi)) {
+    throw err(400, 'Program studi mengandung karakter yang tidak valid');
+  }
+
+  // Validasi angkatan
+  if (req.body?.angkatan === undefined || req.body?.angkatan === null || req.body?.angkatan === '') {
+    throw err(400, 'Tahun angkatan wajib diisi');
+  }
+  const nAngkatan = Number(req.body.angkatan);
+  if (!Number.isInteger(nAngkatan) || nAngkatan < minYear || nAngkatan > maxYear) {
+    throw err(400, `Tahun angkatan harus antara ${minYear} dan ${maxYear}`);
+  }
+
+  // Update hanya kolom prodi dan angkatan milik user yang sedang login (ambil id dari sesi)
+  // Tidak mengubah status_verifikasi, role, atau kolom lainnya!
+  await db.prepare('UPDATE mahasiswa SET prodi=?, angkatan=? WHERE id_mahasiswa=?').run(cleanProdi, nAngkatan, req.uid);
+
+  const updated = await db.prepare(
+    'SELECT id_mahasiswa,nama,email,no_hp,whatsapp_number,ktm,kampus,status_verifikasi,foto,role,prodi,angkatan FROM mahasiswa WHERE id_mahasiswa=?'
+  ).get(req.uid);
+
+  res.json({
+    ok: true,
+    prodi: cleanProdi,
+    angkatan: nAngkatan,
+    user: updated
+  });
+};
+
+router.patch(['/saya/data-diri', '/profil/data-diri'], user, handleUpdateDataDiri);
+router.put(['/saya/data-diri', '/profil/data-diri'], user, handleUpdateDataDiri);
 
 router.post('/verifikasi', user, upload.single('ktm'), async (req, res) => {
   let rawKtm = req.file ? req.file.buffer : (req.body?.ktm ? str(req.body?.ktm, 'ktm', 800_000) : null);

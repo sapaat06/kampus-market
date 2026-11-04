@@ -89,6 +89,8 @@ export async function initDb() {
       whatsapp_number TEXT,
       password_hash TEXT NOT NULL, ktm TEXT, kampus TEXT,
       foto TEXT,
+      prodi TEXT,
+      angkatan INTEGER,
       role TEXT NOT NULL DEFAULT 'mahasiswa' CHECK (role IN ('mahasiswa','pelanggan','pemilik_kost','admin')),
       status_akun TEXT NOT NULL DEFAULT 'pending' CHECK (status_akun IN ('pending','approved','rejected')),
       status_verifikasi TEXT NOT NULL DEFAULT 'pending' CHECK (status_verifikasi IN ('pending','terverifikasi','ditolak','approved','rejected')),
@@ -305,6 +307,12 @@ export async function initDb() {
     }
     if (!kolomMahasiswa.includes('alasan_penolakan')) {
       try { await client.execute('ALTER TABLE mahasiswa ADD COLUMN alasan_penolakan TEXT'); } catch {}
+    }
+    if (!kolomMahasiswa.includes('prodi')) {
+      try { await client.execute('ALTER TABLE mahasiswa ADD COLUMN prodi TEXT'); } catch {}
+    }
+    if (!kolomMahasiswa.includes('angkatan')) {
+      try { await client.execute('ALTER TABLE mahasiswa ADD COLUMN angkatan INTEGER'); } catch {}
     }
 
     const tableInfoBarang = await client.execute('PRAGMA table_info(barang)');

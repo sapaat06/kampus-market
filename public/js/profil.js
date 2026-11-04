@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let currentUserFoto = null;
   let currentUserName = 'Rina Maharani';
+  let currentUserProdi = 'Teknik Informatika';
+  let currentUserAngkatan = 2023;
 
   function getInitials(name) {
     if (!name) return 'KC';
@@ -74,8 +76,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     currentUserFoto = data.foto || null;
     renderAvatar(currentUserFoto, currentUserName);
-    if (data.prodi && userDept) {
-      userDept.textContent = `${data.prodi} · Angkatan ${data.angkatan || '2023'}`;
+    if (data.prodi) currentUserProdi = data.prodi;
+    if (data.angkatan) currentUserAngkatan = Number(data.angkatan);
+    if (userDept) {
+      userDept.textContent = `${currentUserProdi} · Angkatan ${currentUserAngkatan}`;
     }
 
     // Poin Hijau hanya untuk mahasiswa. Akun pemilik kost tidak boleh
@@ -313,6 +317,122 @@ document.addEventListener('DOMContentLoaded', async () => {
         KM.ui.error('Gagal Mengunggah Foto', e.message || 'Foto profil tidak bisa disimpan. Coba lagi.');
       } finally {
         fotoInput.value = '';
+      }
+    });
+  }
+
+  // Edit Data Diri (Program Studi & Tahun Angkatan - NOMOR 6)
+  const btnEditDataDiri = document.getElementById('btnEditDataDiri');
+  const modalEditDataDiri = document.getElementById('modalEditDataDiri');
+  const btnCloseDataDiri = document.getElementById('btnCloseDataDiri');
+  const btnBatalDataDiri = document.getElementById('btnBatalDataDiri');
+  const btnSimpanDataDiri = document.getElementById('btnSimpanDataDiri');
+  const inputProdi = document.getElementById('inputProdi');
+  const selectAngkatan = document.getElementById('selectAngkatan');
+  const errorProdi = document.getElementById('errorProdi');
+  const errorAngkatan = document.getElementById('errorAngkatan');
+
+  const currentYear = new Date().getFullYear();
+  if (selectAngkatan) {
+    selectAngkatan.innerHTML = '';
+    for (let y = currentYear; y >= currentYear - 8; y--) {
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = `Angkatan ${y}`;
+      selectAngkatan.appendChild(opt);
+    }
+  }
+
+  const bukaModalDataDiri = () => {
+    if (!modalEditDataDiri) return;
+    if (inputProdi) inputProdi.value = currentUserProdi || 'Teknik Informatika';
+    if (selectAngkatan) selectAngkatan.value = String(currentUserAngkatan || '2023');
+    if (errorProdi) errorProdi.style.display = 'none';
+    if (errorAngkatan) errorAngkatan.style.display = 'none';
+    modalEditDataDiri.style.display = 'flex';
+  };
+
+  const tutupModalDataDiri = () => {
+    if (modalEditDataDiri) modalEditDataDiri.style.display = 'none';
+  };
+
+  if (btnEditDataDiri) {
+    btnEditDataDiri.addEventListener('click', bukaModalDataDiri);
+  }
+  if (btnCloseDataDiri) {
+    btnCloseDataDiri.addEventListener('click', tutupModalDataDiri);
+  }
+  if (btnBatalDataDiri) {
+    btnBatalDataDiri.addEventListener('click', tutupModalDataDiri);
+  }
+  if (modalEditDataDiri) {
+    modalEditDataDiri.addEventListener('click', (e) => {
+      if (e.target === modalEditDataDiri) tutupModalDataDiri();
+    });
+  }
+
+  if (btnSimpanDataDiri) {
+    btnSimpanDataDiri.addEventListener('click', async () => {
+      const rawProdi = (inputProdi?.value || '').trim().replace(/\s+/g, ' ');
+      const nAngkatan = Number(selectAngkatan?.value);
+
+      let hasError = false;
+      if (rawProdi.length < 2 || rawProdi.length > 60) {
+        if (errorProdi) {
+          errorProdi.textContent = 'Program studi harus antara 2 sampai 60 karakter.';
+          errorProdi.style.display = 'block';
+        }
+        hasError = true;
+      } else if (!/^[a-zA-Z0-9\s.,()&/-]+$/.test(rawProdi)) {
+        if (errorProdi) {
+          errorProdi.textContent = 'Program studi mengandung karakter yang tidak valid.';
+          errorProdi.style.display = 'block';
+        }
+        hasError = true;
+      } else {
+        if (errorProdi) errorProdi.style.display = 'none';
+      }
+
+      if (!nAngkatan || nAngkatan < currentYear - 8 || nAngkatan > currentYear) {
+        if (errorAngkatan) {
+          errorAngkatan.textContent = `Tahun angkatan harus antara ${currentYear - 8} dan ${currentYear}.`;
+          errorAngkatan.style.display = 'block';
+        }
+        hasError = true;
+      } else {
+        if (errorAngkatan) errorAngkatan.style.display = 'none';
+      }
+
+      if (hasError) return;
+
+      KM.ui.loading('Menyimpan data diri...');
+      try {
+        const resp = await KM.patch('/saya/data-diri', {
+          prodi: rawProdi,
+          angkatan: nAngkatan,
+        });
+
+        currentUserProdi = resp?.prodi || rawProdi;
+        currentUserAngkatan = resp?.angkatan || nAngkatan;
+
+        if (userDept) {
+          userDept.textContent = `${currentUserProdi} · Angkatan ${currentUserAngkatan}`;
+        }
+
+        const u = KM.getUser ? KM.getUser() : null;
+        if (u) {
+          u.prodi = currentUserProdi;
+          u.angkatan = currentUserAngkatan;
+          if (KM.setUser) KM.setUser(u);
+          else localStorage.setItem('km_user', JSON.stringify(u));
+        }
+
+        tutupModalDataDiri();
+        KM.ui.tutup();
+        KM.ui.toast('Data diri berhasil diperbarui');
+      } catch (err) {
+        KM.ui.tutup();
+        KM.ui.error('Gagal Menyimpan Data Diri', err.message || 'Gagal menyimpan perubahan. Coba lagi.');
       }
     });
   }
