@@ -644,13 +644,13 @@ async function syncFromApi() {
   }
 }
 
-// Current filter state (default values matching figma)
+// Current filter state (default: tanpa filter aktif)
 let sortMode = 'near';
-let filterActive = true;
-let selectedMode = 'sewa';
+let filterActive = false;
+let selectedMode = 'all';
 let minPriceVal = 0;
-let maxPriceVal = 100000;
-let maxDistVal = 2000; // <= 2 km aktif sebagai standar awal
+let maxPriceVal = 0;
+let maxDistVal = 0;
 let selectedCond = 'all';
 
 // DOM Elements
@@ -672,6 +672,8 @@ const filterDistChips = document.getElementById('filterDistChips');
 const filterCondChips = document.getElementById('filterCondChips');
 const chipPrice = document.getElementById('chipPrice');
 const chipDist = document.getElementById('chipDist');
+const chipMode = document.getElementById('chipMode');
+const chipCond = document.getElementById('chipCond');
 const sortBtn = document.getElementById('sortBtn');
 const sortLabel = document.getElementById('sortLabel');
 const headerLocBtn = document.getElementById('headerLocBtn');
@@ -693,7 +695,7 @@ function parseRupiah(str) {
 
 function getActiveMode() {
   const active = document.querySelector('#filterModeChips .f-pill-opt.active');
-  return active?.dataset.mode || 'sewa';
+  return active?.dataset.mode || 'all';
 }
 
 function getActiveDist() {
@@ -718,19 +720,119 @@ function hasActiveFilters() {
          (selectedCond && selectedCond !== 'all' && selectedCond !== 'semua');
 }
 
+function updateFilterChips() {
+  // Price chip
+  if (chipPrice) {
+    if (minPriceVal > 0 && maxPriceVal > 0) {
+      chipPrice.innerHTML = `Rp${minPriceVal.toLocaleString('id-ID')} - Rp${maxPriceVal.toLocaleString('id-ID')} <span class="chip-close" aria-label="Hapus filter harga" role="button">&times;</span>`;
+      chipPrice.style.display = 'inline-flex';
+      chipPrice.classList.add('active');
+    } else if (maxPriceVal > 0) {
+      chipPrice.innerHTML = `≤ Rp${maxPriceVal.toLocaleString('id-ID')} <span class="chip-close" aria-label="Hapus filter harga" role="button">&times;</span>`;
+      chipPrice.style.display = 'inline-flex';
+      chipPrice.classList.add('active');
+    } else if (minPriceVal > 0) {
+      chipPrice.innerHTML = `≥ Rp${minPriceVal.toLocaleString('id-ID')} <span class="chip-close" aria-label="Hapus filter harga" role="button">&times;</span>`;
+      chipPrice.style.display = 'inline-flex';
+      chipPrice.classList.add('active');
+    } else {
+      chipPrice.style.display = 'none';
+      chipPrice.classList.remove('active');
+      chipPrice.innerHTML = '';
+    }
+  }
+
+  // Distance chip
+  if (chipDist) {
+    if (maxDistVal > 0) {
+      chipDist.innerHTML = `≤ ${formatKm(maxDistVal)} <span class="chip-close" aria-label="Hapus filter jarak" role="button">&times;</span>`;
+      chipDist.style.display = 'inline-flex';
+      chipDist.classList.add('active');
+    } else {
+      chipDist.style.display = 'none';
+      chipDist.classList.remove('active');
+      chipDist.innerHTML = '';
+    }
+  }
+
+  // Mode chip
+  if (chipMode) {
+    if (selectedMode && selectedMode !== 'all' && selectedMode !== 'semua') {
+      const modeLabel = selectedMode === 'pinjam' ? 'Pinjam Free' : (selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1));
+      chipMode.innerHTML = `${modeLabel} <span class="chip-close" aria-label="Hapus filter mode" role="button">&times;</span>`;
+      chipMode.style.display = 'inline-flex';
+      chipMode.classList.add('active');
+    } else {
+      chipMode.style.display = 'none';
+      chipMode.classList.remove('active');
+      chipMode.innerHTML = '';
+    }
+  }
+
+  // Condition chip
+  if (chipCond) {
+    if (selectedCond && selectedCond !== 'all' && selectedCond !== 'semua') {
+      const condLabel = selectedCond === 'baru' ? 'Seperti baru' : 'Kondisi: Baik';
+      chipCond.innerHTML = `${condLabel} <span class="chip-close" aria-label="Hapus filter kondisi" role="button">&times;</span>`;
+      chipCond.style.display = 'inline-flex';
+      chipCond.classList.add('active');
+    } else {
+      chipCond.style.display = 'none';
+      chipCond.classList.remove('active');
+      chipCond.innerHTML = '';
+    }
+  }
+}
+
+function resetFilters() {
+  selectedMode = 'all';
+  minPriceVal = 0;
+  maxPriceVal = 0;
+  maxDistVal = 0;
+  selectedCond = 'all';
+  filterActive = false;
+
+  if (filterMinPrice) filterMinPrice.value = '';
+  if (filterMaxPrice) filterMaxPrice.value = '';
+  document.querySelectorAll('#filterModeChips .f-pill-opt').forEach(c => {
+    c.classList.toggle('active', c.dataset.mode === 'all');
+  });
+  document.querySelectorAll('#filterDistChips .f-pill-opt').forEach(c => {
+    c.classList.toggle('active', c.dataset.dist === 'all');
+  });
+  document.querySelectorAll('#filterCondChips .f-pill-opt').forEach(c => {
+    c.classList.toggle('active', c.dataset.cond === 'all');
+  });
+
+  updateFilterChips();
+  updateFilterPreview();
+  render();
+}
+window.resetFilters = resetFilters;
+
 // Check which items match the filter state
 function getFilteredItems(tempMode = selectedMode, tempMinPrice = minPriceVal, tempMaxPrice = maxPriceVal, tempDist = maxDistVal, tempCond = selectedCond) {
-  const term = (q?.value || '').trim().toLowerCase();
+  let term = '';
+  try {
+    term = (q?.value || '').trim().toLowerCase();
+  } catch (_e) {
+    term = '';
+  }
 
   return data.filter(d => {
-    // Search text match
-    const matchText = !term || d.title.toLowerCase().includes(term);
-    if (!matchText) return false;
+    // Search text match (aman terhadap karakter khusus, emoji, kutip, tag html)
+    try {
+      const title = String(d.title || '').toLowerCase();
+      const matchText = !term || title.includes(term);
+      if (!matchText) return false;
+    } catch (_e) {
+      return false;
+    }
 
     // Mode match
     if (tempMode && tempMode !== 'semua' && tempMode !== 'all') {
-      const modeLower = tempMode.toLowerCase();
-      const badgeLower = (d.badge || '').toLowerCase();
+      const modeLower = String(tempMode).toLowerCase();
+      const badgeLower = String(d.badge || '').toLowerCase();
       if (modeLower === 'pinjam') {
         if (!badgeLower.includes('pinjam') && !badgeLower.includes('free')) return false;
       } else if (badgeLower !== modeLower) {
@@ -747,7 +849,7 @@ function getFilteredItems(tempMode = selectedMode, tempMinPrice = minPriceVal, t
       return false;
     }
 
-    // Distance match (≤ 2 km filter)
+    // Distance match
     if (tempDist > 0 && userLocation) {
       if (d.dist == null || d.dist > tempDist) {
         return false;
@@ -756,7 +858,7 @@ function getFilteredItems(tempMode = selectedMode, tempMinPrice = minPriceVal, t
 
     // Condition match
     if (tempCond && tempCond !== 'semua' && tempCond !== 'all') {
-      if ((d.kondisi || '').toLowerCase() !== tempCond.toLowerCase()) {
+      if (String(d.kondisi || '').toLowerCase() !== String(tempCond).toLowerCase()) {
         return false;
       }
     }
@@ -770,7 +872,7 @@ function updateFilterPreview() {
   const currentMode = getActiveMode();
   const currentCond = getActiveCond();
   const currentMinPrice = parseRupiah(filterMinPrice?.value);
-  const currentMaxPrice = parseRupiah(filterMaxPrice?.value) || 100000;
+  const currentMaxPrice = parseRupiah(filterMaxPrice?.value);
   const currentDist = getActiveDist();
 
   const matches = getFilteredItems(currentMode, currentMinPrice, currentMaxPrice, currentDist, currentCond);
@@ -886,42 +988,50 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 2. Chip Filter Jarak (≤ 2 km) - Respon Instan (0ms delay)
-  if (chipDist) {
-    if (maxDistVal === 2000) chipDist.classList.add('active');
+  // Individual active chip click handlers: hapus filter satu per satu
+  chipPrice?.addEventListener('click', () => {
+    minPriceVal = 0;
+    maxPriceVal = 0;
+    if (filterMinPrice) filterMinPrice.value = '';
+    if (filterMaxPrice) filterMaxPrice.value = '';
+    filterActive = hasActiveFilters();
+    updateFilterChips();
+    updateFilterPreview();
+    render();
+  });
 
-    chipDist.addEventListener('click', () => {
-      // Pastikan titik acuan lokasi selalu ada (fallback kampus)
-      if (!userLocation) {
-        terapkanFallbackLokasi();
-      }
-
-      // 1. Toggle filter dan render secara INSTAN tanpa menunggu GPS selesai
-      if (maxDistVal === 2000) {
-        maxDistVal = 0;
-        chipDist.classList.remove('active');
-        chipDist.textContent = 'Semua jarak';
-      } else {
-        maxDistVal = 2000;
-        chipDist.classList.add('active');
-        chipDist.textContent = '≤ 2 km';
-      }
-
-      // Sinkronisasi dengan modal chips
-      document.querySelectorAll('#filterDistChips .f-pill-opt').forEach(c => {
-        c.classList.toggle('active', maxDistVal === 2000 ? c.dataset.dist === '2' : c.dataset.dist === 'all');
-      });
-
-      render();
-      updateFilterPreview();
-
-      // 2. Jika belum memiliki GPS aktual, tanyakan di background tanpa menahan UI
-      if (userLocation && userLocation.isFallback && !hasPromptedLocation && maxDistVal > 0) {
-        hasPromptedLocation = true;
-        requestUserLocation(true);
-      }
+  chipDist?.addEventListener('click', () => {
+    maxDistVal = 0;
+    document.querySelectorAll('#filterDistChips .f-pill-opt').forEach(c => {
+      c.classList.toggle('active', c.dataset.dist === 'all');
     });
-  }
+    filterActive = hasActiveFilters();
+    updateFilterChips();
+    updateFilterPreview();
+    render();
+  });
+
+  chipMode?.addEventListener('click', () => {
+    selectedMode = 'all';
+    document.querySelectorAll('#filterModeChips .f-pill-opt').forEach(c => {
+      c.classList.toggle('active', c.dataset.mode === 'all');
+    });
+    filterActive = hasActiveFilters();
+    updateFilterChips();
+    updateFilterPreview();
+    render();
+  });
+
+  chipCond?.addEventListener('click', () => {
+    selectedCond = 'all';
+    document.querySelectorAll('#filterCondChips .f-pill-opt').forEach(c => {
+      c.classList.toggle('active', c.dataset.cond === 'all');
+    });
+    filterActive = hasActiveFilters();
+    updateFilterChips();
+    updateFilterPreview();
+    render();
+  });
 
   // 3. Tombol Sort (Terdekat, Termurah, Terbaru) - Respon Instan (0ms delay)
   const sortOptions = [
@@ -953,13 +1063,27 @@ document.addEventListener('DOMContentLoaded', () => {
   // Search Input dengan Debounce 120ms agar pengetikan mulus tanpa lag
   if (q) {
     let searchDebounceTimer = null;
-    q.addEventListener('input', () => {
-      if (clearBtn) clearBtn.style.display = q.value ? 'flex' : 'none';
+    const handleSearchInput = () => {
+      if (clearBtn) clearBtn.style.display = (q.value || '').trim() ? 'flex' : 'none';
       clearTimeout(searchDebounceTimer);
       searchDebounceTimer = setTimeout(() => {
         render();
         updateFilterPreview();
       }, 120);
+    };
+
+    q.addEventListener('input', handleSearchInput);
+    q.addEventListener('search', () => {
+      if (clearBtn) clearBtn.style.display = (q.value || '').trim() ? 'flex' : 'none';
+      render();
+      updateFilterPreview();
+    });
+    q.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        render();
+        updateFilterPreview();
+      }
     });
   }
 
@@ -984,7 +1108,6 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   filterChip?.addEventListener('click', openModal);
-  chipPrice?.addEventListener('click', openModal);
   document.getElementById('closeFilterBtn')?.addEventListener('click', closeModal);
 
   // Close modal on backdrop click or Escape
@@ -1028,34 +1151,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Reset button in modal
   filterResetBtn?.addEventListener('click', () => {
-    document.querySelectorAll('#filterModeChips .f-pill-opt').forEach(c => {
-      c.classList.toggle('active', c.dataset.mode === 'sewa');
-    });
-    document.querySelectorAll('#filterDistChips .f-pill-opt').forEach(c => {
-      c.classList.toggle('active', c.dataset.dist === 'all');
-    });
-    document.querySelectorAll('#filterCondChips .f-pill-opt').forEach(c => {
-      c.classList.toggle('active', c.dataset.cond === 'all');
-    });
-
-    if (filterMinPrice) filterMinPrice.value = 'Rp0';
-    if (filterMaxPrice) filterMaxPrice.value = 'Rp100.000';
-
-    selectedMode = 'sewa';
-    selectedCond = 'all';
-    minPriceVal = 0;
-    maxPriceVal = 100000;
-    maxDistVal = 0;
-    filterActive = true;
-
-    if (chipPrice) chipPrice.textContent = '≤ Rp100.000';
-    if (chipDist) {
-      chipDist.textContent = 'Semua jarak';
-      chipDist.classList.remove('active');
-    }
-
-    updateFilterPreview();
-    render();
+    resetFilters();
     closeModal();
   });
 
@@ -1064,23 +1160,11 @@ document.addEventListener('DOMContentLoaded', () => {
     selectedMode = getActiveMode();
     selectedCond = getActiveCond();
     minPriceVal = parseRupiah(filterMinPrice?.value);
-    maxPriceVal = parseRupiah(filterMaxPrice?.value) || 100000;
+    maxPriceVal = parseRupiah(filterMaxPrice?.value);
     maxDistVal = getActiveDist();
-    filterActive = true;
+    filterActive = hasActiveFilters();
 
-    if (chipPrice) {
-      chipPrice.textContent = `≤ Rp${maxPriceVal.toLocaleString('id-ID')}`;
-    }
-    if (chipDist) {
-      if (maxDistVal > 0) {
-        chipDist.textContent = `≤ ${formatKm(maxDistVal)}`;
-        chipDist.classList.add('active');
-      } else {
-        chipDist.textContent = 'Semua jarak';
-        chipDist.classList.remove('active');
-      }
-    }
-
+    updateFilterChips();
     render();
     closeModal();
 
@@ -1125,8 +1209,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = '/beranda.html';
   });
 
-  // Initial distance calculation and render
+  // Initial distance calculation, chips, and render
   recalculateDistances();
+  updateFilterChips();
   updateFilterPreview();
   render();
   syncFromApi();

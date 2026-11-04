@@ -155,11 +155,24 @@
     flex-shrink: 0;
     cursor: pointer;
     transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
   .chip-tag-pill.active {
     background: #DCFCE7;
     border-color: #86EFAC;
     color: #166534;
+  }
+  .chip-tag-pill .chip-close {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    margin-left: 2px;
+    opacity: 0.75;
+  }
+  .chip-tag-pill:hover .chip-close {
+    opacity: 1;
   }
   .header-loc-btn.active {
     color: #059669;
@@ -641,7 +654,7 @@
     <!-- Search input -->
     <div class="search-input-pill">
       <svg class="search-ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input id="q" type="search" value="kalkulator" placeholder="Cari buku, laptop, alat praktikum...">
+      <input id="q" type="search" value="" placeholder="Cari buku, laptop, alat praktikum...">
       <button class="clear-btn" id="clearBtn" type="button" aria-label="Hapus pencarian">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
@@ -653,13 +666,17 @@
         <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
         <span>Filter</span>
       </button>
-      <span class="chip-tag-pill" id="chipPrice">≤ Rp100.000</span>
-      <span class="chip-tag-pill" id="chipDist">≤ 2 km</span>
+      <div id="activeFilterChipsContainer" style="display:inline-flex;align-items:center;gap:8px;">
+        <span class="chip-tag-pill" id="chipPrice" style="display:none"></span>
+        <span class="chip-tag-pill" id="chipDist" style="display:none"></span>
+        <span class="chip-tag-pill" id="chipMode" style="display:none"></span>
+        <span class="chip-tag-pill" id="chipCond" style="display:none"></span>
+      </div>
     </div>
 
     <!-- Result header row -->
     <div class="result-header-row">
-      <span class="result-count-text" id="countText">3 barang ditemukan</span>
+      <span class="result-count-text" id="countText">0 barang ditemukan</span>
       <button class="sort-dropdown-btn" id="sortBtn" type="button">
         <span id="sortLabel">Terdekat</span>
         <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
@@ -726,7 +743,8 @@
 
       <!-- Mode Chips -->
       <div class="f-chips-group" id="filterModeChips">
-        <button type="button" class="f-pill-opt active" data-mode="sewa">Sewa</button>
+        <button type="button" class="f-pill-opt active" data-mode="all">Semua</button>
+        <button type="button" class="f-pill-opt" data-mode="sewa">Sewa</button>
         <button type="button" class="f-pill-opt" data-mode="beli">Beli</button>
         <button type="button" class="f-pill-opt" data-mode="pinjam">Pinjam Free</button>
       </div>
@@ -734,18 +752,18 @@
       <!-- Kategori -->
       <div>
         <label class="f-field-lbl" for="filterKategori">Kategori</label>
-        <input class="f-input-box" id="filterKategori" type="text" value="Elektronik">
+        <input class="f-input-box" id="filterKategori" type="text" value="" placeholder="Semua kategori">
       </div>
 
       <!-- Rentang Harga (Min - Max) -->
       <div class="f-price-grid">
         <div>
           <label class="f-field-lbl" for="filterMinPrice">Minimum</label>
-          <input class="f-input-box" id="filterMinPrice" type="text" value="Rp0">
+          <input class="f-input-box" id="filterMinPrice" type="text" value="" placeholder="Rp0">
         </div>
         <div>
           <label class="f-field-lbl" for="filterMaxPrice">Maksimum</label>
-          <input class="f-input-box" id="filterMaxPrice" type="text" value="Rp10.000">
+          <input class="f-input-box" id="filterMaxPrice" type="text" value="" placeholder="Tanpa batas">
         </div>
       </div>
 
@@ -760,9 +778,9 @@
         <label class="f-field-lbl">Jarak maksimum</label>
         <div class="f-chips-group" id="filterDistChips">
           <button type="button" class="f-pill-opt" data-dist="1">1 km</button>
-          <button type="button" class="f-pill-opt active" data-dist="2">2 km</button>
+          <button type="button" class="f-pill-opt" data-dist="2">2 km</button>
           <button type="button" class="f-pill-opt" data-dist="5">5 km</button>
-          <button type="button" class="f-pill-opt" data-dist="all">Semua</button>
+          <button type="button" class="f-pill-opt active" data-dist="all">Semua</button>
         </div>
       </div>
 
@@ -770,9 +788,9 @@
       <div>
         <label class="f-field-lbl">Kondisi barang</label>
         <div class="f-chips-group" id="filterCondChips">
-          <button type="button" class="f-pill-opt" data-cond="all">Semua</button>
+          <button type="button" class="f-pill-opt active" data-cond="all">Semua</button>
           <button type="button" class="f-pill-opt" data-cond="baru">Seperti baru</button>
-          <button type="button" class="f-pill-opt active" data-cond="baik">Baik</button>
+          <button type="button" class="f-pill-opt" data-cond="baik">Baik</button>
         </div>
       </div>
 
