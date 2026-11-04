@@ -243,7 +243,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         chatUserStatus.textContent = `Online · ${roleLabel}`;
       }
       if (roomAvatar) {
-        roomAvatar.textContent = getInitials(lawan.nama);
+        if (lawan.foto) {
+          roomAvatar.innerHTML = `<img src="${escHtml(lawan.foto)}" alt="${escHtml(lawan.nama)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+        } else {
+          roomAvatar.textContent = getInitials(lawan.nama);
+        }
       }
 
       // Update Pinned Reference Card (Barang atau Kos)
@@ -507,7 +511,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="chat-item" data-room="${r.id_room}" role="button" tabindex="0">
           <div class="chat-item-header">
             <div class="avatar-wrap">
-              <div class="avatar-img ${roleClass}">${escHtml(initials)}</div>
+              <div class="avatar-img ${roleClass}">${lawan.foto ? `<img src="${escHtml(lawan.foto)}" alt="${escHtml(lawan.nama)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : escHtml(initials)}</div>
               <div class="online-indicator"></div>
             </div>
             <div class="item-meta">

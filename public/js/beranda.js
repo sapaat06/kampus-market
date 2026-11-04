@@ -123,6 +123,16 @@ async function muatUser() {
     const elSapaan = document.getElementById('sapaanNama');
     if (elSapaan) elSapaan.textContent = `Halo, ${namaDepan}`;
 
+    const berandaAvatarInner = document.getElementById('berandaAvatarInner');
+    if (berandaAvatarInner) {
+      if (currentUser.foto) {
+        berandaAvatarInner.innerHTML = `<img src="${currentUser.foto}" alt="${currentUser.nama || 'Profil'}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      } else {
+        const initials = ((currentUser.nama || 'Rina').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('')).toUpperCase();
+        berandaAvatarInner.textContent = initials || 'RM';
+      }
+    }
+
     if (currentUser.kampus) {
       const elKampus = document.getElementById('txtKampus');
       if (elKampus) elKampus.textContent = currentUser.kampus;

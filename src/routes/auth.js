@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import fs from 'node:fs';
+import path from 'node:path';
 import { db } from '../db.js';
 import { err, str, optStr, emailOf, posInt, oneOf } from '../util.js';
 import { hash, verify, makeToken, user, admin } from '../auth.js';
@@ -262,16 +264,90 @@ router.get('/status-verifikasi', async (req, res) => {
   res.json(m);
 });
 
-// Mahasiswa: unggah/hapus foto profil (mendukung multipart file atau base64 ke Cloudinary)
-router.patch('/profil/foto', user, upload.single('foto'), async (req, res) => {
-  let rawFoto = req.file ? req.file.buffer : optStr(req.body?.foto, 'foto', 800_000);
-  const foto = rawFoto ? await uploadToCloudinary(rawFoto, req.file?.mimetype) : null;
-  if (!foto) await db.prepare('UPDATE mahasiswa SET foto=NULL WHERE id_mahasiswa=?').run(req.uid);
-  else await db.prepare('UPDATE mahasiswa SET foto=? WHERE id_mahasiswa=?').run(foto, req.uid);
-  res.json({ ok: true, foto: foto || null });
-});
+// Validasi magic bytes file gambar (hanya jpeg, png, webp berdasarkan isi file)
+function detectImageMime(buffer) {
+  if (!Buffer.isBuffer(buffer) || buffer.length < 12) return null;
+  // JPEG: FF D8 FF
+  if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) return 'image/jpeg';
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47 &&
+      buffer[4] === 0x0D && buffer[5] === 0x0A && buffer[6] === 0x1A && buffer[7] === 0x0A) return 'image/png';
+  // WebP: RIFF....WEBP
+  if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
+      buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50) return 'image/webp';
+  return null;
+}
 
-router.delete('/profil/foto', user, async (req, res) => {
+// Hapus file lama dari disk dengan aman (cegah path traversal)
+function hapusFileLokal(fotoPath) {
+  if (!fotoPath || typeof fotoPath !== 'string') return;
+  if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://') || fotoPath.startsWith('data:')) return;
+  try {
+    const baseDir = path.resolve(process.cwd(), 'public');
+    const cleanPath = path.normalize(fotoPath).replace(/^(\.\.(\/|\\|$))+/, '');
+    const fullPath = path.resolve(baseDir, cleanPath.replace(/^[/\\]+/, ''));
+    if (fullPath.startsWith(baseDir) && fullPath !== baseDir && fs.existsSync(fullPath)) {
+      fs.unlinkSync(fullPath);
+    }
+  } catch (_e) {
+    // Jangan gagal kalau file sudah tidak ada
+  }
+}
+
+// Mahasiswa: unggah foto profil (mendukung multipart file atau base64)
+const handleUploadFoto = async (req, res) => {
+  let buffer = null;
+  let mimeType = null;
+
+  if (req.file && req.file.buffer) {
+    buffer = req.file.buffer;
+  } else if (req.body?.foto && typeof req.body.foto === 'string') {
+    const raw = req.body.foto.trim();
+    if (raw.startsWith('data:')) {
+      const match = raw.match(/^data:image\/[a-zA-Z0-9+.-]+;base64,(.+)$/);
+      if (!match) throw err(400, 'Format data URL tidak valid');
+      buffer = Buffer.from(match[1], 'base64');
+    } else {
+      buffer = Buffer.from(raw, 'base64');
+      if (!detectImageMime(buffer)) {
+        buffer = Buffer.from(raw, 'utf8');
+      }
+    }
+  } else {
+    throw err(400, 'file foto wajib diunggah');
+  }
+
+  // Maksimal 5 MB
+  if (buffer.length > 5 * 1024 * 1024) {
+    throw err(400, 'Ukuran foto maksimal 5 MB');
+  }
+
+  // Validasi berdasarkan isi file (magic bytes)
+  mimeType = detectImageMime(buffer);
+  if (!mimeType) {
+    throw err(400, 'Hanya gambar (JPEG, PNG, WebP) yang diizinkan');
+  }
+
+  // Hapus file lama jika ada agar tidak menumpuk
+  const existing = await db.prepare('SELECT foto FROM mahasiswa WHERE id_mahasiswa=?').get(req.uid);
+  if (existing?.foto) {
+    hapusFileLokal(existing.foto);
+  }
+
+  const foto = await uploadToCloudinary(buffer, mimeType);
+  await db.prepare('UPDATE mahasiswa SET foto=? WHERE id_mahasiswa=?').run(foto, req.uid);
+  res.json({ ok: true, foto });
+};
+
+router.patch(['/profil/foto', '/saya/foto'], user, upload.single('foto'), handleUploadFoto);
+router.post(['/profil/foto', '/saya/foto'], user, upload.single('foto'), handleUploadFoto);
+
+// Mahasiswa: hapus foto profil milik user yang login saja
+router.delete(['/profil/foto', '/saya/foto'], user, async (req, res) => {
+  const existing = await db.prepare('SELECT foto FROM mahasiswa WHERE id_mahasiswa=?').get(req.uid);
+  if (existing?.foto) {
+    hapusFileLokal(existing.foto);
+  }
   await db.prepare('UPDATE mahasiswa SET foto=NULL WHERE id_mahasiswa=?').run(req.uid);
   res.json({ ok: true, foto: null });
 });

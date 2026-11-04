@@ -666,6 +666,28 @@
     </a>
     <div class="home-indicator"></div>
   </nav>
+
+  <!-- Bottom Sheet: Menu Foto Profil -->
+  <div class="filter-sheet-overlay" id="sheetFotoProfil" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:9999;align-items:flex-end;justify-content:center;">
+    <div class="filter-sheet-panel" style="background:#FFFFFF;width:100%;max-width:390px;border-radius:24px 24px 0 0;padding:20px 20px 32px;display:flex;flex-direction:column;gap:12px;box-shadow:0 -4px 20px rgba(0,0,0,0.15);box-sizing:border-box;">
+      <div style="width:40px;height:4px;border-radius:2px;background:#CBD5E1;margin:0 auto 8px;"></div>
+      <div style="font-size:16px;font-weight:700;color:#0F172A;text-align:center;margin-bottom:4px;">Foto Profil</div>
+      
+      <button type="button" id="btnPilihFoto" style="width:100%;height:46px;border-radius:12px;border:none;background:#007A68;color:#FFFFFF;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span id="txtPilihFoto">Unggah foto</span>
+      </button>
+
+      <button type="button" id="btnHapusFoto" style="width:100%;height:46px;border-radius:12px;border:1px solid #FECACA;background:#FEF2F2;color:#DC2626;font-size:14px;font-weight:600;cursor:pointer;display:none;align-items:center;justify-content:center;gap:8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+        <span>Hapus foto</span>
+      </button>
+
+      <button type="button" id="btnBatalFoto" style="width:100%;height:44px;border-radius:12px;border:1px solid #E2E8F0;background:#F8FAFC;color:#64748B;font-size:14px;font-weight:600;cursor:pointer;">
+        Batal
+      </button>
+    </div>
+  </div>
 </div>
 
 <script src="/js/profil.js"></script>

@@ -19,15 +19,61 @@ document.addEventListener('DOMContentLoaded', async () => {
   const logoutBtn = document.getElementById('logoutBtn');
   const badgeCircles = document.querySelectorAll('.badge-circle');
 
+  let currentUserFoto = null;
+  let currentUserName = 'Rina Maharani';
+
+  function getInitials(name) {
+    if (!name) return 'KC';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  function renderAvatar(foto, name) {
+    const avatarCircle = document.getElementById('avatarCircle');
+    if (!avatarCircle) return;
+    const fotoInput = document.getElementById('fotoInput');
+    if (foto) {
+      avatarCircle.innerHTML = `<img src="${foto}" alt="${name || 'Pengguna'}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    } else {
+      const initials = getInitials(name);
+      avatarCircle.innerHTML = `<div style="width:100%;height:100%;background:#DCFCE7;color:#007A68;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;border-radius:50%;">${initials}</div>`;
+    }
+    if (fotoInput) avatarCircle.appendChild(fotoInput);
+  }
+
+  function kompresGambar(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Gagal membaca file gambar.'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('Gagal memuat data gambar.'));
+        img.onload = () => {
+          const max = 720;
+          const skala = Math.min(1, max / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * skala);
+          canvas.height = Math.round(img.height * skala);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   // Try fetching live user session data
   try {
     const data = await KM.get('/saya');
     if (data.nama && userName) {
       userName.textContent = data.nama;
+      currentUserName = data.nama;
     }
-    if (data.foto && document.querySelector('.avatar-circle img')) {
-      document.querySelector('.avatar-circle img').src = data.foto;
-    }
+    currentUserFoto = data.foto || null;
+    renderAvatar(currentUserFoto, currentUserName);
     if (data.prodi && userDept) {
       userDept.textContent = `${data.prodi} · Angkatan ${data.angkatan || '2023'}`;
     }
@@ -159,25 +205,115 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const avatarCircle = document.getElementById('avatarCircle');
   const fotoInput = document.getElementById('fotoInput');
-  if (avatarCircle && fotoInput) {
-    avatarCircle.addEventListener('click', () => fotoInput.click());
+  const sheetFotoProfil = document.getElementById('sheetFotoProfil');
+  const btnPilihFoto = document.getElementById('btnPilihFoto');
+  const txtPilihFoto = document.getElementById('txtPilihFoto');
+  const btnHapusFoto = document.getElementById('btnHapusFoto');
+  const btnBatalFoto = document.getElementById('btnBatalFoto');
+
+  const bukaSheetFoto = () => {
+    if (!sheetFotoProfil) return;
+    if (currentUserFoto) {
+      if (btnHapusFoto) btnHapusFoto.style.display = 'flex';
+      if (txtPilihFoto) txtPilihFoto.textContent = 'Ganti foto';
+    } else {
+      if (btnHapusFoto) btnHapusFoto.style.display = 'none';
+      if (txtPilihFoto) txtPilihFoto.textContent = 'Unggah foto';
+    }
+    sheetFotoProfil.style.display = 'flex';
+  };
+
+  const tutupSheetFoto = () => {
+    if (sheetFotoProfil) sheetFotoProfil.style.display = 'none';
+  };
+
+  if (avatarCircle) {
+    avatarCircle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      bukaSheetFoto();
+    });
+  }
+
+  if (btnPilihFoto && fotoInput) {
+    btnPilihFoto.addEventListener('click', () => {
+      tutupSheetFoto();
+      fotoInput.click();
+    });
+  }
+
+  if (btnHapusFoto) {
+    btnHapusFoto.addEventListener('click', async () => {
+      tutupSheetFoto();
+      const yakin = await KM.ui.konfirmasi({
+        judul: 'Hapus foto profil?',
+        teks: 'Foto profil akan dihapus dan kembali ke avatar inisial.',
+        teksYa: 'Hapus',
+        teksBatal: 'Batal',
+        danger: true,
+      });
+      if (!yakin) return;
+
+      KM.ui.loading('Menghapus foto...');
+      try {
+        await KM.del('/profil/foto');
+        currentUserFoto = null;
+        renderAvatar(null, currentUserName);
+        const u = KM.getUser ? KM.getUser() : null;
+        if (u) {
+          u.foto = null;
+          if (KM.setUser) KM.setUser(u);
+          else localStorage.setItem('km_user', JSON.stringify(u));
+        }
+        KM.ui.tutup();
+        KM.ui.toast('Foto profil berhasil dihapus');
+      } catch (err) {
+        KM.ui.tutup();
+        KM.ui.error('Gagal Menghapus Foto', err.message || 'Foto profil tidak bisa dihapus.');
+      }
+    });
+  }
+
+  if (btnBatalFoto) {
+    btnBatalFoto.addEventListener('click', tutupSheetFoto);
+  }
+
+  if (sheetFotoProfil) {
+    sheetFotoProfil.addEventListener('click', (e) => {
+      if (e.target === sheetFotoProfil) tutupSheetFoto();
+    });
+  }
+
+  if (fotoInput) {
     fotoInput.addEventListener('change', async () => {
       const file = fotoInput.files?.[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async () => {
-        KM.ui.loading('Mengunggah foto...');
-        try {
-          const resp = await KM.patch('/profil/foto', { foto: reader.result });
-          if (resp?.foto) avatarCircle.innerHTML = `<img src="${resp.foto}" alt="foto" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-          KM.ui.tutup();
-          await KM.ui.sukses('Foto Profil Diperbarui');
-        } catch (e) {
-          KM.ui.tutup();
-          KM.ui.error('Gagal Mengunggah Foto', e.message || 'Foto profil tidak bisa disimpan. Coba lagi.');
+
+      if (file.size > 5 * 1024 * 1024) {
+        KM.ui.error('Ukuran File Terlalu Besar', 'Maksimal ukuran foto adalah 5 MB.');
+        fotoInput.value = '';
+        return;
+      }
+
+      KM.ui.loading('Mengompres dan mengunggah foto...');
+      try {
+        const compressed = await kompresGambar(file);
+        const resp = await KM.patch('/profil/foto', { foto: compressed });
+        currentUserFoto = resp?.foto || compressed;
+        renderAvatar(currentUserFoto, currentUserName);
+        const u = KM.getUser ? KM.getUser() : null;
+        if (u) {
+          u.foto = currentUserFoto;
+          if (KM.setUser) KM.setUser(u);
+          else localStorage.setItem('km_user', JSON.stringify(u));
         }
-      };
-      reader.readAsDataURL(file);
+        KM.ui.tutup();
+        KM.ui.toast('Foto profil berhasil diperbarui');
+      } catch (e) {
+        KM.ui.tutup();
+        KM.ui.error('Gagal Mengunggah Foto', e.message || 'Foto profil tidak bisa disimpan. Coba lagi.');
+      } finally {
+        fotoInput.value = '';
+      }
     });
   }
   if (logoutBtn) {

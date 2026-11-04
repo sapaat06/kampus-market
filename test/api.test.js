@@ -881,5 +881,49 @@ assert.match(String(apiJsRes.j), /function goBack/);
   assert.equal(resScript.s, 400, 'kategori_lain berisi tag script harus 400');
 }
 
+// Uji Foto Profil (NOMOR 3: Unggah, Ganti, Hapus, Izin, Keamanan)
+{
+  const validPngDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+  const validJpegDataUrl = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+
+  // 1. Akses endpoint hapus tanpa login -> 401
+  assert.equal((await call('DELETE', '/api/profil/foto')).s, 401, 'hapus foto tanpa login harus 401');
+
+  // 2. Unggah file bukan gambar (teks biasa/script) -> 400
+  const fakeFile = await call('PATCH', '/api/profil/foto', { foto: 'data:image/png;base64,SGVsbG8gV29ybGQh' }, U);
+  assert.equal(fakeFile.s, 400, 'unggah file bukan gambar harus 400');
+
+  // 3. User A unggah foto profil valid -> 200
+  const uploadRes = await call('PATCH', '/api/profil/foto', { foto: validPngDataUrl }, U);
+  assert.equal(uploadRes.s, 200, 'unggah foto profil valid harus 200');
+  assert.ok(uploadRes.j.foto, 'response harus menyertakan URL foto');
+
+  const profileAfterUpload = await call('GET', '/api/saya', null, U);
+  assert.equal(profileAfterUpload.s, 200);
+  assert.ok(profileAfterUpload.j.foto, 'foto profil user A harus terisi');
+
+  // 4. User A ganti foto profil -> 200
+  const changeRes = await call('PATCH', '/api/profil/foto', { foto: validJpegDataUrl }, U);
+  assert.equal(changeRes.s, 200, 'ganti foto profil harus 200');
+
+  // 5. User B menghapus foto (user A tidak terpengaruh / User A tidak bisa dihapus User B)
+  const delResB = await call('DELETE', '/api/profil/foto', null, UPenyusup);
+  assert.equal(delResB.s, 200);
+
+  const profileUserA = await call('GET', '/api/saya', null, U);
+  assert.ok(profileUserA.j.foto, 'foto user A tidak boleh terhapus oleh aksi user B');
+
+  // 6. User A hapus foto -> 200
+  const delResA = await call('DELETE', '/api/profil/foto', null, U);
+  assert.equal(delResA.s, 200, 'hapus foto user A harus 200');
+
+  const profileAfterDelete = await call('GET', '/api/saya', null, U);
+  assert.equal(profileAfterDelete.j.foto, null, 'foto profil user A harus null setelah dihapus');
+
+  // 7. Hapus foto saat tidak ada foto -> 200 (tidak error)
+  const delResNull = await call('DELETE', '/api/profil/foto', null, U);
+  assert.equal(delResNull.s, 200, 'hapus foto saat null harus tetap 200');
+}
+
 srv.close();
 console.log('semua cek lolos');
