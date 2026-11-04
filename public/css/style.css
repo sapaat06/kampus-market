@@ -685,3 +685,98 @@ html, body {
 .items-center { align-items: center !important; }
 .gap-1\.5 { gap: 0.375rem !important; }
 
+/* ==========================================================================
+   Universal Empty State Component (Shared across all pages)
+   ========================================================================== */
+.empty-state {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  padding: 40px 20px !important;
+  width: 100% !important;
+  border: none !important;
+  border-left: none !important;
+  box-sizing: border-box !important;
+  margin: 0 auto !important;
+}
+.empty-state-icon,
+.empty-state .empty-icon,
+.empty-state .gp-empty-icon {
+  width: 96px !important;
+  height: 96px !important;
+  border-radius: 50% !important;
+  background: var(--mint-bg, #DDF1EC) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 auto 16px auto !important;
+  flex-shrink: 0 !important;
+  border: none !important;
+}
+.empty-state-icon svg,
+.empty-state .empty-icon svg,
+.empty-state .gp-empty-icon svg,
+.empty-state > svg {
+  width: 44px !important;
+  height: 44px !important;
+  stroke: var(--primary, #007A68) !important;
+  fill: none !important;
+  stroke-width: 2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+.empty-state-title,
+.empty-state .t,
+.empty-state .empty-title,
+.empty-state h3 {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: var(--text-dark, #0F172A) !important;
+  margin: 0 0 6px 0 !important;
+  line-height: 1.4 !important;
+  text-align: center !important;
+  border: none !important;
+  border-left: none !important;
+}
+.empty-state-desc,
+.empty-state .s,
+.empty-state .empty-desc,
+.empty-state p {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: var(--text-muted, #64748B) !important;
+  line-height: 1.5 !important;
+  max-width: 280px !important;
+  margin: 0 auto 16px auto !important;
+  text-align: center !important;
+  border: none !important;
+  border-left: none !important;
+}
+.empty-state-btn,
+.empty-state .empty-btn,
+.empty-state .btn-secondary-theme {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 10px 22px !important;
+  background: #FFFFFF !important;
+  border: 1.5px solid var(--primary, #007A68) !important;
+  color: var(--primary, #007A68) !important;
+  border-radius: var(--radius-md, 14px) !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  transition: all 0.15s ease !important;
+  font-family: inherit !important;
+  margin-top: 4px !important;
+}
+.empty-state-btn:hover,
+.empty-state .empty-btn:hover,
+.empty-state .btn-secondary-theme:hover {
+  background: var(--mint-bg, #DDF1EC) !important;
+}
+
+

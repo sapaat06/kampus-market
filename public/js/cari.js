@@ -710,6 +710,14 @@ function getActiveCond() {
   return active?.dataset.cond || 'all';
 }
 
+function hasActiveFilters() {
+  return (minPriceVal > 0) ||
+         (maxPriceVal > 0) ||
+         (maxDistVal > 0) ||
+         (selectedMode && selectedMode !== 'all' && selectedMode !== 'semua') ||
+         (selectedCond && selectedCond !== 'all' && selectedCond !== 'semua');
+}
+
 // Check which items match the filter state
 function getFilteredItems(tempMode = selectedMode, tempMinPrice = minPriceVal, tempMaxPrice = maxPriceVal, tempDist = maxDistVal, tempCond = selectedCond) {
   const term = (q?.value || '').trim().toLowerCase();
@@ -800,12 +808,21 @@ function render() {
   }
 
   if (items.length === 0) {
+    const showReset = typeof hasActiveFilters === 'function' && hasActiveFilters();
     list.innerHTML = `
       <div class="empty-state">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <div class="t">Barang tidak ditemukan</div>
-        <div class="s">Coba ubah kata kunci atau longgarkan filter pencarian Anda.</div>
+        <div class="empty-state-icon">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <div class="empty-state-title">Barang tidak ditemukan</div>
+        <div class="empty-state-desc">Coba ubah kata kunci atau longgarkan filter pencarianmu.</div>
+        ${showReset ? `<button type="button" class="empty-state-btn" id="resetFilterEmptyBtn">Atur ulang filter</button>` : ''}
       </div>`;
+    if (showReset) {
+      document.getElementById('resetFilterEmptyBtn')?.addEventListener('click', () => {
+        if (typeof resetFilters === 'function') resetFilters();
+      });
+    }
     return;
   }
 

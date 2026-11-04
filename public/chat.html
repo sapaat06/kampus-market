@@ -799,13 +799,13 @@
       <div id="inboxListContainer" style="display:flex;flex-direction:column;gap:10px;"></div>
 
       <!-- Empty State jika Inbox Kosong -->
-      <div id="inboxEmptyState" style="display:none;text-align:center;padding:36px 16px;flex-direction:column;align-items:center;gap:10px;">
-        <div style="width:52px;height:52px;border-radius:50%;background:#DCFCE7;display:flex;align-items:center;justify-content:center;color:#008F83;">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-4-.9L3 21l1.7-4.4A8.4 8.4 0 1 1 21 11.5Z"/></svg>
+      <div class="empty-state" id="inboxEmptyState" style="display:none">
+        <div class="empty-state-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-4-.9L3 21l1.7-4.4A8.4 8.4 0 1 1 21 11.5Z"/></svg>
         </div>
-        <div style="font-size:14px;font-weight:700;color:#0F172A;" id="inboxEmptyTitle">Belum Ada Obrolan Masuk</div>
-        <div style="font-size:12px;color:#64748B;line-height:1.45;max-width:260px;" id="inboxEmptyDesc">Mulai percakapan dengan pemilik kos atau penjual barang lewat tombol "Chat" di halaman katalog.</div>
-        <a href="/beranda.html" class="btn-primary" id="inboxEmptyBtn" style="margin-top:6px;width:auto;padding:0 20px;height:40px;font-size:12.5px;">Jelajahi Katalog</a>
+        <div class="empty-state-title" id="inboxEmptyTitle">Belum Ada Obrolan Masuk</div>
+        <div class="empty-state-desc" id="inboxEmptyDesc">Mulai percakapan dengan pemilik kos atau penjual barang lewat tombol "Chat" di halaman katalog.</div>
+        <a href="/beranda.html" class="empty-state-btn" id="inboxEmptyBtn">Jelajahi Katalog</a>
       </div>
 
       <!-- Security Banner -->

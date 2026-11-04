@@ -218,10 +218,12 @@ function renderCards(keyword = '') {
 
   if (filtered.length === 0) {
     grid.innerHTML = `
-      <div style="grid-column:1/-1;text-align:center;padding:36px 12px;color:var(--text-muted)">
-        <svg viewBox="0 0 24 24" width="44" height="44" stroke="var(--text-muted)" fill="none" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <div style="margin-top:10px;font-size:15px;font-weight:700;color:var(--text-dark)">Tidak ada barang</div>
-        <div style="font-size:13px;margin-top:4px;color:var(--text-muted)">Coba pilih filter lain atau gunakan kata kunci berbeda.</div>
+      <div class="empty-state" style="grid-column:1/-1;">
+        <div class="empty-state-icon">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <div class="empty-state-title">Barang tidak ditemukan</div>
+        <div class="empty-state-desc">Coba pilih filter lain atau gunakan kata kunci berbeda.</div>
       </div>`;
     return;
   }

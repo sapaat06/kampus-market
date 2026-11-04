@@ -262,10 +262,12 @@ function renderKos() {
 
   if (items.length === 0) {
     container.innerHTML = `
-      <div style="text-align:center;padding:30px 0;color:#64748B">
-        <svg viewBox="0 0 24 24" width="36" height="36" stroke="#64748B" fill="none" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <div style="font-weight:700;color:#0F172A;margin-top:6px">Kos tidak ditemukan</div>
-        <div style="font-size:12px">Coba sesuaikan kata kunci atau filter tipe/jarak/harga.</div>
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <div class="empty-state-title">Kos tidak ditemukan</div>
+        <div class="empty-state-desc">Coba sesuaikan kata kunci atau longgarkan filter pencarianmu.</div>
       </div>`;
     return;
   }

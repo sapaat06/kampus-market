@@ -218,9 +218,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (!items || items.length === 0) {
         myItemsList.innerHTML = bannerHtml + `
-          <div style="font-size:12px;color:#94A3B8;text-align:center;padding:16px 0;background:#FFFFFF;border-radius:12px;border:1px dashed #CBD5E1;">
-            Kamu belum mengunggah barang apa pun.<br>
-            <a href="/unggah.html" style="color:#008F83;font-weight:700;text-decoration:none;display:inline-block;margin-top:6px;">Mulai Unggah Barang Sekarang</a>
+          <div class="empty-state">
+            <div class="empty-state-icon">
+              <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            </div>
+            <div class="empty-state-title">Belum ada barang diunggah</div>
+            <div class="empty-state-desc">Kamu belum memiliki barang yang diunggah. Mulai sewakan atau jual barangmu sekarang.</div>
+            <a href="/unggah.html" class="empty-state-btn">Unggah Barang Sekarang</a>
           </div>`;
         return;
       }

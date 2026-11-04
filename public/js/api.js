@@ -354,14 +354,58 @@ window.KM = (() => {
     }
   }
 
+  function createEmptyStateHtml({
+    icon = 'search',
+    title = 'Barang tidak ditemukan',
+    desc = 'Coba ubah kata kunci atau longgarkan filter pencarianmu.',
+    btnText = '',
+    btnHref = '',
+    btnId = '',
+  } = {}) {
+    let iconSvg = '';
+    if (icon === 'search') {
+      iconSvg = '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
+    } else if (icon === 'chat') {
+      iconSvg = '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+    } else if (icon === 'box') {
+      iconSvg = '<svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>';
+    } else if (typeof icon === 'string' && icon.includes('<svg')) {
+      iconSvg = icon;
+    } else {
+      iconSvg = '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
+    }
+
+    let btnHtml = '';
+    if (btnText) {
+      if (btnHref) {
+        btnHtml = `<a href="${esc(btnHref)}" class="empty-state-btn" ${btnId ? `id="${esc(btnId)}"` : ''}>${esc(btnText)}</a>`;
+      } else {
+        btnHtml = `<button type="button" class="empty-state-btn" ${btnId ? `id="${esc(btnId)}"` : ''}>${esc(btnText)}</button>`;
+      }
+    }
+
+    return `
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          ${iconSvg}
+        </div>
+        <div class="empty-state-title">${esc(title)}</div>
+        ${desc ? `<div class="empty-state-desc">${esc(desc)}</div>` : ''}
+        ${btnHtml}
+      </div>
+    `.trim();
+  }
+
   window.goToHome = goToHome;
   window.getHomeUrl = getHomeUrl;
+  window.createEmptyStateHtml = createEmptyStateHtml;
 
   // Nama lama dipertahankan supaya halaman lama tidak perlu diubah semua.
   return {
     api, get, post, patch, del, token, sesi, logout, esc, rp, pesan, thumb, wajibLogin, nav,
     ui,
     getFotos, getFoto,
+    createEmptyStateHtml,
     adaSesi: sesi.ada,
     simpanSesi: sesi.set,
     role,
