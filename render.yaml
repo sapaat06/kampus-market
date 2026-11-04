@@ -1,0 +1,23 @@
+﻿services:
+  - type: web
+    name: kampus-market
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: ADMIN_KEY
+        generateValue: true
+      - key: SECRET
+        generateValue: true
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
