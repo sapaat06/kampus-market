@@ -122,6 +122,7 @@ export async function initDb() {
       lokasi_lng REAL,
       latitude REAL,
       longitude REAL,
+      kategori_lain TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     ) STRICT;
     CREATE TABLE IF NOT EXISTS transaksi (
@@ -313,6 +314,9 @@ export async function initDb() {
     }
     if (!kolomBarang.includes('alasan_penolakan')) {
       try { await client.execute('ALTER TABLE barang ADD COLUMN alasan_penolakan TEXT'); } catch {}
+    }
+    if (!kolomBarang.includes('kategori_lain')) {
+      try { await client.execute('ALTER TABLE barang ADD COLUMN kategori_lain TEXT'); } catch {}
     }
 
     const tableInfoKos = await client.execute('PRAGMA table_info(kos)');

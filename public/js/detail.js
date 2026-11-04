@@ -475,7 +475,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Komponen UI
   const badgeMode = document.getElementById('badgeMode');
+  const badgeKategori = document.getElementById('badgeKategori');
   const badgeKondisi = document.getElementById('badgeKondisi');
+
+  const userCat = (currentItem.kategori_lain || '').trim();
+  const rawNamaKat = (currentItem.nama_kategori || '').trim();
+  const katText = userCat || (rawNamaKat.toLowerCase() !== 'lainnya' ? rawNamaKat : '');
+  if (badgeKategori && katText) {
+    badgeKategori.textContent = katText;
+    badgeKategori.style.display = 'inline-flex';
+  }
   const priceVal = document.getElementById('priceVal');
   const boxHargaSewa = document.getElementById('boxHargaSewa');
   const priceValSewa = document.getElementById('priceValSewa');

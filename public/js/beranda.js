@@ -181,6 +181,7 @@ async function muatBarang() {
         lokasi: b.lokasi || '-',
         kategori: b.id_kategori,
         namaKategori: b.nama_kategori,
+        kategori_lain: b.kategori_lain,
         foto: (typeof KM !== 'undefined' && KM.getFoto ? KM.getFoto(b.foto) : b.foto) || null
       };
     });
@@ -201,7 +202,7 @@ function renderCards(keyword = '') {
 
   const kw = keyword.toLowerCase().trim();
   let filtered = allItems.filter(item => {
-    const matchText = !kw || item.title.toLowerCase().includes(kw) || item.deskripsi.toLowerCase().includes(kw);
+    const matchText = !kw || item.title.toLowerCase().includes(kw) || item.deskripsi.toLowerCase().includes(kw) || (item.kategori_lain && item.kategori_lain.toLowerCase().includes(kw));
 
     let matchType = true;
     if (activeFilter === 'beli') {
@@ -261,6 +262,7 @@ function renderCards(keyword = '') {
 
     const hargaText = currentBadge === 'Pinjam' ? 'Gratis' : `Rp${Number(hargaNum).toLocaleString('id-ID')}`;
     const modeUrl = currentBadge.toLowerCase();
+    const katDisplay = item.kategori_lain || (item.namaKategori && item.namaKategori.toLowerCase() !== 'lainnya' ? item.namaKategori : '');
 
     return `
       <div class="product-card card-item" data-id="${item.id}" data-mode="${modeUrl}" role="button" tabindex="0" aria-label="${escHtml(item.title)}, ${currentBadge}, ${hargaText}">
@@ -269,6 +271,7 @@ function renderCards(keyword = '') {
           ${item.foto && !item.foto.includes('AARCAAEAAEDASIAAhEBAxEB') ? `<img src="${escHtml(item.foto)}" alt="${escHtml(item.title)}" loading="lazy">` : getSvg(item.title)}
         </div>
         <div class="card-body-content">
+          ${katDisplay ? `<div style="font-size:10px;font-weight:600;color:#64748B;margin-bottom:2px;">${escHtml(katDisplay)}</div>` : ''}
           <div class="card-item-title">${escHtml(item.title)}</div>
           <div class="card-price-row ${modeUrl}">${hargaText}<span class="unit">${escHtml(unitText)}</span></div>
           <div class="card-distance-row">

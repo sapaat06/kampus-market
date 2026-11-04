@@ -838,5 +838,48 @@ assert.match(String(apiJsRes.j), /function goBack/);
   assert.equal(mockWindow2.history.called, true);
 }
 
+// Uji Kategori "Lainnya" (NOMOR 2)
+{
+  const barangLain = {
+    id_penjual: 1,
+    nama_barang: 'Gitar Akustik Yamaha',
+    harga_sewa: 15000,
+    kondisi: 'baik',
+    kategori: 'lainnya',
+  };
+
+  // 1. Kategori lainnya valid
+  const resValid = await call('POST', '/api/barang', { ...barangLain, kategori_lain: 'Alat Musik' }, A);
+  assert.equal(resValid.s, 201, 'unggah kategori lainnya valid harus 201');
+  const idBarang = resValid.j.id;
+
+  // Cek detail barang dan pastikan kategori_lain tersimpan
+  const detail = await call('GET', `/api/barang/${idBarang}`);
+  assert.equal(detail.s, 200);
+  assert.equal(detail.j.kategori_lain, 'Alat Musik');
+
+  // Cek filter kategori=lainnya di katalog
+  const listLainnya = await call('GET', '/api/barang?kategori=lainnya');
+  assert.equal(listLainnya.s, 200);
+  assert.ok(listLainnya.j.some(b => b.id_barang === idBarang), 'barang harus muncul di filter kategori=lainnya');
+
+  // Cek pencarian kata kunci mencocokkan kategori_lain
+  const listSearch = await call('GET', '/api/barang?q=Musik');
+  assert.equal(listSearch.s, 200);
+  assert.ok(listSearch.j.some(b => b.id_barang === idBarang), 'barang harus ditemukan dari teks kategori_lain');
+
+  // 2. Kategori lainnya kosong (harus 400)
+  const resKosong = await call('POST', '/api/barang', { ...barangLain, kategori_lain: '   ' }, A);
+  assert.equal(resKosong.s, 400, 'kategori_lain kosong harus 400');
+
+  // 3. Kategori lainnya terlalu panjang > 30 karakter (harus 400)
+  const resPanjang = await call('POST', '/api/barang', { ...barangLain, kategori_lain: 'Alat Musik Sangat Panjang Sekali Lebih Dari 30 Huruf' }, A);
+  assert.equal(resPanjang.s, 400, 'kategori_lain > 30 karakter harus 400');
+
+  // 4. Kategori lainnya berisi karakter <script> (harus 400)
+  const resScript = await call('POST', '/api/barang', { ...barangLain, kategori_lain: '<script>alert(1)</script>' }, A);
+  assert.equal(resScript.s, 400, 'kategori_lain berisi tag script harus 400');
+}
+
 srv.close();
 console.log('semua cek lolos');

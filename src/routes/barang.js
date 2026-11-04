@@ -60,7 +60,46 @@ router.post('/barang', userOrAdmin, upload.array('foto', 5), async (req, res) =>
     }
   }
   if (!id_penjual) id_penjual = 1;
-  const id_kategori = posInt(Number(req.body?.id_kategori ?? 1), 'id_kategori');
+
+  let id_kategori;
+  let cleanKategoriLain = null;
+
+  const isLainnya = req.body?.kategori === 'lainnya' || String(req.body?.id_kategori).toLowerCase() === 'lainnya';
+  if (isLainnya || (req.body?.kategori_lain !== undefined && req.body?.kategori_lain !== null)) {
+    const rawKategoriLain = req.body?.kategori_lain;
+    if (typeof rawKategoriLain !== 'string') {
+      throw err(400, 'kategori_lain harus diisi');
+    }
+    cleanKategoriLain = rawKategoriLain.trim().replace(/\s+/g, ' ');
+    if (cleanKategoriLain.length < 2 || cleanKategoriLain.length > 30) {
+      throw err(400, 'kategori_lain harus 2 sampai 30 karakter');
+    }
+    if (!/^[a-zA-Z0-9\s-]+$/.test(cleanKategoriLain)) {
+      throw err(400, 'kategori_lain hanya boleh huruf, angka, spasi, dan tanda hubung');
+    }
+  }
+
+  if (isLainnya) {
+    if (!cleanKategoriLain) {
+      throw err(400, 'kategori_lain harus diisi');
+    }
+    let katRow = await db.prepare("SELECT id_kategori FROM kategori WHERE LOWER(nama_kategori) = 'lainnya'").get();
+    if (!katRow) {
+      const ins = await db.prepare("INSERT INTO kategori (nama_kategori, deskripsi) VALUES ('Lainnya', 'Kategori lainnya')").run();
+      id_kategori = Number(ins.lastInsertRowid);
+    } else {
+      id_kategori = katRow.id_kategori;
+    }
+  } else {
+    id_kategori = posInt(Number(req.body?.id_kategori ?? 1), 'id_kategori');
+    const katRow = await db.prepare('SELECT nama_kategori FROM kategori WHERE id_kategori = ?').get(id_kategori);
+    if (katRow && katRow.nama_kategori.toLowerCase() === 'lainnya') {
+      if (!cleanKategoriLain) {
+        throw err(400, 'kategori_lain harus diisi');
+      }
+    }
+  }
+
   const nama_barang = str(req.body?.nama_barang, 'nama_barang', 200);
   const deskripsi = optStr(req.body?.deskripsi, 'deskripsi', 2000);
   let rawKondisi = req.body?.kondisi;
@@ -105,15 +144,27 @@ router.post('/barang', userOrAdmin, upload.array('foto', 5), async (req, res) =>
   const longitude = lokasi_lng;
 
   const r = await db.prepare(
-    `INSERT INTO barang (id_kategori,id_penjual,nama_barang,deskripsi,harga_sewa,harga_jual,kondisi,foto,lokasi,lokasi_lat,lokasi_lng,latitude,longitude)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
-  ).run(id_kategori, id_penjual, nama_barang, deskripsi, harga_sewa, harga_jual, kondisi, foto, lokasi, lokasi_lat, lokasi_lng, latitude, longitude);
+    `INSERT INTO barang (id_kategori,id_penjual,nama_barang,deskripsi,harga_sewa,harga_jual,kondisi,foto,lokasi,lokasi_lat,lokasi_lng,latitude,longitude,kategori_lain)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+  ).run(id_kategori, id_penjual, nama_barang, deskripsi, harga_sewa, harga_jual, kondisi, foto, lokasi, lokasi_lat, lokasi_lng, latitude, longitude, cleanKategoriLain);
   res.status(201).json({ id: Number(r.lastInsertRowid) });
 });
 
 router.get('/barang', async (req, res) => {
   const raw = req.query.kategori;
-  const k = raw == null || raw === '' ? null : posInt(Number(raw), 'kategori');
+  let k = null;
+  let filterLainnya = false;
+  if (raw != null && raw !== '') {
+    if (String(raw).toLowerCase() === 'lainnya') {
+      filterLainnya = true;
+    } else {
+      k = posInt(Number(raw), 'kategori');
+      const katRow = await db.prepare('SELECT LOWER(nama_kategori) AS nama FROM kategori WHERE id_kategori = ?').get(k);
+      if (katRow && katRow.nama === 'lainnya') {
+        filterLainnya = true;
+      }
+    }
+  }
   const q = typeof req.query.q === 'string' && req.query.q.trim() !== '' ? `%${req.query.q.trim()}%` : null;
 
   let tipe = null;
@@ -137,14 +188,16 @@ router.get('/barang', async (req, res) => {
   const where = ["b.status='tersedia'"];
   const params = [];
 
-  if (k !== null) {
+  if (filterLainnya) {
+    where.push("(LOWER(k.nama_kategori) = 'lainnya' OR b.kategori_lain IS NOT NULL)");
+  } else if (k !== null) {
     where.push('b.id_kategori = ?');
     params.push(k);
   }
 
   if (q !== null) {
-    where.push('(b.nama_barang LIKE ? OR b.deskripsi LIKE ?)');
-    params.push(q, q);
+    where.push('(b.nama_barang LIKE ? OR b.deskripsi LIKE ? OR b.kategori_lain LIKE ?)');
+    params.push(q, q, q);
   }
 
   if (tipe === 'sewa') {

@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const namaBarang = document.getElementById('namaBarang');
   const deskripsiInput = document.getElementById('deskripsiInput');
   const kategoriSelect = document.getElementById('kategoriSelect');
+  const groupKategoriLain = document.getElementById('groupKategoriLain');
+  const inputKategoriLain = document.getElementById('inputKategoriLain');
+  const errorKategoriLain = document.getElementById('errorKategoriLain');
   const kondisiSelect = document.getElementById('kondisiSelect');
   const kondisiChips = document.querySelectorAll('#kondisiChips .condition-chip');
 
@@ -234,11 +237,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Kategori "Lainnya" Toggle
+  if (kategoriSelect) {
+    kategoriSelect.addEventListener('change', () => {
+      if (kategoriSelect.value === 'lainnya') {
+        if (groupKategoriLain) groupKategoriLain.style.display = 'block';
+        if (inputKategoriLain) {
+          inputKategoriLain.focus();
+        }
+      } else {
+        if (groupKategoriLain) groupKategoriLain.style.display = 'none';
+        if (errorKategoriLain) errorKategoriLain.style.display = 'none';
+      }
+    });
+  }
+
   // Estimator Harga Sheet (Screen 24)
   if (btnOpenEstimator && estimatorSheet) {
     btnOpenEstimator.addEventListener('click', () => {
       if (estProdTitle && namaBarang) estProdTitle.textContent = namaBarang.value || 'Lampu Belajar LED';
-      const katText = kategoriSelect ? kategoriSelect.options[kategoriSelect.selectedIndex].text : 'Perlengkapan Kos';
+      const isKatLain = kategoriSelect?.value === 'lainnya';
+      const katText = isKatLain
+        ? (inputKategoriLain?.value.trim() || 'Lainnya')
+        : (kategoriSelect && kategoriSelect.selectedIndex >= 0 ? kategoriSelect.options[kategoriSelect.selectedIndex].text : 'Perlengkapan Kos');
       const konVal = kondisiSelect ? kondisiSelect.value : 'baik';
       const konLabel = (konVal === 'baru' || konVal === 'seperti-baru' || konVal === 'seperti baru')
         ? 'Seperti Baru'
@@ -613,12 +634,39 @@ document.addEventListener('DOMContentLoaded', () => {
       const latVal = !isNaN(parsedLat) ? parsedLat : DEFAULT_CAMPUS_LAT;
       const lngVal = !isNaN(parsedLng) ? parsedLng : DEFAULT_CAMPUS_LNG;
 
+      const isKatLain = (kategoriSelect?.value || '').toLowerCase() === 'lainnya';
+      let cleanKategoriLain = null;
+      if (isKatLain) {
+        cleanKategoriLain = (inputKategoriLain?.value || '').trim().replace(/\s+/g, ' ');
+        if (cleanKategoriLain.length < 2 || cleanKategoriLain.length > 30) {
+          tampilkanPopupError('Tulis kategori barang antara 2 sampai 30 karakter.');
+          if (errorKategoriLain) {
+            errorKategoriLain.textContent = 'Kategori barang harus 2 sampai 30 karakter.';
+            errorKategoriLain.style.display = 'block';
+          }
+          inputKategoriLain?.focus();
+          return;
+        }
+        if (!/^[a-zA-Z0-9\s-]+$/.test(cleanKategoriLain)) {
+          tampilkanPopupError('Kategori barang hanya boleh berisi huruf, angka, spasi, dan tanda hubung.');
+          if (errorKategoriLain) {
+            errorKategoriLain.textContent = 'Kategori hanya boleh huruf, angka, spasi, dan tanda hubung.';
+            errorKategoriLain.style.display = 'block';
+          }
+          inputKategoriLain?.focus();
+          return;
+        }
+        if (errorKategoriLain) errorKategoriLain.style.display = 'none';
+      }
+
       const sampleFallbackFoto = ['/img/kalkulator-casio.png'];
       const fotoPayload = uploadedFotos.length > 0 ? uploadedFotos : sampleFallbackFoto;
 
       const payload = {
         nama_barang: nama,
-        id_kategori: Number(kategoriSelect?.value) || 1,
+        id_kategori: isKatLain ? 'lainnya' : (Number(kategoriSelect?.value) || 1),
+        kategori: isKatLain ? 'lainnya' : undefined,
+        kategori_lain: isKatLain ? cleanKategoriLain : undefined,
         kondisi: kondisiSelect?.value || 'baik',
         harga_sewa: sewaVal,
         harga_jual: jualVal,

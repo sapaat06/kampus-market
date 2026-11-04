@@ -667,6 +667,7 @@
         <span>Filter</span>
       </button>
       <div id="activeFilterChipsContainer" style="display:inline-flex;align-items:center;gap:8px;">
+        <span class="chip-tag-pill" id="chipCat" style="display:none"></span>
         <span class="chip-tag-pill" id="chipPrice" style="display:none"></span>
         <span class="chip-tag-pill" id="chipDist" style="display:none"></span>
         <span class="chip-tag-pill" id="chipMode" style="display:none"></span>
@@ -752,7 +753,15 @@
       <!-- Kategori -->
       <div>
         <label class="f-field-lbl" for="filterKategori">Kategori</label>
-        <input class="f-input-box" id="filterKategori" type="text" value="" placeholder="Semua kategori">
+        <select class="f-input-box" id="filterKategori" style="background:#fff;">
+          <option value="">Semua kategori</option>
+          <option value="1">Elektronik</option>
+          <option value="2">Buku & Diktat</option>
+          <option value="3">Perlengkapan Kos</option>
+          <option value="4">Alat Lab / Praktikum</option>
+          <option value="5">Olahraga & Outdoor</option>
+          <option value="lainnya">Lainnya</option>
+        </select>
       </div>
 
       <!-- Rentang Harga (Min - Max) -->

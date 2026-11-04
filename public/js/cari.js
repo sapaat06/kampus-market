@@ -618,6 +618,10 @@ async function syncFromApi() {
           id: b.id_barang,
           badge: badge,
           title: b.nama_barang,
+          deskripsi: b.deskripsi,
+          kategori: b.nama_kategori,
+          id_kategori: b.id_kategori,
+          kategori_lain: b.kategori_lain,
           kondisi: (b.kondisi || 'baik').toLowerCase(),
           price: priceStr,
           priceNum: priceNum,
@@ -652,6 +656,7 @@ let minPriceVal = 0;
 let maxPriceVal = 0;
 let maxDistVal = 0;
 let selectedCond = 'all';
+let selectedKategori = '';
 
 // DOM Elements
 const q = document.getElementById('q');
@@ -670,6 +675,7 @@ const filterSort = document.getElementById('filterSort');
 const filterModeChips = document.getElementById('filterModeChips');
 const filterDistChips = document.getElementById('filterDistChips');
 const filterCondChips = document.getElementById('filterCondChips');
+const chipCat = document.getElementById('chipCat');
 const chipPrice = document.getElementById('chipPrice');
 const chipDist = document.getElementById('chipDist');
 const chipMode = document.getElementById('chipMode');
@@ -717,10 +723,27 @@ function hasActiveFilters() {
          (maxPriceVal > 0) ||
          (maxDistVal > 0) ||
          (selectedMode && selectedMode !== 'all' && selectedMode !== 'semua') ||
-         (selectedCond && selectedCond !== 'all' && selectedCond !== 'semua');
+         (selectedCond && selectedCond !== 'all' && selectedCond !== 'semua') ||
+         (selectedKategori && selectedKategori !== '' && selectedKategori !== 'all');
 }
 
 function updateFilterChips() {
+  // Category chip
+  if (chipCat) {
+    if (selectedKategori && selectedKategori !== '' && selectedKategori !== 'all') {
+      const catLabel = selectedKategori.toLowerCase() === 'lainnya'
+        ? 'Lainnya'
+        : (filterKategori?.options?.[filterKategori.selectedIndex]?.text || selectedKategori);
+      chipCat.innerHTML = `${catLabel} <span class="chip-close" aria-label="Hapus filter kategori" role="button">&times;</span>`;
+      chipCat.style.display = 'inline-flex';
+      chipCat.classList.add('active');
+    } else {
+      chipCat.style.display = 'none';
+      chipCat.classList.remove('active');
+      chipCat.innerHTML = '';
+    }
+  }
+
   // Price chip
   if (chipPrice) {
     if (minPriceVal > 0 && maxPriceVal > 0) {
@@ -790,10 +813,12 @@ function resetFilters() {
   maxPriceVal = 0;
   maxDistVal = 0;
   selectedCond = 'all';
+  selectedKategori = '';
   filterActive = false;
 
   if (filterMinPrice) filterMinPrice.value = '';
   if (filterMaxPrice) filterMaxPrice.value = '';
+  if (filterKategori) filterKategori.value = '';
   document.querySelectorAll('#filterModeChips .f-pill-opt').forEach(c => {
     c.classList.toggle('active', c.dataset.mode === 'all');
   });
@@ -811,7 +836,7 @@ function resetFilters() {
 window.resetFilters = resetFilters;
 
 // Check which items match the filter state
-function getFilteredItems(tempMode = selectedMode, tempMinPrice = minPriceVal, tempMaxPrice = maxPriceVal, tempDist = maxDistVal, tempCond = selectedCond) {
+function getFilteredItems(tempMode = selectedMode, tempMinPrice = minPriceVal, tempMaxPrice = maxPriceVal, tempDist = maxDistVal, tempCond = selectedCond, tempCat = selectedKategori) {
   let term = '';
   try {
     term = (q?.value || '').trim().toLowerCase();
@@ -823,10 +848,24 @@ function getFilteredItems(tempMode = selectedMode, tempMinPrice = minPriceVal, t
     // Search text match (aman terhadap karakter khusus, emoji, kutip, tag html)
     try {
       const title = String(d.title || '').toLowerCase();
-      const matchText = !term || title.includes(term);
+      const desc = String(d.deskripsi || '').toLowerCase();
+      const katLain = String(d.kategori_lain || '').toLowerCase();
+      const matchText = !term || title.includes(term) || desc.includes(term) || katLain.includes(term);
       if (!matchText) return false;
     } catch (_e) {
       return false;
+    }
+
+    // Category match
+    if (tempCat && tempCat !== '' && tempCat !== 'all' && tempCat !== 'semua') {
+      const catLower = String(tempCat).toLowerCase();
+      if (catLower === 'lainnya') {
+        const isItemLain = Boolean(d.kategori_lain) || String(d.id_kategori) === 'lainnya' || String(d.kategori || '').toLowerCase() === 'lainnya';
+        if (!isItemLain) return false;
+      } else {
+        const matchesCat = String(d.id_kategori) === String(tempCat) || String(d.kategori || '').toLowerCase() === catLower;
+        if (!matchesCat) return false;
+      }
     }
 
     // Mode match
@@ -874,8 +913,9 @@ function updateFilterPreview() {
   const currentMinPrice = parseRupiah(filterMinPrice?.value);
   const currentMaxPrice = parseRupiah(filterMaxPrice?.value);
   const currentDist = getActiveDist();
+  const currentCat = filterKategori?.value || '';
 
-  const matches = getFilteredItems(currentMode, currentMinPrice, currentMaxPrice, currentDist, currentCond);
+  const matches = getFilteredItems(currentMode, currentMinPrice, currentMaxPrice, currentDist, currentCond, currentCat);
   if (filterApplyBtn) {
     filterApplyBtn.textContent = `Terapkan (${matches.length} barang)`;
   }
@@ -885,7 +925,11 @@ function updateFilterPreview() {
 function render() {
   let items = filterActive ? getFilteredItems() : data.filter(d => {
     const term = (q?.value || '').trim().toLowerCase();
-    return !term || d.title.toLowerCase().includes(term);
+    if (!term) return true;
+    const title = String(d.title || '').toLowerCase();
+    const desc = String(d.deskripsi || '').toLowerCase();
+    const katLain = String(d.kategori_lain || '').toLowerCase();
+    return title.includes(term) || desc.includes(term) || katLain.includes(term);
   });
 
   // Sorting
@@ -928,13 +972,18 @@ function render() {
     return;
   }
 
-  let html = items.map(d => `
+  let html = items.map(d => {
+    const katDisplay = d.kategori_lain || (d.kategori && d.kategori.toLowerCase() !== 'lainnya' ? d.kategori : '');
+    return `
     <div class="horizontal-item-card result-card" data-id="${d.id}" data-mode="${escHtml(d.badge.toLowerCase())}" role="button" tabindex="0" aria-label="${escHtml(d.title)}, ${escHtml(d.badge)}, ${escHtml(d.price)}">
       <div class="card-left-thumb ${escHtml(d.img)}">
         ${d.foto && !d.foto.includes('AARCAAEAAEDASIAAhEBAxEB') ? `<img src="${escHtml(d.foto)}" alt="${escHtml(d.title)}" loading="lazy">` : (d.svg || getSvg(d.title))}
       </div>
       <div class="card-right-info">
-        <span class="badge-tag-sm ${escHtml(d.badge.toLowerCase())}">${escHtml(d.badge)}</span>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+          <span class="badge-tag-sm ${escHtml(d.badge.toLowerCase())}">${escHtml(d.badge)}</span>
+          ${katDisplay ? `<span class="badge-tag-sm" style="background:#F1F5F9;color:#475569;font-weight:600;font-size:10px;padding:2px 8px;border-radius:10px;">${escHtml(katDisplay)}</span>` : ''}
+        </div>
         <div class="card-title-text">${escHtml(d.title)}</div>
         <div class="card-price-text ${d.badge.toLowerCase() === 'sewa' ? 'orange' : ''}">${escHtml(d.price)}</div>
         <div class="card-location-row">
@@ -943,7 +992,8 @@ function render() {
         </div>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   html += `
     <div class="community-banner">
@@ -1148,6 +1198,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // Input price listeners
   filterMinPrice?.addEventListener('input', updateFilterPreview);
   filterMaxPrice?.addEventListener('input', updateFilterPreview);
+  filterKategori?.addEventListener('change', updateFilterPreview);
+
+  // Category chip remove listener
+  chipCat?.addEventListener('click', (e) => {
+    if (e.target && e.target.classList.contains('chip-close')) {
+      selectedKategori = '';
+      if (filterKategori) filterKategori.value = '';
+      filterActive = hasActiveFilters();
+      updateFilterChips();
+      render();
+    }
+  });
 
   // Reset button in modal
   filterResetBtn?.addEventListener('click', () => {
@@ -1159,6 +1221,7 @@ document.addEventListener('DOMContentLoaded', () => {
   filterApplyBtn?.addEventListener('click', () => {
     selectedMode = getActiveMode();
     selectedCond = getActiveCond();
+    selectedKategori = filterKategori?.value || '';
     minPriceVal = parseRupiah(filterMinPrice?.value);
     maxPriceVal = parseRupiah(filterMaxPrice?.value);
     maxDistVal = getActiveDist();
@@ -1181,6 +1244,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (qParam && q) {
     q.value = qParam;
     if (clearBtn) clearBtn.style.display = 'flex';
+  }
+
+  const katParam = urlParams.get('kategori');
+  if (katParam) {
+    selectedKategori = katParam;
+    if (filterKategori) filterKategori.value = katParam;
+    filterActive = true;
   }
 
   const filterParam = urlParams.get('filter');
