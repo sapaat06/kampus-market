@@ -1,0 +1,13 @@
+.env
+.env.*
+*.db
+*.db-*
+app.db*
+node_modules
+.git
+.vscode
+test
+coverage
+npm-debug.log*
+yarn-debug.log*
+*.local

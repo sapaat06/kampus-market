@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { err } from './util.js';
 import { limit } from './limit.js';
 import { upload, uploadStream } from './upload.js';
+import { initDb } from './db.js';
 import { router as auth } from './routes/auth.js';
 import { router as barang } from './routes/barang.js';
 import { router as transaksi } from './routes/transaksi.js';
@@ -16,6 +17,18 @@ app.disable('x-powered-by');
 
 // Reverse proxy trust untuk Render & HTTPS session cookie
 app.set('trust proxy', 1);
+
+let dbReady = null;
+const ensureDb = async (_req, _res, next) => {
+  try {
+    if (!dbReady) dbReady = initDb();
+    await dbReady;
+    next();
+  } catch (e) {
+    dbReady = null;
+    next(e);
+  }
+};
 
 const CSP = [
   "default-src 'self'",
@@ -54,6 +67,7 @@ app.use(express.json({ limit: '4mb' })); // Vercel ~4.5MB body limit; foto sudah
 const apiPrefixes = ['/api', '/chat', '/auth', '/admin'];
 
 app.use(apiPrefixes, (_req, res, next) => { res.set('cache-control', 'no-store'); next(); });
+app.use(apiPrefixes, ensureDb);
 
 // Tolak request lintas-origin untuk metode yang mengubah data (CSRF).
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
