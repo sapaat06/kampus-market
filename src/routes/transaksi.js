@@ -193,10 +193,14 @@ router.all(['/transaksi/:id/approve', '/transaksi/:id/terima', '/transaksi/:id/a
       await db.prepare("UPDATE pengajuan_sewa_kos SET status='approved' WHERE id_pengajuan=?").run(id);
       try {
         await db.prepare("UPDATE pesanan SET status='approved' WHERE id_pesanan=?").run(id);
-      } catch (_e) {}
+      } catch (e) {
+        if (!(String(e?.message || e || '').toLowerCase().includes('no such table') && String(e?.message || e || '').includes('pesanan'))) throw e;
+      }
       try {
         await db.prepare("UPDATE transaksi SET status='approved' WHERE id_transaksi=?").run(id);
-      } catch (_e) {}
+      } catch (e) {
+        if (!(String(e?.message || e || '').toLowerCase().includes('no such table') && String(e?.message || e || '').includes('transaksi'))) throw e;
+      }
 
       // Kunci kamar spesifik di tabel kamar_kos -> 'booked'
       const p = p0;
@@ -233,7 +237,9 @@ router.all(['/transaksi/:id/approve', '/transaksi/:id/terima', '/transaksi/:id/a
             SET kamar_tersedia = (SELECT COUNT(*) FROM kamar_kos WHERE kos_id = ? AND status IN ('available', 'kosong')) 
             WHERE id_kos = ?
           `).run(kosId, kosId);
-        } catch (_e) {}
+        } catch (e) {
+          if (!(String(e?.message || e || '').toLowerCase().includes('no such table') && String(e?.message || e || '').includes('kamar_kos'))) throw e;
+        }
       }
     });
 
@@ -274,10 +280,14 @@ router.all(['/transaksi/:id/reject', '/transaksi/:id/tolak'], userOrAdmin, async
       await db.prepare("UPDATE pengajuan_sewa_kos SET status='rejected' WHERE id_pengajuan=?").run(id);
       try {
         await db.prepare("UPDATE pesanan SET status='rejected' WHERE id_pesanan=?").run(id);
-      } catch (_e) {}
+      } catch (e) {
+        if (!(String(e?.message || e || '').toLowerCase().includes('no such table') && String(e?.message || e || '').includes('pesanan'))) throw e;
+      }
       try {
         await db.prepare("UPDATE transaksi SET status='rejected', alasan_batal=? WHERE id_transaksi=?").run(alasan, id);
-      } catch (_e) {}
+      } catch (e) {
+        if (!(String(e?.message || e || '').toLowerCase().includes('no such table') && String(e?.message || e || '').includes('transaksi'))) throw e;
+      }
 
       // Kembalikan status kamar jadi available
       const p = p0;
@@ -314,7 +324,9 @@ router.all(['/transaksi/:id/reject', '/transaksi/:id/tolak'], userOrAdmin, async
             SET kamar_tersedia = (SELECT COUNT(*) FROM kamar_kos WHERE kos_id = ? AND status IN ('available', 'kosong')) 
             WHERE id_kos = ?
           `).run(kosId, kosId);
-        } catch (_e) {}
+        } catch (e) {
+          if (!(String(e?.message || e || '').toLowerCase().includes('no such table') && String(e?.message || e || '').includes('kamar_kos'))) throw e;
+        }
       }
     });
 

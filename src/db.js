@@ -254,6 +254,13 @@ export async function initDb() {
       is_read INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     ) STRICT;
+    DELETE FROM chat_rooms
+    WHERE id_room NOT IN (
+      SELECT MIN(id_room) FROM chat_rooms
+      GROUP BY id_pembeli, id_penjual, tipe_referensi, COALESCE(id_referensi, -1)
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_chat_rooms_unique
+      ON chat_rooms(id_pembeli, id_penjual, tipe_referensi, COALESCE(id_referensi, -1));
     CREATE INDEX IF NOT EXISTS idx_chat_rooms_users ON chat_rooms(id_pembeli, id_penjual);
     CREATE INDEX IF NOT EXISTS idx_chat_messages_room ON chat_messages(id_room, created_at);
 

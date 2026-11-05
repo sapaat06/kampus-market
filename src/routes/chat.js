@@ -69,21 +69,28 @@ async function cariAtauBuatRoom(uid, body = {}, query = {}) {
     throw err(400, 'Anda adalah pemilik dari postingan ini');
   }
 
-  // Cek apakah room sudah ada (atomik untuk kurangi duplikasi race)
+  // Cek apakah room sudah ada (atomik + dijaga UNIQUE index)
   const room = await tx(async () => {
-    let r0 = await db.prepare(`
+    const find = () => db.prepare(`
       SELECT * FROM chat_rooms
       WHERE ((id_pembeli = ? AND id_penjual = ?) OR (id_pembeli = ? AND id_penjual = ?))
         AND tipe_referensi = ?
         AND (id_referensi = ? OR (id_referensi IS NULL AND ? IS NULL))
       LIMIT 1
     `).get(uid, id_penjual, id_penjual, uid, tipe, id_ref, id_ref);
+    let r0 = await find();
     if (r0) return r0;
-    const r = await db.prepare(`
-      INSERT INTO chat_rooms (id_pembeli, id_penjual, tipe_referensi, id_referensi)
-      VALUES (?, ?, ?, ?)
-    `).run(uid, id_penjual, tipe, id_ref);
-    return await db.prepare('SELECT * FROM chat_rooms WHERE id_room = ?').get(Number(r.lastInsertRowid));
+    try {
+      const r = await db.prepare(`
+        INSERT INTO chat_rooms (id_pembeli, id_penjual, tipe_referensi, id_referensi)
+        VALUES (?, ?, ?, ?)
+      `).run(uid, id_penjual, tipe, id_ref);
+      return await db.prepare('SELECT * FROM chat_rooms WHERE id_room = ?').get(Number(r.lastInsertRowid));
+    } catch (e) {
+      r0 = await find();
+      if (r0) return r0;
+      throw e;
+    }
   });
 
   return room;

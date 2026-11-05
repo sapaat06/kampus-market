@@ -262,7 +262,9 @@ router.post(['/sewa', '/kos/sewa', '/kos/pengajuan'], user, async (req, res) => 
         nama_penyewa, email_penyewa, avatar_penyewa,
         nama_kos, kamar, durasi_bulan, total_harga, periode
       );
-    } catch (_e) {}
+    } catch (e) {
+      if (!(String(e?.message || e || '').toLowerCase().includes('no such table') && String(e?.message || e || '').includes('pesanan'))) throw e;
+    }
 
     return insId;
   });
@@ -353,10 +355,14 @@ router.all(['/kos/pengajuan/:id/terima', '/kos/pengajuan/:id/approve', '/pesanan
     await db.prepare("UPDATE pengajuan_sewa_kos SET status='approved' WHERE id_pengajuan=?").run(id);
     try {
       await db.prepare("UPDATE pesanan SET status='approved' WHERE id_pesanan=?").run(id);
-    } catch (_e) {}
+    } catch (e) {
+      if (!(String(e?.message || e || '').toLowerCase().includes('no such table') && String(e?.message || e || '').includes('pesanan'))) throw e;
+    }
     try {
       await db.prepare("UPDATE transaksi SET status='approved' WHERE id_transaksi=?").run(id);
-    } catch (_e) {}
+    } catch (e) {
+      if (!(String(e?.message || e || '').toLowerCase().includes('no such table') && String(e?.message || e || '').includes('transaksi'))) throw e;
+    }
 
     // Kunci kamar spesifik yang dipesan: status -> 'booked'
     if (pengajuan) {
@@ -415,10 +421,14 @@ router.all(['/kos/pengajuan/:id/tolak', '/kos/pengajuan/:id/reject', '/pesanan-m
     await db.prepare("UPDATE pengajuan_sewa_kos SET status='rejected' WHERE id_pengajuan=?").run(id);
     try {
       await db.prepare("UPDATE pesanan SET status='rejected' WHERE id_pesanan=?").run(id);
-    } catch (_e) {}
+    } catch (e) {
+      if (!(String(e?.message || e || '').toLowerCase().includes('no such table') && String(e?.message || e || '').includes('pesanan'))) throw e;
+    }
     try {
       await db.prepare("UPDATE transaksi SET status='rejected', alasan_batal=? WHERE id_transaksi=?").run(alasan, id);
-    } catch (_e) {}
+    } catch (e) {
+      if (!(String(e?.message || e || '').toLowerCase().includes('no such table') && String(e?.message || e || '').includes('transaksi'))) throw e;
+    }
 
     // Kembalikan status kamar jadi available
     if (pengajuan) {
