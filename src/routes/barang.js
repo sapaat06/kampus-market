@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db, tx } from '../db.js';
 import { err, str, optStr, oneOf, posInt, haversineDistance } from '../util.js';
-import { user, admin, userOrAdmin } from '../auth.js';
+import { user, admin, userOrAdmin, verifyToken } from '../auth.js';
 import { upload, simpanFotosCloudinary } from '../upload.js';
 
 export const router = Router();
@@ -199,6 +199,20 @@ router.get('/barang', async (req, res) => {
 
   const where = ["b.status='tersedia'"];
   const params = [];
+
+  // Sembunyikan barang milik sendiri di beranda/pencarian (kalau user login), tapi tetap tampil untuk orang lain.
+  const bearer = (req.get('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
+  const rawCookie = req.headers?.cookie || '';
+  let cookieToken = '';
+  for (const part of rawCookie.split(';')) {
+    const [nama, ...val] = part.trim().split('=');
+    if (nama === 'km_token') cookieToken = val.join('=');
+  }
+  const uid = verifyToken(bearer || cookieToken);
+  if (uid) {
+    const me = await db.prepare('SELECT email FROM mahasiswa WHERE id_mahasiswa=?').get(uid);
+    if (me?.email) { where.push('p.email IS NULL OR p.email <> ?'); params.push(me.email); }
+  }
 
   if (filterLainnya) {
     where.push("(LOWER(k.nama_kategori) = 'lainnya' OR b.kategori_lain IS NOT NULL)");
