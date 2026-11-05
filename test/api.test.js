@@ -564,10 +564,11 @@ assert.equal(rejKosRes.s, 200);
 assert.equal(rejKosRes.j.kos.status_postingan, 'rejected');
 
 // Pemilik kost: kelola pengajuan sewa kos dan approval
+const idPemilikKos = loginSuccessKost.j.user.id_mahasiswa ?? loginSuccessKost.j.user.id;
 await db.prepare(`
-  INSERT OR REPLACE INTO pengajuan_sewa_kos (id_pengajuan, id_kos, id_pemilik, nama_penyewa, email_penyewa, status)
-  VALUES (1, 1, 1, 'Rina Maharani', 'rina@itg.ac.id', 'pending')
-`).run();
+  INSERT OR REPLACE INTO pengajuan_sewa_kos (id_pengajuan, id_kos, id_pemilik, pemilik_id, nama_penyewa, email_penyewa, status)
+  VALUES (1, 1, ?, ?, 'Rina Maharani', 'rina@itg.ac.id', 'pending')
+`).run(idPemilikKos, idPemilikKos);
 
 const listPengajuanPending = await call('GET', '/api/kos/pengajuan', null, UPemilik);
 assert.equal(listPengajuanPending.s, 200);
@@ -586,9 +587,9 @@ assert.equal(listPengajuanSetelahApprove.j.length, 0);
 
 // Pengujian tolak / reject pengajuan sewa kos
 await db.prepare(`
-  INSERT OR REPLACE INTO pengajuan_sewa_kos (id_pengajuan, id_kos, id_pemilik, nama_penyewa, email_penyewa, status)
-  VALUES (2, 1, 1, 'Budi Santoso', 'budi@itg.ac.id', 'pending')
-`).run();
+  INSERT OR REPLACE INTO pengajuan_sewa_kos (id_pengajuan, id_kos, id_pemilik, pemilik_id, nama_penyewa, email_penyewa, status)
+  VALUES (2, 1, ?, ?, 'Budi Santoso', 'budi@itg.ac.id', 'pending')
+`).run(idPemilikKos, idPemilikKos);
 const tolakTxKosPut = await call('PUT', '/api/transaksi/2/reject', { alasan: 'Kamar penuh' }, UPemilik);
 assert.equal(tolakTxKosPut.s, 200);
 assert.equal(tolakTxKosPut.j.status, 'rejected');
