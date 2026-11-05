@@ -487,7 +487,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               <a href="/masuk.html" class="btn-primary" style="display:inline-flex;width:auto;padding:0 24px;height:40px;font-size:13px;text-decoration:none;">Masuk Sekarang</a>
             </div>
           `;
-          if (inboxEmptyState) inboxEmptyState.style.display = 'none';
+          if (inboxEmptyState) inboxEmptyState.style.setProperty('display', 'none', 'important');
         }
       }
     }
@@ -519,11 +519,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (filtered.length === 0) {
       inboxListContainer.innerHTML = '';
-      if (inboxEmptyState) inboxEmptyState.style.display = 'flex';
+      if (inboxEmptyState) inboxEmptyState.style.setProperty('display', 'flex', 'important');
       return;
     }
 
-    if (inboxEmptyState) inboxEmptyState.style.display = 'none';
+    if (inboxEmptyState) inboxEmptyState.style.setProperty('display', 'none', 'important');
 
     inboxListContainer.innerHTML = filtered.map((r) => {
       const lawan = r.lawan || { nama: 'Pengguna', role: 'pelanggan' };

@@ -1,7 +1,10 @@
-node_modules
+node_modules/
 app.db
 app.db*
 *.db
 *.db-journal
 .env
-public/uploads
+.env.*
+!.env.example
+public/uploads/
+.vercel/

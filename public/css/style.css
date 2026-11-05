@@ -689,7 +689,7 @@ html, body {
    Universal Empty State Component (Shared across all pages)
    ========================================================================== */
 .empty-state {
-  display: flex !important;
+  display: flex;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
@@ -700,6 +700,12 @@ html, body {
   border-left: none !important;
   box-sizing: border-box !important;
   margin: 0 auto !important;
+}
+.empty-state[style*="display: none"],
+.empty-state[style*="display:none"],
+.empty-state.hidden,
+.empty-state[hidden] {
+  display: none !important;
 }
 .empty-state-icon,
 .empty-state .empty-icon,
