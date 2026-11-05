@@ -237,9 +237,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function scrollToBottom() {
-    if (chatThread) {
-      chatThread.scrollTop = chatThread.scrollHeight;
-    }
+    if (!chatThread) return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { chatThread.scrollTop = chatThread.scrollHeight; });
+    });
   }
 
   // 3. Buka Ruang Chat Spesifik (Real Data dari Server)
