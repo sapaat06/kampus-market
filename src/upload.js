@@ -34,6 +34,45 @@ const CLOUDINARY_ENABLED = (() => {
 const toDataUrl = (buffer, mimetype = 'image/jpeg') =>
   `data:${mimetype};base64,${buffer.toString('base64')}`;
 
+export const CHAT_FILE_MAX = 5 * 1024 * 1024; // 5MB
+export const CHAT_FILE_MIME = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/plain',
+]);
+
+export const uploadFileToCloudinary = async (buffer, mimeType, originalName = 'file') => {
+  const safeName = String(originalName || 'file').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120);
+  const fallback = () => toDataUrl(buffer, mimeType);
+  if (!CLOUDINARY_ENABLED) return fallback();
+  return new Promise((resolve, reject) => {
+    const isImage = /^image\//i.test(mimeType);
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'kampus-market/chat',
+        resource_type: isImage ? 'image' : 'raw',
+        public_id: `${Date.now()}_${safeName.replace(/\.[^.]+$/, '')}`,
+        use_filename: false,
+      },
+      (error, result) => {
+        if (error) {
+          if (process.env.NODE_ENV !== 'production' && (error.http_code === 401 || error.http_code === 403)) {
+            console.warn('[upload] Cloudinary menolak kredensial (chat file), memakai fallback data URL.');
+            return resolve(fallback());
+          }
+          return reject(error);
+        }
+        resolve(result.secure_url || result.url);
+      }
+    );
+    stream.end(buffer);
+  });
+};
+
 /**
  * Upload single buffer to Cloudinary using upload_stream.
  * Jika CLOUDINARY_URL tidak diatur / masih placeholder (mis. offline/tes lokal),

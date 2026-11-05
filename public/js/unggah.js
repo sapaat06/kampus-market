@@ -1,6 +1,6 @@
 // public/js/unggah.js
 // Handles item upload (Screens 21 to 26):
-// Mode Sewa / Beli / Free, Photo upload, Estimator Harga Cerdas, Lokasi Pemilik, and Status Produk
+// Mode Sewa / Jual / Free, Photo upload, Estimator Harga Cerdas, Lokasi Pemilik, and Status Produk
 
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof KM !== 'undefined' && KM.wajibLogin && !KM.wajibLogin()) {
@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnOpenEstimator) btnOpenEstimator.style.display = 'inline-flex';
         if (hargaHelper) hargaHelper.textContent = 'Saran harga sewa harian untuk teman kampus.';
       } else if (currentType === 'jual') {
-        if (pageTitle) pageTitle.textContent = 'Unggah Produk Jual / Beli';
+        if (pageTitle) pageTitle.textContent = 'Unggah Produk Jual';
         if (hargaGroup) hargaGroup.style.display = 'block';
         if (pinjamInfoBanner) pinjamInfoBanner.style.display = 'none';
         if (hargaLabel) hargaLabel.textContent = 'Harga Jual (Rp)';
@@ -701,7 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (currentType === 'sewa') {
             succProdJenis.textContent = `Sewa · Rp${Number(sewaVal).toLocaleString('id-ID')}/hari`;
           } else if (currentType === 'jual') {
-            succProdJenis.textContent = `Beli · Rp${Number(jualVal).toLocaleString('id-ID')}`;
+            succProdJenis.textContent = `Jual · Rp${Number(jualVal).toLocaleString('id-ID')}`;
           } else {
             succProdJenis.textContent = 'Pinjam Gratis';
           }

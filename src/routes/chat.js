@@ -1,14 +1,34 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { db, tx } from '../db.js';
 import { user } from '../auth.js';
-import { err, posInt, str } from '../util.js';
+import { err, posInt } from '../util.js';
+import { uploadFileToCloudinary, CHAT_FILE_MAX, CHAT_FILE_MIME } from '../upload.js';
 
 export const router = Router();
+
+const uploadChatFile = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: CHAT_FILE_MAX, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    if (!file.mimetype || !CHAT_FILE_MIME.has(file.mimetype)) {
+      return cb(Object.assign(new Error('Tipe file tidak didukung (izinkan: gambar, PDF, Word, Excel, TXT)'), { status: 400 }));
+    }
+    cb(null, true);
+  },
+});
 
 // Setiap objek pesan dikirim dengan dua nama field: `id_pengirim` (asli DB)
 // dan `sender_id` (alias eksplisit untuk frontend), supaya klien bisa memakai
 // salah satunya tanpa menebak struktur data.
 const denganSenderId = (m) => (m && typeof m === 'object' ? { ...m, sender_id: m.id_pengirim } : m);
+
+function snippetPesan(m) {
+  if (!m) return '';
+  if (m.tipe_pesan === 'image') return '[Foto]';
+  if (m.tipe_pesan === 'file') return `[Dokumen] ${m.file_name || ''}`.trim();
+  return m.pesan || '';
+}
 
 // Otorisasi terpusat: room hanya boleh diakses oleh pembeli atau penjualnya.
 // Dipakai oleh SEMUA endpoint detail, riwayat pesan, dan kirim pesan agar tidak
@@ -120,7 +140,8 @@ const handleGetRooms = async (req, res) => {
 
   const rows = await db.prepare(`
     SELECT r.*,
-           (SELECT pesan FROM chat_messages m WHERE m.id_room = r.id_room ORDER BY m.id_pesan DESC LIMIT 1) AS last_message,
+           (SELECT COALESCE(NULLIF(pesan,''), CASE WHEN tipe_pesan='image' THEN '[Foto]' WHEN tipe_pesan='file' THEN '[Dokumen] ' || COALESCE(file_name,'') ELSE '' END)
+              FROM chat_messages m WHERE m.id_room = r.id_room ORDER BY m.id_pesan DESC LIMIT 1) AS last_message,
            (SELECT created_at FROM chat_messages m WHERE m.id_room = r.id_room ORDER BY m.id_pesan DESC LIMIT 1) AS last_message_time,
            (SELECT id_pengirim FROM chat_messages m WHERE m.id_room = r.id_room ORDER BY m.id_pesan DESC LIMIT 1) AS last_message_sender,
            (SELECT COUNT(*) FROM chat_messages m WHERE m.id_room = r.id_room AND m.id_pengirim != ? AND m.is_read = 0) AS unread_count
@@ -242,14 +263,31 @@ const handleSendMessage = async (req, res) => {
   const id_room = posInt(Number(req.params.id || req.body?.id_room || req.body?.room), 'id_room');
   await ambilRoomAman(req.uid, id_room);
 
-  const text = str(req.body?.pesan || req.body?.message || req.body?.text, 'pesan', 2000).trim();
-  if (!text) throw err(400, 'Pesan tidak boleh kosong');
+  const body = req.body || {};
+  const raw = (body.pesan ?? body.message ?? body.text ?? '');
+  const text = typeof raw === 'string' ? raw.trim().slice(0, 2000) : '';
+
+  let tipe_pesan = 'teks';
+  let file_url = null, file_name = null, file_type = null, file_size = null;
+
+  if (req.file && req.file.buffer) {
+    file_type = req.file.mimetype;
+    file_size = Number(req.file.size || req.file.buffer.length || 0);
+    if (file_size > CHAT_FILE_MAX) throw err(400, 'Ukuran file maksimal 5 MB');
+    file_name = String(req.file.originalname || 'file').slice(0, 200);
+    file_url = await uploadFileToCloudinary(req.file.buffer, file_type, file_name);
+    tipe_pesan = /^image\//i.test(file_type) ? 'image' : 'file';
+  } else if (text) {
+    // teks saja
+  } else {
+    throw err(400, 'Pesan atau file wajib diisi');
+  }
 
   const message = await tx(async () => {
     const r = await db.prepare(`
-      INSERT INTO chat_messages (id_room, id_pengirim, pesan)
-      VALUES (?, ?, ?)
-    `).run(id_room, req.uid, text);
+      INSERT INTO chat_messages (id_room, id_pengirim, pesan, tipe_pesan, file_url, file_name, file_type, file_size)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id_room, req.uid, text || '', tipe_pesan, file_url, file_name, file_type, file_size);
     // Perbarui updated_at room agar naik ke urutan paling atas di Inbox
     await db.prepare('UPDATE chat_rooms SET updated_at = CURRENT_TIMESTAMP WHERE id_room = ?').run(id_room);
     return await db.prepare('SELECT * FROM chat_messages WHERE id_pesan = ?').get(Number(r.lastInsertRowid));
@@ -259,7 +297,12 @@ const handleSendMessage = async (req, res) => {
 };
 
 // 4. Kirim Pesan Real User ke Room
-router.post(['/rooms/:id/messages', '/room/:id/messages', '/:id/messages', '/messages'], user, handleSendMessage);
+const msgUpload = (req, res, next) => uploadChatFile.single('file')(req, res, (e) => {
+  if (!e) return next();
+  if (e instanceof multer.MulterError) return next(err(400, e.code === 'LIMIT_FILE_SIZE' ? 'Ukuran file maksimal 5 MB' : e.message));
+  return next(e.status ? e : err(400, e.message || 'Upload file gagal'));
+});
+router.post(['/rooms/:id/messages', '/room/:id/messages', '/:id/messages', '/messages'], user, msgUpload, handleSendMessage);
 
 // Handler untuk riwayat pesan saja
 const handleGetMessagesOnly = async (req, res) => {

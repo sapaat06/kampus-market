@@ -210,11 +210,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Submit checkout
   submitCheckoutBtn?.addEventListener('click', async () => {
     if (checkoutError) { checkoutError.style.display = 'none'; checkoutError.innerHTML = ''; }
-    submitCheckoutBtn.disabled = true;
-    submitCheckoutBtn.textContent = 'Memproses...';
-
     const lokasiTemu = (currentItem && currentItem.lokasi) ? currentItem.lokasi : 'Lobi Fakultas Teknik';
     const metodeLabel = selectedMetodeBayar === 'COD' ? 'COD (Bayar di Tempat)' : 'Pembayaran di Aplikasi (QRIS)';
+
+    if (activeCheckoutMode === 'beli') {
+      const hargaBeli = Number(currentItem?.harga_jual || 0).toLocaleString('id-ID');
+      const yakin = await KM.ui.konfirmasi({
+        judul: 'Konfirmasi Pembelian',
+        teks: `Lanjut membeli ${currentItem?.nama_barang || 'barang ini'} seharga Rp${hargaBeli} (${metodeLabel})?`,
+        teksYa: 'Jadi Membeli',
+        teksBatal: 'Batal / Tidak Jadi',
+        icon: 'question',
+      });
+      if (!yakin) return;
+    }
+
+    submitCheckoutBtn.disabled = true;
+    submitCheckoutBtn.textContent = 'Memproses...';
 
     sessionStorage.setItem('kc_last_payment_method', metodeLabel);
     sessionStorage.setItem('kc_last_location', lokasiTemu);

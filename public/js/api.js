@@ -48,9 +48,10 @@ window.KM = (() => {
 
   // api() selalu melempar Error ber-status kalau gagal, jadi pemanggil cukup
   // pakai try/catch dan tidak perlu memeriksa res.ok sendiri.
-  async function api(path, { method = 'GET', body, headers = {} } = {}) {
+  async function api(path, { method = 'GET', body, headers = {}, isForm = false } = {}) {
     const h = { ...headers };
-    if (body !== undefined) h['content-type'] = 'application/json';
+    const formBody = isForm || (typeof FormData !== 'undefined' && body instanceof FormData);
+    if (body !== undefined && !formBody) h['content-type'] = 'application/json';
     const t = token.get();
     if (t) h.authorization = 'Bearer ' + t; // dipakai APK; di web cookie tetap jalan
 
@@ -72,7 +73,7 @@ window.KM = (() => {
         method,
         credentials: 'same-origin',
         headers: h,
-        body: body === undefined ? undefined : JSON.stringify(body),
+        body: body === undefined ? undefined : (formBody ? body : JSON.stringify(body)),
       });
     } catch {
       throw Object.assign(new Error('Tidak bisa menghubungi server'), { status: 0 });

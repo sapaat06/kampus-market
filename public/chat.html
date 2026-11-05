@@ -709,6 +709,9 @@
     cursor: pointer;
   }
   .btn-attach svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2.2; }
+  .bubble img.chat-img { max-width: 100%; max-height: 220px; border-radius: 10px; display: block; cursor: pointer; margin-bottom: 4px; }
+  .bubble a.chat-file { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: inherit; text-decoration: underline; word-break: break-word; }
+  .bubble a.chat-file::before { content: "📄"; text-decoration: none; }
   .chat-input {
     flex: 1;
     height: 38px;
@@ -908,12 +911,17 @@
     </div>
 
     <!-- Chat Input Bar -->
+    <div id="filePreviewBar" style="display:none;align-items:center;gap:8px;padding:6px 16px;background:#F8FAFC;border-top:1px solid #E2E8F0;font-size:11px;color:#334155;">
+      <span id="filePreviewName" style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;"></span>
+      <button type="button" id="filePreviewRemove" aria-label="Hapus lampiran" style="border:none;background:transparent;color:#64748B;font-size:16px;cursor:pointer;line-height:1;">×</button>
+    </div>
     <div class="chat-input-bar">
-      <button class="btn-attach" aria-label="Kirim Lampiran">
+      <button class="btn-attach" id="btnAttach" aria-label="Kirim Lampiran" type="button">
         <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
       </button>
+      <input type="file" id="chatFileInput" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.doc,.docx,.xls,.xlsx,.txt" style="display:none">
       <input type="text" class="chat-input" id="msgInput" placeholder="Tulis pesan untuk Bu Rani...">
-      <button class="btn-send" id="sendBtn" aria-label="Kirim Pesan">
+      <button class="btn-send" id="sendBtn" aria-label="Kirim Pesan" type="button">
         <svg viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4 20-7Z"/><path d="M22 2 11 13"/></svg>
       </button>
     </div>

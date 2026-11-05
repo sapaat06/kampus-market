@@ -66,6 +66,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const chipAjukanSewa = document.getElementById('chipAjukanSewa');
   const quickChips = document.querySelectorAll('.quick-chip[data-msg]');
 
+  const btnAttach = document.getElementById('btnAttach');
+  const chatFileInput = document.getElementById('chatFileInput');
+  const filePreviewBar = document.getElementById('filePreviewBar');
+  const filePreviewName = document.getElementById('filePreviewName');
+  const filePreviewRemove = document.getElementById('filePreviewRemove');
+
   let currentUserId = null;
   let activeRoomId = null;
   let lastMessageId = 0;
@@ -74,6 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let cachedRooms = [];
   let isRoomPollingActive = false;
   let pollRoomTimer = null;
+  let pendingFile = null;
   let pollInboxTimer = null;
 
   // Helper: ambil ID pengirim dari berbagai kemungkinan nama field API
@@ -188,7 +195,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 2. Render Bubble Pesan di Thread
   function renderMessageBubble(msg, isOutgoing) {
-    if (!chatThread || !msg.pesan) return;
+    if (!chatThread || !msg) return;
     if (emptyChatState) emptyChatState.style.display = 'none';
 
     // Cek apakah bubble sudah ada (hindari duplikasi)
@@ -203,9 +210,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       ? `<svg viewBox="0 0 24 24"><path d="m2 12 5 5L17 7"/><path d="m9 12 3 3L22 5"/></svg>`
       : '';
 
+    let bodyHtml = '';
+    const tipe = msg.tipe_pesan || 'teks';
+    if (tipe === 'image' && msg.file_url) {
+      bodyHtml += `<img class="chat-img" src="${escHtml(msg.file_url)}" alt="${escHtml(msg.file_name || 'foto')}" loading="lazy" onclick="window.open(this.src,'_blank')">`;
+      if (msg.pesan) bodyHtml += `<div>${escHtml(msg.pesan)}</div>`;
+    } else if (tipe === 'file' && msg.file_url) {
+      bodyHtml += `<a class="chat-file" href="${escHtml(msg.file_url)}" target="_blank" rel="noopener">${escHtml(msg.file_name || 'Dokumen')}</a>`;
+      if (msg.pesan) bodyHtml += `<div style="margin-top:4px">${escHtml(msg.pesan)}</div>`;
+    } else {
+      bodyHtml = escHtml(msg.pesan || '');
+    }
+    if (!bodyHtml) return;
+
     wrap.innerHTML = `
       <div class="bubble">
-        ${escHtml(msg.pesan)}
+        ${bodyHtml}
         <div class="bubble-meta">
           <span>${timeStr}</span>
           ${metaCheck}
@@ -349,17 +369,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // 5. Kirim Pesan Real ke API Backend
+  // 5. Kirim Pesan / Lampiran ke API Backend
+  const CHAT_FILE_MAX = 5 * 1024 * 1024;
+  const CHAT_FILE_OK = /^(image\/(jpeg|png|webp|gif)|application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document|application\/vnd\.ms-excel|application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet|text\/plain)$/i;
+
+  function setPendingFile(file) {
+    pendingFile = file || null;
+    if (filePreviewBar) filePreviewBar.style.display = pendingFile ? 'flex' : 'none';
+    if (filePreviewName) filePreviewName.textContent = pendingFile ? pendingFile.name : '';
+  }
+
+  btnAttach?.addEventListener('click', () => chatFileInput?.click());
+  filePreviewRemove?.addEventListener('click', () => { if (chatFileInput) chatFileInput.value = ''; setPendingFile(null); });
+  chatFileInput?.addEventListener('change', () => {
+    const f = chatFileInput.files && chatFileInput.files[0];
+    if (!f) return setPendingFile(null);
+    if (f.size > CHAT_FILE_MAX) { KM.ui.peringatan('File terlalu besar', 'Ukuran maksimal 5 MB.'); chatFileInput.value = ''; return; }
+    if (!CHAT_FILE_OK.test(f.type)) { KM.ui.peringatan('Tipe tidak didukung', 'Gunakan gambar (JPG/PNG/WebP/GIF), PDF, Word, Excel, atau TXT.'); chatFileInput.value = ''; return; }
+    setPendingFile(f);
+  });
+
   async function handleSendMessage() {
     if (!activeRoomId) return;
     const text = (msgInput?.value || '').trim();
-    if (!text) return;
+    if (!text && !pendingFile) return;
 
     if (sendBtn) sendBtn.disabled = true;
     msgInput.value = '';
 
     try {
-      const newMsg = await KM.post(`/chat/rooms/${activeRoomId}/messages`, { pesan: text });
+      let newMsg;
+      if (pendingFile) {
+        const fd = new FormData();
+        fd.append('file', pendingFile);
+        if (text) fd.append('pesan', text);
+        newMsg = await KM.post(`/chat/rooms/${activeRoomId}/messages`, fd);
+        if (chatFileInput) chatFileInput.value = '';
+        setPendingFile(null);
+      } else {
+        newMsg = await KM.post(`/chat/rooms/${activeRoomId}/messages`, { pesan: text });
+      }
       if (newMsg && newMsg.id_pesan) {
         renderMessageBubble(newMsg, true);
         if (newMsg.id_pesan > lastMessageId) lastMessageId = newMsg.id_pesan;
@@ -371,7 +420,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = '/masuk.html';
       } else {
         KM.ui.error('Pesan Gagal Terkirim', err.message || 'Periksa koneksi kamu lalu coba lagi.');
-        msgInput.value = text;
+        if (text) msgInput.value = text;
       }
     } finally {
       if (sendBtn) sendBtn.disabled = false;
@@ -470,6 +519,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       let snippet = r.last_message
         ? (Number(r.last_message_sender) === Number(currentUserId) ? 'Anda: ' : '') + r.last_message
         : 'Belum ada pesan · Ketuk untuk mulai';
+      if (!snippet || snippet === 'Anda: ') snippet = 'Lampiran · Ketuk untuk lihat';
       const snippetStyle = r.unread_count > 0 ? 'font-weight:700;color:#0F172A;' : 'font-weight:500;color:#64748B;';
 
       // Mini Attached Item Preview

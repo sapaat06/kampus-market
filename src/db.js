@@ -250,7 +250,12 @@ export async function initDb() {
       id_pesan INTEGER PRIMARY KEY AUTOINCREMENT,
       id_room INTEGER NOT NULL REFERENCES chat_rooms(id_room) ON DELETE CASCADE,
       id_pengirim INTEGER NOT NULL REFERENCES mahasiswa(id_mahasiswa),
-      pesan TEXT NOT NULL,
+      pesan TEXT,
+      tipe_pesan TEXT NOT NULL DEFAULT 'teks' CHECK (tipe_pesan IN ('teks','image','file')),
+      file_url TEXT,
+      file_name TEXT,
+      file_type TEXT,
+      file_size INTEGER,
       is_read INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     ) STRICT;
@@ -301,6 +306,25 @@ export async function initDb() {
   `);
 
   // Migrasi database yang sudah ada jika kolom belum ada
+  try {
+    const tableInfoChatMsg = await client.execute('PRAGMA table_info(chat_messages)');
+    const kolomChatMsg = tableInfoChatMsg.rows.map((k) => k.name);
+    if (!kolomChatMsg.includes('tipe_pesan')) {
+      try { await client.execute("ALTER TABLE chat_messages ADD COLUMN tipe_pesan TEXT NOT NULL DEFAULT 'teks'"); } catch {}
+    }
+    if (!kolomChatMsg.includes('file_url')) {
+      try { await client.execute('ALTER TABLE chat_messages ADD COLUMN file_url TEXT'); } catch {}
+    }
+    if (!kolomChatMsg.includes('file_name')) {
+      try { await client.execute('ALTER TABLE chat_messages ADD COLUMN file_name TEXT'); } catch {}
+    }
+    if (!kolomChatMsg.includes('file_type')) {
+      try { await client.execute('ALTER TABLE chat_messages ADD COLUMN file_type TEXT'); } catch {}
+    }
+    if (!kolomChatMsg.includes('file_size')) {
+      try { await client.execute('ALTER TABLE chat_messages ADD COLUMN file_size INTEGER'); } catch {}
+    }
+  } catch {}
   try {
     const tableInfoMahasiswa = await client.execute('PRAGMA table_info(mahasiswa)');
     const kolomMahasiswa = tableInfoMahasiswa.rows.map((k) => k.name);
