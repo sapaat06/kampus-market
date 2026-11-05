@@ -11,9 +11,13 @@ const { limit, resetLimits } = await import('../src/limit.js');
 const srv = app.listen(0);
 const base = `http://localhost:${srv.address().port}`;
 const call = async (method, path, body, headers = {}) => {
+  const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+  const h = { ...headers };
+  if (body && !isForm) h['content-type'] = h['content-type'] || 'application/json';
   const r = await fetch(base + path, {
-    method, headers: { 'content-type': 'application/json', ...headers },
-    body: body && JSON.stringify(body),
+    method,
+    headers: h,
+    body: body ? (isForm ? body : JSON.stringify(body)) : undefined,
   });
   const ct = r.headers.get('content-type') ?? '';
   return {
@@ -357,6 +361,40 @@ assert.equal((await call('GET', `/api/chat/rooms/${idRoom}/messages`)).s, 401);
 const detailFinal = await call('GET', `/api/chat/rooms/${idRoom}`, null, U);
 assert.equal(detailFinal.j.messages.length >= 2, true);
 assert.equal(detailFinal.j.messages.every((m) => [daftar.j.id_mahasiswa, mPenjual.j.id_mahasiswa].includes(m.sender_id)), true);
+
+// Lampiran chat (foto/dokumen): teks ATAU file wajib; file tanpa teks; validasi 5MB & tipe; pesan lama aman
+const sendImg = await call('POST', `/api/chat/rooms/${idRoom}/messages`, (() => {
+  const fd = new FormData(); fd.append('file', new Blob(['fakepng'], { type: 'image/png' }), 'foto.png'); return fd;
+})(), U);
+assert.equal(sendImg.s, 201);
+assert.equal(sendImg.j.tipe_pesan, 'image');
+assert.equal(typeof sendImg.j.file_url, 'string');
+assert.equal(sendImg.j.file_name, 'foto.png');
+
+const sendPdf = await call('POST', `/api/chat/rooms/${idRoom}/messages`, (() => {
+  const fd = new FormData(); fd.append('file', new Blob(['%PDF-1.4'], { type: 'application/pdf' }), 'doc.pdf'); return fd;
+})(), U);
+assert.equal(sendPdf.s, 201);
+assert.equal(sendPdf.j.tipe_pesan, 'file');
+assert.equal(sendPdf.j.file_name, 'doc.pdf');
+
+const big = await call('POST', `/api/chat/rooms/${idRoom}/messages`, (() => {
+  const fd = new FormData(); fd.append('file', new Blob([new Uint8Array(5 * 1024 * 1024 + 1)], { type: 'image/png' }), 'big.png'); return fd;
+})(), U);
+assert.equal(big.s, 400);
+
+const badType = await call('POST', `/api/chat/rooms/${idRoom}/messages`, (() => {
+  const fd = new FormData(); fd.append('file', new Blob(['MZ'], { type: 'application/x-msdownload' }), 'x.exe'); return fd;
+})(), U);
+assert.equal(badType.s, 400);
+
+assert.equal((await call('POST', `/api/chat/rooms/${idRoom}/messages`, { pesan: '' }, U)).s, 400);
+assert.equal((await call('POST', `/api/chat/rooms/${idRoom}/messages`, {}, U)).s, 400);
+
+const detailLampiran = await call('GET', `/api/chat/rooms/${idRoom}`, null, U);
+assert.equal(detailLampiran.j.messages.some((m) => m.tipe_pesan === 'image' && m.file_url), true);
+assert.equal(detailLampiran.j.messages.some((m) => m.tipe_pesan === 'file' && m.file_url), true);
+assert.equal(detailLampiran.j.messages.some((m) => (m.pesan || '').includes('meja lipatnya masih ada')), true); // chat teks lama aman
 
 // Verifikasi Alur COD (Cash on Delivery) dengan Kode Verifikasi Pertemuan
 // 1. Buat barang baru untuk COD
