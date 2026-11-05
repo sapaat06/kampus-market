@@ -96,13 +96,17 @@
     selectedFacs.clear();
   });
 
-  // Back button: aturan eksplisit filter-kos.html -> kos.html
-  document.getElementById('filterKosBackBtn')?.addEventListener('click', (e) => {
+  // Back button: kembali ke halaman asal (beranda atau kos), fallback beranda
+  const fromParam = new URLSearchParams(window.location.search).get('from');
+  const backTarget = fromParam === 'kos' ? '/kos.html' : '/beranda.html';
+  const backBtn = document.getElementById('filterKosBackBtn');
+  if (backBtn) backBtn.setAttribute('href', backTarget);
+  backBtn?.addEventListener('click', (e) => {
     e.preventDefault();
     if (typeof goBack === 'function') {
-      goBack('/kos.html', { forceFallback: true });
+      goBack(backTarget);
     } else {
-      window.location.href = '/kos.html';
+      window.location.href = backTarget;
     }
   });
 

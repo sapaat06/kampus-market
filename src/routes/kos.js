@@ -8,6 +8,55 @@ export const router = Router();
 
 const JENIS_KELAMIN = ['putra', 'putri', 'campur'];
 
+// Batas waktu pembayaran QRIS simulasi.
+const MENIT_BAYAR = 15;
+const expireBaru = () => new Date(Date.now() + MENIT_BAYAR * 60_000).toISOString();
+
+// Ubah status kamar milik satu pengajuan, lalu sinkronkan kamar_tersedia.
+async function ubahKamarPengajuan(pengajuan, status) {
+  const kosId = Number(pengajuan.kos_id || pengajuan.id_kos) || 1;
+  const kamarRaw = String(pengajuan.kamar || '').trim();
+  const cleanNo = kamarRaw.replace(/^Kamar\s*/i, '').trim();
+  const hanyaPending = status === 'available' ? "AND status = 'pending'" : '';
+
+  const r = await db.prepare(`
+    UPDATE kamar_kos SET status = ?
+    WHERE kos_id = ? ${hanyaPending}
+      AND (nomor_kamar = ? OR nama = ? OR nomor_kamar = ? OR replace(nomor_kamar, 'Kamar ', '') = ? OR nomor_kamar LIKE ?)
+  `).run(status, kosId, kamarRaw, kamarRaw, `Kamar ${cleanNo}`, cleanNo, `%${cleanNo}%`);
+
+  if (r.changes === 0) {
+    const dariStatus = status === 'booked' ? "IN ('pending', 'available', 'kosong')" : "= 'pending'";
+    await db.prepare(`
+      UPDATE kamar_kos SET status = ?
+      WHERE id = (SELECT id FROM kamar_kos WHERE kos_id = ? AND status ${dariStatus} LIMIT 1)
+    `).run(status, kosId);
+  }
+
+  await db.prepare(`
+    UPDATE kos SET kamar_tersedia = (SELECT COUNT(*) FROM kamar_kos WHERE kos_id = ? AND status IN ('available', 'kosong'))
+    WHERE id_kos = ?
+  `).run(kosId, kosId);
+}
+
+// Cek lazy: pengajuan unpaid yang lewat expire_at jadi expired dan kamarnya dilepas.
+async function kedaluwarsakanPengajuan() {
+  const rows = await db.prepare(`
+    SELECT * FROM pengajuan_sewa_kos
+    WHERE status_bayar = 'unpaid' AND expire_at IS NOT NULL AND expire_at <= ?
+  `).all(new Date().toISOString());
+
+  for (const p of rows) {
+    const r = await db.prepare(`
+      UPDATE pengajuan_sewa_kos SET status_bayar = 'expired', status = 'cancelled'
+      WHERE id_pengajuan = ? AND status_bayar = 'unpaid'
+    `).run(p.id_pengajuan);
+    if (r.changes === 0) continue;
+    try { await db.prepare("UPDATE pesanan SET status='cancelled' WHERE id_pesanan=?").run(p.id_pengajuan); } catch {}
+    await ubahKamarPengajuan(p, 'available');
+  }
+}
+
 // Public: daftar semua kos
 router.get('/kos', async (req, res) => {
   const tipe = req.query.tipe;
@@ -69,32 +118,11 @@ router.get('/kos/miliku', user, pemilikKost, async (_req, res) => {
 });
 
 // Pemilik kost: daftar pesanan masuk khusus untuk role Pemilik Kost
-router.get(['/pesanan-masuk', '/kos/pesanan-masuk'], async (req, res, next) => {
-  let uid = null;
-  const bearer = (req.get('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
-  const rawCookie = req.headers?.cookie || '';
-  let token = bearer;
-  if (!token) {
-    for (const part of rawCookie.split(';')) {
-      const [nama, ...val] = part.trim().split('=');
-      if (nama === 'km_token') token = val.join('=');
-    }
-  }
-  if (token) {
-    const tm = /^(\d{1,15})\.(\d{1,16})\.([0-9a-f]{64})$/.exec(token);
-    if (tm) uid = Number(tm[1]);
-  }
-
-  const pemilik_id = Number(req.query.pemilik_id ?? uid ?? 1);
-
-  if (uid) {
-    const userRow = await db.prepare('SELECT role FROM mahasiswa WHERE id_mahasiswa=?').get(uid);
-    if (userRow && userRow.role !== 'pemilik_kost' && userRow.role !== 'admin') {
-      return next(err(403, 'khusus pemilik kost'));
-    }
-  }
+router.get(['/pesanan-masuk', '/kos/pesanan-masuk'], user, pemilikKost, async (req, res) => {
+  const pemilik_id = Number(req.uid);
 
   // Query datanya menggunakan klausa: WHERE pemilik_id = ? AND status = 'pending'
+  await kedaluwarsakanPengajuan();
   const list = await db.prepare(`
     SELECT p.*,
            COALESCE(p.kos_id, p.id_kos) AS kos_id,
@@ -111,14 +139,25 @@ router.get(['/pesanan-masuk', '/kos/pesanan-masuk'], async (req, res, next) => {
 // Pemilik kost / antrean pengajuan sewa kos baru
 router.get(['/kos/pengajuan', '/kos/pengajuan/pending'], userOrAdmin, async (req, res) => {
   // Klausa query WHERE status = 'pending': jangan pernah me-return pesanan approved / selesai
-  const list = await db.prepare(
-    `SELECT * FROM pengajuan_sewa_kos WHERE status = 'pending' ORDER BY id_pengajuan DESC`
-  ).all();
+  await kedaluwarsakanPengajuan();
+  let list;
+  if (req.isAdmin) {
+    list = await db.prepare(
+      `SELECT * FROM pengajuan_sewa_kos WHERE status = 'pending' ORDER BY id_pengajuan DESC`
+    ).all();
+  } else {
+    list = await db.prepare(
+      `SELECT * FROM pengajuan_sewa_kos
+       WHERE status = 'pending' AND (pemilik_id = ? OR id_pemilik = ?)
+       ORDER BY id_pengajuan DESC`
+    ).all(req.uid, req.uid);
+  }
   res.json(list);
 });
 
 // Mahasiswa / Pengguna: ajukan sewa kos baru
-router.post(['/sewa', '/kos/sewa', '/kos/pengajuan'], async (req, res) => {
+router.post(['/sewa', '/kos/sewa', '/kos/pengajuan'], user, async (req, res) => {
+  await kedaluwarsakanPengajuan();
   const kos_id = Number(req.body?.kos_id ?? req.body?.id_kos);
   if (!kos_id || !Number.isInteger(kos_id) || kos_id <= 0) {
     throw err(400, 'kos_id wajib diisi dan valid');
@@ -140,34 +179,15 @@ router.post(['/sewa', '/kos/sewa', '/kos/pengajuan'], async (req, res) => {
   let email_penyewa = req.body?.email_penyewa ? str(req.body.email_penyewa, 'email_penyewa', 100) : null;
   let avatar_penyewa = req.body?.avatar_penyewa || '/img/avatar-rina-figma.png';
 
-  // Ambil user_id (mahasiswa) yang mengajukan sewa
-  let user_id = req.uid;
-  if (!user_id) {
-    const bearer = (req.get('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
-    const rawCookie = req.headers?.cookie || '';
-    let token = bearer;
-    if (!token) {
-      for (const part of rawCookie.split(';')) {
-        const [nama, ...val] = part.trim().split('=');
-        if (nama === 'km_token') token = val.join('=');
-      }
-    }
-    if (token) {
-      const tm = /^(\d{1,15})\.(\d{1,16})\.([0-9a-f]{64})$/.exec(token);
-      if (tm) user_id = Number(tm[1]);
-    }
-  }
-  if (!user_id && req.body?.user_id) user_id = Number(req.body.user_id);
-  if (!user_id && req.body?.id_mahasiswa) user_id = Number(req.body.id_mahasiswa);
-  if (!user_id) user_id = 1;
+  // Ambil user_id (mahasiswa) yang mengajukan sewa (dari sesi terautentikasi)
+  const user_id = Number(req.uid);
+  if (!user_id) throw err(401, 'login dulu');
 
-  if (user_id) {
-    const userRow = await db.prepare('SELECT nama, email, foto FROM mahasiswa WHERE id_mahasiswa=?').get(user_id);
-    if (userRow) {
-      nama_penyewa = userRow.nama || nama_penyewa;
-      email_penyewa = userRow.email || email_penyewa;
-      if (userRow.foto) avatar_penyewa = userRow.foto;
-    }
+  const userRow = await db.prepare('SELECT nama, email, foto FROM mahasiswa WHERE id_mahasiswa=?').get(user_id);
+  if (userRow) {
+    nama_penyewa = userRow.nama || nama_penyewa;
+    email_penyewa = userRow.email || email_penyewa;
+    if (userRow.foto) avatar_penyewa = userRow.foto;
   }
 
   if (!nama_penyewa) nama_penyewa = 'Mahasiswa ITG';
@@ -177,6 +197,7 @@ router.post(['/sewa', '/kos/sewa', '/kos/pengajuan'], async (req, res) => {
   const dEnd = new Date(dStart);
   dEnd.setMonth(dEnd.getMonth() + durasi_bulan);
   const periode = req.body?.periode || `${dStart.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} – ${dEnd.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+  const expire_at = expireBaru();
 
   // Transaksi atomik: Validasi ketersediaan kamar, ubah status jadi pending, dan insert pesanan
   const id_pengajuan = await tx(async () => {
@@ -219,13 +240,13 @@ router.post(['/sewa', '/kos/sewa', '/kos/pengajuan'], async (req, res) => {
       INSERT INTO pengajuan_sewa_kos (
         id_kos, id_pemilik, kos_id, pemilik_id, user_id,
         nama_penyewa, email_penyewa, avatar_penyewa,
-        nama_kos, kamar, periode, durasi_bulan, total_harga, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+        nama_kos, kamar, periode, durasi_bulan, total_harga, status, status_bayar, expire_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?)
     `);
     const r = await stmt.run(
       kos_id, pemilik_id, kos_id, pemilik_id, user_id,
       nama_penyewa, email_penyewa, avatar_penyewa,
-      nama_kos, kamar, periode, durasi_bulan, total_harga
+      nama_kos, kamar, periode, durasi_bulan, total_harga, expire_at
     );
     const insId = Number(r.lastInsertRowid);
 
@@ -260,8 +281,60 @@ router.post(['/sewa', '/kos/sewa', '/kos/pengajuan'], async (req, res) => {
     durasi_bulan,
     total_harga,
     status: 'pending',
+    status_bayar: 'unpaid',
+    expire_at,
     periode,
     pesan: 'Pengajuan sewa kos berhasil dikirim dan menunggu konfirmasi pemilik.'
+  });
+});
+
+// Mahasiswa: simulasi pembayaran QRIS (dummy, tanpa gateway asli)
+router.post('/kos/pengajuan/:id/simulasi-bayar', user, async (req, res) => {
+  const id = posInt(Number(req.params.id), 'id_pengajuan');
+  await kedaluwarsakanPengajuan();
+
+  const p = await db.prepare('SELECT * FROM pengajuan_sewa_kos WHERE id_pengajuan=?').get(id);
+  if (!p) throw err(404, 'pengajuan tidak ditemukan');
+  if (Number(p.user_id || 1) !== Number(req.uid)) throw err(403, 'pengajuan ini bukan milik Anda');
+
+  // Idempotent: pembayaran yang sudah lunas tetap mengembalikan status paid.
+  if (p.status_bayar === 'paid') {
+    return res.json({
+      ok: true,
+      id_pengajuan: id,
+      status_bayar: 'paid',
+      sudah_dibayar: true,
+      total_harga: p.total_harga,
+      paid_at: new Date().toISOString(),
+      pesan: 'Pembayaran simulasi sudah tercatat sebelumnya.'
+    });
+  }
+
+  if (p.status_bayar === 'expired' || (p.expire_at && p.expire_at <= new Date().toISOString())) {
+    throw err(410, 'waktu pembayaran sudah habis');
+  }
+  if (p.status === 'rejected' || p.status === 'cancelled') {
+    throw err(409, 'pengajuan sudah tidak aktif');
+  }
+
+  const paid_at = new Date().toISOString();
+  await tx(async () => {
+    const r = await db.prepare(`
+      UPDATE pengajuan_sewa_kos SET status_bayar='paid'
+      WHERE id_pengajuan=? AND status_bayar='unpaid'
+    `).run(id);
+    if (r.changes > 0) await ubahKamarPengajuan(p, 'booked');
+  });
+
+  const after = await db.prepare('SELECT status_bayar FROM pengajuan_sewa_kos WHERE id_pengajuan=?').get(id);
+  res.json({
+    ok: true,
+    id_pengajuan: id,
+    status_bayar: after?.status_bayar || 'paid',
+    sudah_dibayar: false,
+    total_harga: p.total_harga,
+    paid_at,
+    pesan: 'Pembayaran simulasi berhasil. Kamar telah dikunci.'
   });
 });
 
@@ -273,6 +346,9 @@ router.all(['/kos/pengajuan/:id/terima', '/kos/pengajuan/:id/approve', '/pesanan
     // Ambil data pengajuan / pesanan untuk mengetahui kos_id dan nomor kamar yang dipesan
     const pengajuan = await db.prepare('SELECT * FROM pengajuan_sewa_kos WHERE id_pengajuan=?').get(id)
                    || await db.prepare('SELECT * FROM pesanan WHERE id_pesanan=?').get(id);
+
+    const isOwner = Boolean(req.uid && pengajuan && (Number(pengajuan.id_pemilik) === Number(req.uid) || Number(pengajuan.pemilik_id) === Number(req.uid)));
+    if (!req.isAdmin && !isOwner) throw err(403, 'Hanya pemilik kos atau admin yang dapat menyetujui pengajuan ini');
 
     await db.prepare("UPDATE pengajuan_sewa_kos SET status='approved' WHERE id_pengajuan=?").run(id);
     try {
@@ -333,6 +409,9 @@ router.all(['/kos/pengajuan/:id/tolak', '/kos/pengajuan/:id/reject', '/pesanan-m
     const pengajuan = await db.prepare('SELECT * FROM pengajuan_sewa_kos WHERE id_pengajuan=?').get(id)
                    || await db.prepare('SELECT * FROM pesanan WHERE id_pesanan=?').get(id);
 
+    const isOwner = Boolean(req.uid && pengajuan && (Number(pengajuan.id_pemilik) === Number(req.uid) || Number(pengajuan.pemilik_id) === Number(req.uid)));
+    if (!req.isAdmin && !isOwner) throw err(403, 'Hanya pemilik kos atau admin yang dapat menolak pengajuan ini');
+
     await db.prepare("UPDATE pengajuan_sewa_kos SET status='rejected' WHERE id_pengajuan=?").run(id);
     try {
       await db.prepare("UPDATE pesanan SET status='rejected' WHERE id_pesanan=?").run(id);
@@ -386,14 +465,18 @@ router.get(['/kos/:id/kamar', '/api/kos/:id/kamar', '/kamar-kos/:id'], async (re
   const kosId = posInt(Number(req.params.id), 'id_kos');
   let rooms = await db.prepare('SELECT * FROM kamar_kos WHERE kos_id=? ORDER BY id ASC').all(kosId);
   if (rooms.length === 0) {
-    const k = await db.prepare('SELECT kamar_tersedia FROM kos WHERE id_kos=?').get(kosId);
-    const n = Math.max(1, Number(k?.kamar_tersedia || 2));
-    const stmtKamar = db.prepare('INSERT INTO kamar_kos (kos_id, property_id, nomor_kamar, nama, tipe, ukuran, status) VALUES (?, ?, ?, ?, ?, ?, ?)');
-    for (let i = 1; i <= n; i++) {
-      const roomName = `Kamar ${String(i).padStart(2, '0')}`;
-      await stmtKamar.run(kosId, kosId, roomName, roomName, 'Standar', '3 × 3 m', 'available');
-    }
-    rooms = await db.prepare('SELECT * FROM kamar_kos WHERE kos_id=? ORDER BY id ASC').all(kosId);
+    rooms = await tx(async () => {
+      const again = await db.prepare('SELECT * FROM kamar_kos WHERE kos_id=? ORDER BY id ASC').all(kosId);
+      if (again.length > 0) return again;
+      const k = await db.prepare('SELECT kamar_tersedia FROM kos WHERE id_kos=?').get(kosId);
+      const n = Math.max(1, Number(k?.kamar_tersedia || 2));
+      const stmtKamar = db.prepare('INSERT INTO kamar_kos (kos_id, property_id, nomor_kamar, nama, tipe, ukuran, status) VALUES (?, ?, ?, ?, ?, ?, ?)');
+      for (let i = 1; i <= n; i++) {
+        const roomName = `Kamar ${String(i).padStart(2, '0')}`;
+        await stmtKamar.run(kosId, kosId, roomName, roomName, 'Standar', '3 × 3 m', 'available');
+      }
+      return await db.prepare('SELECT * FROM kamar_kos WHERE kos_id=? ORDER BY id ASC').all(kosId);
+    });
   }
   res.json(rooms);
 });
@@ -406,43 +489,48 @@ router.post(['/kos/:id/kamar', '/api/kos/:id/kamar'], userOrAdmin, async (req, r
   const ukuran = optStr(req.body?.ukuran, 'ukuran', 50) || '3 × 3 m';
   const status = 'available';
 
-  const r = await db.prepare('INSERT INTO kamar_kos (kos_id, property_id, nomor_kamar, nama, tipe, ukuran, status) VALUES (?, ?, ?, ?, ?, ?, ?)').run(kosId, kosId, nomorKamar, nomorKamar, tipe, ukuran, status);
-
-  await db.prepare(`
-    UPDATE kos 
-    SET kamar_tersedia = (SELECT COUNT(*) FROM kamar_kos WHERE kos_id=? AND status IN ('available', 'kosong')) 
-    WHERE id_kos=?
-  `).run(kosId, kosId);
-
-  const inserted = await db.prepare('SELECT * FROM kamar_kos WHERE id=?').get(r.lastInsertRowid);
+  const inserted = await tx(async () => {
+    const k = await db.prepare('SELECT id_pemilik FROM kos WHERE id_kos=?').get(kosId);
+    if (!k) throw err(404, 'kos tidak ada');
+    if (!req.isAdmin && Number(k.id_pemilik) !== Number(req.uid)) throw err(403, 'bukan kos milik Anda');
+    const r = await db.prepare('INSERT INTO kamar_kos (kos_id, property_id, nomor_kamar, nama, tipe, ukuran, status) VALUES (?, ?, ?, ?, ?, ?, ?)').run(kosId, kosId, nomorKamar, nomorKamar, tipe, ukuran, status);
+    await db.prepare(`
+      UPDATE kos 
+      SET kamar_tersedia = (SELECT COUNT(*) FROM kamar_kos WHERE kos_id=? AND status IN ('available', 'kosong')) 
+      WHERE id_kos=?
+    `).run(kosId, kosId);
+    return await db.prepare('SELECT * FROM kamar_kos WHERE id=?').get(r.lastInsertRowid);
+  });
   res.status(201).json(inserted);
 });
 
 // Pemilik kost / Admin: update status kamar (available <-> booked)
 router.patch(['/kamar-kos/:id/status', '/kos/kamar/:id/status'], userOrAdmin, async (req, res) => {
   const idKamar = posInt(Number(req.params.id), 'id_kamar');
-  const targetRoom = await db.prepare('SELECT * FROM kamar_kos WHERE id=?').get(idKamar);
-  if (!targetRoom) throw err(404, 'kamar tidak ditemukan');
+  const updated = await tx(async () => {
+    const targetRoom = await db.prepare('SELECT * FROM kamar_kos WHERE id=?').get(idKamar);
+    if (!targetRoom) throw err(404, 'kamar tidak ditemukan');
+    const k = await db.prepare('SELECT id_pemilik FROM kos WHERE id_kos=?').get(targetRoom.kos_id);
+    if (!req.isAdmin && (!k || Number(k.id_pemilik) !== Number(req.uid))) throw err(403, 'bukan kos milik Anda');
 
-  let newStatus = req.body?.status;
-  if (!newStatus) {
-    newStatus = (targetRoom.status === 'available' || targetRoom.status === 'kosong') ? 'booked' : 'available';
-  } else {
-    newStatus = oneOf(newStatus, 'status', ['available', 'booked', 'pending', 'kosong', 'terisi']);
-    if (newStatus === 'kosong') newStatus = 'available';
-    if (newStatus === 'terisi') newStatus = 'booked';
-  }
+    let newStatus = req.body?.status;
+    if (!newStatus) {
+      newStatus = (targetRoom.status === 'available' || targetRoom.status === 'kosong') ? 'booked' : 'available';
+    } else {
+      newStatus = oneOf(newStatus, 'status', ['available', 'booked', 'pending', 'kosong', 'terisi']);
+      if (newStatus === 'kosong') newStatus = 'available';
+      if (newStatus === 'terisi') newStatus = 'booked';
+    }
 
-  await db.prepare('UPDATE kamar_kos SET status=? WHERE id=?').run(newStatus, idKamar);
-
-  // Update kamar_tersedia pada kos
-  await db.prepare(`
-    UPDATE kos 
-    SET kamar_tersedia = (SELECT COUNT(*) FROM kamar_kos WHERE kos_id=? AND status IN ('available', 'kosong')) 
-    WHERE id_kos=?
-  `).run(targetRoom.kos_id, targetRoom.kos_id);
-
-  const updated = await db.prepare('SELECT * FROM kamar_kos WHERE id=?').get(idKamar);
+    await db.prepare('UPDATE kamar_kos SET status=? WHERE id=?').run(newStatus, idKamar);
+    // Update kamar_tersedia pada kos
+    await db.prepare(`
+      UPDATE kos 
+      SET kamar_tersedia = (SELECT COUNT(*) FROM kamar_kos WHERE kos_id=? AND status IN ('available', 'kosong')) 
+      WHERE id_kos=?
+    `).run(targetRoom.kos_id, targetRoom.kos_id);
+    return await db.prepare('SELECT * FROM kamar_kos WHERE id=?').get(idKamar);
+  });
   res.json({ ok: true, kamar: updated });
 });
 

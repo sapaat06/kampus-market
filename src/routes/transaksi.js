@@ -115,6 +115,9 @@ router.get('/transaksi/:id', userOrAdmin, async (req, res) => {
     `).get(idPengajuan);
 
     if (pKos) {
+      const isBuyer = Boolean(req.uid && Number(pKos.user_id) === Number(req.uid));
+      const isOwner = Boolean(req.uid && (Number(pKos.id_pemilik) === Number(req.uid) || Number(pKos.pemilik_id) === Number(req.uid)));
+      if (!req.isAdmin && !isBuyer && !isOwner) throw err(403, 'Anda tidak memiliki akses ke transaksi ini');
       return res.json({
         id_transaksi: `KST-${pKos.id_pengajuan}`,
         id_pengajuan: pKos.id_pengajuan,
@@ -133,8 +136,9 @@ router.get('/transaksi/:id', userOrAdmin, async (req, res) => {
         nama_penjual: pKos.nama_pemilik || 'Pemilik Kos',
         no_hp_penjual: pKos.no_hp_pemilik || '08123456789',
         is_kos: true,
-        is_pembeli: true,
-        is_penjual: false
+        is_pembeli: isBuyer,
+        is_penjual: isOwner,
+        is_admin: Boolean(req.isAdmin)
       });
     }
   }
@@ -177,56 +181,61 @@ router.all(['/transaksi/:id/approve', '/transaksi/:id/terima', '/transaksi/:id/a
   if (req.method !== 'PUT' && req.method !== 'PATCH' && req.method !== 'POST') return next();
   const id = posInt(Number(req.params.id), 'id_transaksi');
 
-  const userObj = req.uid ? await db.prepare('SELECT role FROM mahasiswa WHERE id_mahasiswa=?').get(req.uid) : null;
   const isPengajuan = await db.prepare('SELECT * FROM pengajuan_sewa_kos WHERE id_pengajuan=?').get(id);
+  const isPesanan = !isPengajuan ? await db.prepare('SELECT * FROM pesanan WHERE id_pesanan=?').get(id) : null;
 
-  // Jika ini pengajuan sewa kos atau akun pemilik kost
-  if (isPengajuan || userObj?.role === 'pemilik_kost') {
-    await db.prepare("UPDATE pengajuan_sewa_kos SET status='approved' WHERE id_pengajuan=? OR id_kos=?").run(id, id);
-    try {
-      await db.prepare("UPDATE pesanan SET status='approved' WHERE id_pesanan=? OR kos_id=?").run(id, id);
-    } catch (_e) {}
-    try {
-      await db.prepare("UPDATE transaksi SET status='approved' WHERE id_transaksi=?").run(id);
-    } catch (_e) {}
+  if (isPengajuan || isPesanan) {
+    const p0 = isPengajuan || isPesanan;
+    const isOwner = Boolean(req.uid && (Number(p0.id_pemilik) === Number(req.uid) || Number(p0.pemilik_id) === Number(req.uid)));
+    if (!req.isAdmin && !isOwner) throw err(403, 'Hanya pemilik kos atau admin yang dapat menyetujui pengajuan ini');
 
-    // Kunci kamar spesifik di tabel kamar_kos -> 'booked'
-    const p = isPengajuan || await db.prepare('SELECT * FROM pesanan WHERE id_pesanan=? OR kos_id=?').get(id, id);
-    if (p) {
-      const kosId = p.kos_id || p.id_kos;
-      const kamarRaw = String(p.kamar || '').trim();
-      const cleanNo = kamarRaw.replace(/^Kamar\s*/i, '').trim();
+    await tx(async () => {
+      await db.prepare("UPDATE pengajuan_sewa_kos SET status='approved' WHERE id_pengajuan=?").run(id);
       try {
-        let rKamar = await db.prepare(`
-          UPDATE kamar_kos 
-          SET status = 'booked' 
-          WHERE kos_id = ? 
-            AND (
-              nomor_kamar = ? 
-              OR nama = ? 
-              OR nomor_kamar = ? 
-              OR replace(nomor_kamar, 'Kamar ', '') = ?
-              OR nomor_kamar LIKE ?
-            )
-        `).run(kosId, kamarRaw, kamarRaw, `Kamar ${cleanNo}`, cleanNo, `%${cleanNo}%`);
+        await db.prepare("UPDATE pesanan SET status='approved' WHERE id_pesanan=?").run(id);
+      } catch (_e) {}
+      try {
+        await db.prepare("UPDATE transaksi SET status='approved' WHERE id_transaksi=?").run(id);
+      } catch (_e) {}
 
-        if (rKamar.changes === 0) {
-          await db.prepare(`
+      // Kunci kamar spesifik di tabel kamar_kos -> 'booked'
+      const p = p0;
+      if (p) {
+        const kosId = p.kos_id || p.id_kos;
+        const kamarRaw = String(p.kamar || '').trim();
+        const cleanNo = kamarRaw.replace(/^Kamar\s*/i, '').trim();
+        try {
+          let rKamar = await db.prepare(`
             UPDATE kamar_kos 
             SET status = 'booked' 
-            WHERE id = (
-              SELECT id FROM kamar_kos WHERE kos_id = ? AND status IN ('pending', 'available', 'kosong') LIMIT 1
-            )
-          `).run(kosId);
-        }
+            WHERE kos_id = ? 
+              AND (
+                nomor_kamar = ? 
+                OR nama = ? 
+                OR nomor_kamar = ? 
+                OR replace(nomor_kamar, 'Kamar ', '') = ?
+                OR nomor_kamar LIKE ?
+              )
+          `).run(kosId, kamarRaw, kamarRaw, `Kamar ${cleanNo}`, cleanNo, `%${cleanNo}%`);
 
-        await db.prepare(`
-          UPDATE kos 
-          SET kamar_tersedia = (SELECT COUNT(*) FROM kamar_kos WHERE kos_id = ? AND status IN ('available', 'kosong')) 
-          WHERE id_kos = ?
-        `).run(kosId, kosId);
-      } catch (_e) {}
-    }
+          if (rKamar.changes === 0) {
+            await db.prepare(`
+              UPDATE kamar_kos 
+              SET status = 'booked' 
+              WHERE id = (
+                SELECT id FROM kamar_kos WHERE kos_id = ? AND status IN ('pending', 'available', 'kosong') LIMIT 1
+              )
+            `).run(kosId);
+          }
+
+          await db.prepare(`
+            UPDATE kos 
+            SET kamar_tersedia = (SELECT COUNT(*) FROM kamar_kos WHERE kos_id = ? AND status IN ('available', 'kosong')) 
+            WHERE id_kos = ?
+          `).run(kosId, kosId);
+        } catch (_e) {}
+      }
+    });
 
     return res.status(200).json({
       ok: true,
@@ -253,55 +262,61 @@ router.all(['/transaksi/:id/reject', '/transaksi/:id/tolak'], userOrAdmin, async
   const id = posInt(Number(req.params.id), 'id_transaksi');
   const alasan = str(req.body?.alasan || req.body?.alasan_penolakan || 'Ditolak oleh pemilik', 'alasan', 500);
 
-  const userObj = req.uid ? await db.prepare('SELECT role FROM mahasiswa WHERE id_mahasiswa=?').get(req.uid) : null;
   const isPengajuan = await db.prepare('SELECT * FROM pengajuan_sewa_kos WHERE id_pengajuan=?').get(id);
+  const isPesanan = !isPengajuan ? await db.prepare('SELECT * FROM pesanan WHERE id_pesanan=?').get(id) : null;
 
-  if (isPengajuan || userObj?.role === 'pemilik_kost') {
-    await db.prepare("UPDATE pengajuan_sewa_kos SET status='rejected' WHERE id_pengajuan=? OR id_kos=?").run(id, id);
-    try {
-      await db.prepare("UPDATE pesanan SET status='rejected' WHERE id_pesanan=? OR kos_id=?").run(id, id);
-    } catch (_e) {}
-    try {
-      await db.prepare("UPDATE transaksi SET status='rejected', alasan_batal=? WHERE id_transaksi=?").run(alasan, id);
-    } catch (_e) {}
+  if (isPengajuan || isPesanan) {
+    const p0 = isPengajuan || isPesanan;
+    const isOwner = Boolean(req.uid && (Number(p0.id_pemilik) === Number(req.uid) || Number(p0.pemilik_id) === Number(req.uid)));
+    if (!req.isAdmin && !isOwner) throw err(403, 'Hanya pemilik kos atau admin yang dapat menolak pengajuan ini');
 
-    // Kembalikan status kamar jadi available
-    const p = isPengajuan || await db.prepare('SELECT * FROM pesanan WHERE id_pesanan=? OR kos_id=?').get(id, id);
-    if (p) {
-      const kosId = p.kos_id || p.id_kos;
-      const kamarRaw = String(p.kamar || '').trim();
-      const cleanNo = kamarRaw.replace(/^Kamar\s*/i, '').trim();
+    await tx(async () => {
+      await db.prepare("UPDATE pengajuan_sewa_kos SET status='rejected' WHERE id_pengajuan=?").run(id);
       try {
-        let rKamar = await db.prepare(`
-          UPDATE kamar_kos 
-          SET status = 'available' 
-          WHERE kos_id = ? 
-            AND (
-              nomor_kamar = ? 
-              OR nama = ? 
-              OR nomor_kamar = ? 
-              OR replace(nomor_kamar, 'Kamar ', '') = ?
-              OR nomor_kamar LIKE ?
-            )
-        `).run(kosId, kamarRaw, kamarRaw, `Kamar ${cleanNo}`, cleanNo, `%${cleanNo}%`);
+        await db.prepare("UPDATE pesanan SET status='rejected' WHERE id_pesanan=?").run(id);
+      } catch (_e) {}
+      try {
+        await db.prepare("UPDATE transaksi SET status='rejected', alasan_batal=? WHERE id_transaksi=?").run(alasan, id);
+      } catch (_e) {}
 
-        if (rKamar.changes === 0) {
-          await db.prepare(`
+      // Kembalikan status kamar jadi available
+      const p = p0;
+      if (p) {
+        const kosId = p.kos_id || p.id_kos;
+        const kamarRaw = String(p.kamar || '').trim();
+        const cleanNo = kamarRaw.replace(/^Kamar\s*/i, '').trim();
+        try {
+          let rKamar = await db.prepare(`
             UPDATE kamar_kos 
             SET status = 'available' 
-            WHERE id = (
-              SELECT id FROM kamar_kos WHERE kos_id = ? AND status = 'pending' LIMIT 1
-            )
-          `).run(kosId);
-        }
+            WHERE kos_id = ? 
+              AND (
+                nomor_kamar = ? 
+                OR nama = ? 
+                OR nomor_kamar = ? 
+                OR replace(nomor_kamar, 'Kamar ', '') = ?
+                OR nomor_kamar LIKE ?
+              )
+          `).run(kosId, kamarRaw, kamarRaw, `Kamar ${cleanNo}`, cleanNo, `%${cleanNo}%`);
 
-        await db.prepare(`
-          UPDATE kos 
-          SET kamar_tersedia = (SELECT COUNT(*) FROM kamar_kos WHERE kos_id = ? AND status IN ('available', 'kosong')) 
-          WHERE id_kos = ?
-        `).run(kosId, kosId);
-      } catch (_e) {}
-    }
+          if (rKamar.changes === 0) {
+            await db.prepare(`
+              UPDATE kamar_kos 
+              SET status = 'available' 
+              WHERE id = (
+                SELECT id FROM kamar_kos WHERE kos_id = ? AND status = 'pending' LIMIT 1
+              )
+            `).run(kosId);
+          }
+
+          await db.prepare(`
+            UPDATE kos 
+            SET kamar_tersedia = (SELECT COUNT(*) FROM kamar_kos WHERE kos_id = ? AND status IN ('available', 'kosong')) 
+            WHERE id_kos = ?
+          `).run(kosId, kosId);
+        } catch (_e) {}
+      }
+    });
 
     return res.status(200).json({
       ok: true,

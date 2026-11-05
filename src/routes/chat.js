@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { db } from '../db.js';
+import { db, tx } from '../db.js';
 import { user } from '../auth.js';
 import { err, posInt, str } from '../util.js';
 
@@ -39,15 +39,21 @@ async function cariAtauBuatRoom(uid, body = {}, query = {}) {
     if (!b) throw err(404, 'Barang tidak ditemukan');
 
     // Cari akun mahasiswa dari email penjual
-    let mhsPenjual = await db.prepare('SELECT id_mahasiswa FROM mahasiswa WHERE email = ?').get(b.email);
-    if (!mhsPenjual) {
-      const r = await db.prepare(`
-        INSERT INTO mahasiswa (nama, email, password_hash, no_hp, kampus, role)
-        VALUES (?, ?, 'seed_account', ?, 'ITG Garut', 'pelanggan')
-      `).run(b.nama_penjual, b.email, b.no_hp || '081234567890');
-      mhsPenjual = { id_mahasiswa: Number(r.lastInsertRowid) };
-    }
-    id_penjual = mhsPenjual.id_mahasiswa;
+    id_penjual = await tx(async () => {
+      let mhsPenjual = await db.prepare('SELECT id_mahasiswa FROM mahasiswa WHERE email = ?').get(b.email);
+      if (mhsPenjual) return mhsPenjual.id_mahasiswa;
+      try {
+        const r = await db.prepare(`
+          INSERT INTO mahasiswa (nama, email, password_hash, no_hp, kampus, role)
+          VALUES (?, ?, 'seed_account', ?, 'ITG Garut', 'pelanggan')
+        `).run(b.nama_penjual, b.email, b.no_hp || '081234567890');
+        return Number(r.lastInsertRowid);
+      } catch (_e) {
+        mhsPenjual = await db.prepare('SELECT id_mahasiswa FROM mahasiswa WHERE email = ?').get(b.email);
+        if (mhsPenjual) return mhsPenjual.id_mahasiswa;
+        throw _e;
+      }
+    });
   } else if (tipe === 'kos') {
     if (!id_ref) throw err(400, 'id_referensi kos diperlukan');
     const k = await db.prepare('SELECT id_kos, id_pemilik, nama_kos FROM kos WHERE id_kos = ?').get(id_ref);
@@ -63,22 +69,22 @@ async function cariAtauBuatRoom(uid, body = {}, query = {}) {
     throw err(400, 'Anda adalah pemilik dari postingan ini');
   }
 
-  // Cek apakah room sudah ada
-  let room = await db.prepare(`
-    SELECT * FROM chat_rooms
-    WHERE ((id_pembeli = ? AND id_penjual = ?) OR (id_pembeli = ? AND id_penjual = ?))
-      AND tipe_referensi = ?
-      AND (id_referensi = ? OR (id_referensi IS NULL AND ? IS NULL))
-    LIMIT 1
-  `).get(uid, id_penjual, id_penjual, uid, tipe, id_ref, id_ref);
-
-  if (!room) {
+  // Cek apakah room sudah ada (atomik untuk kurangi duplikasi race)
+  const room = await tx(async () => {
+    let r0 = await db.prepare(`
+      SELECT * FROM chat_rooms
+      WHERE ((id_pembeli = ? AND id_penjual = ?) OR (id_pembeli = ? AND id_penjual = ?))
+        AND tipe_referensi = ?
+        AND (id_referensi = ? OR (id_referensi IS NULL AND ? IS NULL))
+      LIMIT 1
+    `).get(uid, id_penjual, id_penjual, uid, tipe, id_ref, id_ref);
+    if (r0) return r0;
     const r = await db.prepare(`
       INSERT INTO chat_rooms (id_pembeli, id_penjual, tipe_referensi, id_referensi)
       VALUES (?, ?, ?, ?)
     `).run(uid, id_penjual, tipe, id_ref);
-    room = await db.prepare('SELECT * FROM chat_rooms WHERE id_room = ?').get(Number(r.lastInsertRowid));
-  }
+    return await db.prepare('SELECT * FROM chat_rooms WHERE id_room = ?').get(Number(r.lastInsertRowid));
+  });
 
   return room;
 }
@@ -232,15 +238,15 @@ const handleSendMessage = async (req, res) => {
   const text = str(req.body?.pesan || req.body?.message || req.body?.text, 'pesan', 2000).trim();
   if (!text) throw err(400, 'Pesan tidak boleh kosong');
 
-  const r = await db.prepare(`
-    INSERT INTO chat_messages (id_room, id_pengirim, pesan)
-    VALUES (?, ?, ?)
-  `).run(id_room, req.uid, text);
-
-  // Perbarui updated_at room agar naik ke urutan paling atas di Inbox
-  await db.prepare('UPDATE chat_rooms SET updated_at = CURRENT_TIMESTAMP WHERE id_room = ?').run(id_room);
-
-  const message = await db.prepare('SELECT * FROM chat_messages WHERE id_pesan = ?').get(Number(r.lastInsertRowid));
+  const message = await tx(async () => {
+    const r = await db.prepare(`
+      INSERT INTO chat_messages (id_room, id_pengirim, pesan)
+      VALUES (?, ?, ?)
+    `).run(id_room, req.uid, text);
+    // Perbarui updated_at room agar naik ke urutan paling atas di Inbox
+    await db.prepare('UPDATE chat_rooms SET updated_at = CURRENT_TIMESTAMP WHERE id_room = ?').run(id_room);
+    return await db.prepare('SELECT * FROM chat_messages WHERE id_pesan = ?').get(Number(r.lastInsertRowid));
+  });
 
   res.status(201).json(denganSenderId(message));
 };

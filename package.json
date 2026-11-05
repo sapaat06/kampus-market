@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "start": "node --env-file-if-exists=.env src/server.js",
+    "migrate": "node --env-file-if-exists=.env migrate.js",
     "seed": "node --env-file-if-exists=.env seed.js",
     "test": "node test/api.test.js"
   },
   "engines": {
-    "node": ">=22.13"
+    "node": "22.x"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

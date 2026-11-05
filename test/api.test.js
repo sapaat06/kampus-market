@@ -3,7 +3,8 @@ process.env.TURSO_DATABASE_URL = ':memory:';
 process.env.ADMIN_KEY = 'k';
 import assert from 'node:assert/strict';
 const { app } = await import('../src/server.js');
-const { db } = await import('../src/db.js');
+const { db, initDb } = await import('../src/db.js');
+await initDb(); // migrasi DB in-memory sebelum tes (initDb tidak lagi auto-run di module level)
 const { user } = await import('../src/auth.js');
 const { limit, resetLimits } = await import('../src/limit.js');
 
@@ -202,10 +203,12 @@ assert.match(loginDitolak.j.error, /ditolak oleh admin/i);
 await db.prepare("UPDATE mahasiswa SET status_verifikasi='terverifikasi' WHERE id_mahasiswa=?").run(listMhs.j[0].id_mahasiswa);
 
 // uji statistik admin dinamis
-const statsRes = await call('GET', '/api/admin/stats');
+const statsRes = await call('GET', '/api/admin/stats', null, A);
 assert.equal(statsRes.s, 200);
 assert.equal(typeof statsRes.j.total_users, 'number');
 assert.equal(typeof statsRes.j.verified_users, 'number');
+const statsTanpaAuth = await call('GET', '/api/admin/stats');
+assert.equal(statsTanpaAuth.s, 403);
 
 // uji blokir / suspend akun (banned)
 const banRes = await call('PATCH', `/api/mahasiswa/${listMhs.j[0].id_mahasiswa}/ban`, { is_banned: true }, A);

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { db } from '../db.js';
+import { db, tx } from '../db.js';
 import { err, str, optStr, oneOf, posInt, haversineDistance } from '../util.js';
 import { user, admin, userOrAdmin } from '../auth.js';
 import { upload, simpanFotosCloudinary } from '../upload.js';
@@ -51,12 +51,19 @@ router.post('/barang', userOrAdmin, upload.array('foto', 5), async (req, res) =>
   let id_penjual = req.body?.id_penjual ? posInt(Number(req.body.id_penjual), 'id_penjual') : null;
   if (!id_penjual && req.uid) {
     const m = await db.prepare('SELECT nama, email, no_hp FROM mahasiswa WHERE id_mahasiswa=?').get(req.uid);
-    let p = m ? await db.prepare('SELECT id_penjual FROM penjual WHERE email=?').get(m.email) : null;
-    if (!p && m) {
-      const rP = await db.prepare('INSERT INTO penjual (nama, email, no_hp) VALUES (?,?,?)').run(m.nama, m.email, m.no_hp);
-      id_penjual = Number(rP.lastInsertRowid);
-    } else if (p) {
-      id_penjual = p.id_penjual;
+    if (m) {
+      id_penjual = await tx(async () => {
+        let p = await db.prepare('SELECT id_penjual FROM penjual WHERE email=?').get(m.email);
+        if (p) return p.id_penjual;
+        try {
+          const rP = await db.prepare('INSERT INTO penjual (nama, email, no_hp) VALUES (?,?,?)').run(m.nama, m.email, m.no_hp);
+          return Number(rP.lastInsertRowid);
+        } catch (_e) {
+          p = await db.prepare('SELECT id_penjual FROM penjual WHERE email=?').get(m.email);
+          if (p) return p.id_penjual;
+          throw _e;
+        }
+      });
     }
   }
   if (!id_penjual) id_penjual = 1;
@@ -83,13 +90,18 @@ router.post('/barang', userOrAdmin, upload.array('foto', 5), async (req, res) =>
     if (!cleanKategoriLain) {
       throw err(400, 'kategori_lain harus diisi');
     }
-    let katRow = await db.prepare("SELECT id_kategori FROM kategori WHERE LOWER(nama_kategori) = 'lainnya'").get();
-    if (!katRow) {
-      const ins = await db.prepare("INSERT INTO kategori (nama_kategori, deskripsi) VALUES ('Lainnya', 'Kategori lainnya')").run();
-      id_kategori = Number(ins.lastInsertRowid);
-    } else {
-      id_kategori = katRow.id_kategori;
-    }
+    id_kategori = await tx(async () => {
+      let katRow = await db.prepare("SELECT id_kategori FROM kategori WHERE LOWER(nama_kategori) = 'lainnya'").get();
+      if (katRow) return katRow.id_kategori;
+      try {
+        const ins = await db.prepare("INSERT INTO kategori (nama_kategori, deskripsi) VALUES ('Lainnya', 'Kategori lainnya')").run();
+        return Number(ins.lastInsertRowid);
+      } catch (_e) {
+        katRow = await db.prepare("SELECT id_kategori FROM kategori WHERE LOWER(nama_kategori) = 'lainnya'").get();
+        if (katRow) return katRow.id_kategori;
+        throw _e;
+      }
+    });
   } else {
     id_kategori = posInt(Number(req.body?.id_kategori ?? 1), 'id_kategori');
     const katRow = await db.prepare('SELECT nama_kategori FROM kategori WHERE id_kategori = ?').get(id_kategori);
@@ -251,7 +263,7 @@ router.get('/barang/:id', async (req, res) => {
   const b = await db.prepare(
     `SELECT b.*, k.nama_kategori, p.nama AS nama_penjual, p.no_hp AS no_hp_penjual
      FROM barang b JOIN kategori k USING (id_kategori) JOIN penjual p USING (id_penjual)
-     WHERE b.id_barang=?`
+     WHERE b.id_barang=? AND b.status_moderasi='disetujui'`
   ).get(id);
   if (!b) throw err(404, 'barang tidak ada');
   res.json(b);
@@ -281,23 +293,32 @@ router.get('/barang-saya', user, async (req, res) => {
 // Mahasiswa pemilik atau Admin: aktifkan kembali ("Up Lagi") postingan barang sewa/pinjam yang sudah dikembalikan
 router.post('/barang/:id/up', userOrAdmin, async (req, res) => {
   const id = posInt(Number(req.params.id), 'id_barang');
-  const b = await db.prepare('SELECT b.*, p.email FROM barang b JOIN penjual p USING (id_penjual) WHERE b.id_barang=?').get(id);
-  if (!b) throw err(404, 'barang tidak ada');
-  if (!req.isAdmin) {
-    const m = await db.prepare('SELECT email FROM mahasiswa WHERE id_mahasiswa=?').get(req.uid);
-    if (!m || m.email !== b.email) throw err(403, 'bukan pemilik barang ini');
-  }
-  if (b.status === 'terjual') {
-    throw err(400, 'barang yang sudah terjual tidak bisa di-up lagi');
-  }
-  await db.prepare("UPDATE barang SET status='tersedia' WHERE id_barang=?").run(id);
-  res.json({ ok: true, id_barang: id, status: 'tersedia', pesan: 'Postingan barang berhasil di-up lagi dan tampil kembali di beranda!' });
+  const hasil = await tx(async () => {
+    const b = await db.prepare('SELECT b.*, p.email FROM barang b JOIN penjual p USING (id_penjual) WHERE b.id_barang=?').get(id);
+    if (!b) throw err(404, 'barang tidak ada');
+    if (!req.isAdmin) {
+      const m = await db.prepare('SELECT email FROM mahasiswa WHERE id_mahasiswa=?').get(req.uid);
+      if (!m || m.email !== b.email) throw err(403, 'bukan pemilik barang ini');
+    }
+    if (b.status === 'terjual') {
+      throw err(400, 'barang yang sudah terjual tidak bisa di-up lagi');
+    }
+    // Cek transaksi aktif (accepted/berjalan) — jangan up barang yang masih dipakai
+    const txAktif = await db.prepare(
+      "SELECT id_transaksi FROM transaksi WHERE id_barang=? AND status IN ('accepted','approved','berjalan') LIMIT 1"
+    ).get(id);
+    if (txAktif) throw err(400, 'barang masih memiliki transaksi aktif, tidak bisa di-up');
+    const rUp = await db.prepare("UPDATE barang SET status='tersedia' WHERE id_barang=? AND status != 'terjual'").run(id);
+    if (!rUp.changes) throw err(409, 'status barang berubah, muat ulang dan coba lagi');
+    return id;
+  });
+  res.json({ ok: true, id_barang: hasil, status: 'tersedia', pesan: 'Postingan barang berhasil di-up lagi dan tampil kembali di beranda!' });
 });
 
 // Mahasiswa pemilik atau Admin: ubah status barang
 router.patch('/barang/:id/status', userOrAdmin, async (req, res) => {
   const id = posInt(Number(req.params.id), 'id_barang');
-  const status = oneOf(req.body?.status ?? 'tersedia', 'status', ['tersedia', 'disewa', 'dipinjam', 'terjual', 'tidak_tersedia']);
+  const status = oneOf(req.body?.status ?? 'tersedia', 'status', ['tersedia', 'disewa', 'dipinjam', 'terjual']);
   const b = await db.prepare('SELECT b.*, p.email FROM barang b JOIN penjual p USING (id_penjual) WHERE b.id_barang=?').get(id);
   if (!b) throw err(404, 'barang tidak ada');
   if (!req.isAdmin) {

@@ -1,9 +1,7 @@
 import { Router } from 'express';
-import fs from 'node:fs';
-import path from 'node:path';
-import { db } from '../db.js';
+import { db, tx } from '../db.js';
 import { err, str, optStr, emailOf, posInt, oneOf } from '../util.js';
-import { hash, verify, makeToken, user, admin } from '../auth.js';
+import { hash, verify, makeToken, user, admin, verifyToken } from '../auth.js';
 import { limit } from '../limit.js';
 import { upload, uploadToCloudinary } from '../upload.js';
 
@@ -54,8 +52,6 @@ router.post('/register', limit({ name: 'register', max: 10, windowMs: 3600e3 }),
   let role = 'mahasiswa';
   if (rawRole === 'pemilik_kost' || rawRole === 'pemilik' || rawRole === 'kost') {
     role = 'pemilik_kost';
-  } else if (rawRole === 'admin') {
-    role = 'admin';
   } else if (rawRole === 'pelanggan') {
     role = 'pelanggan';
   } else {
@@ -67,9 +63,18 @@ router.post('/register', limit({ name: 'register', max: 10, windowMs: 3600e3 }),
 
   const existing = await db.prepare('SELECT id_mahasiswa FROM mahasiswa WHERE LOWER(TRIM(email))=LOWER(TRIM(?))').get(email);
   if (existing) throw err(409, 'Email kampus sudah terdaftar. Silakan gunakan email lain atau langsung masuk.');
-  const r = await db.prepare(
-    'INSERT INTO mahasiswa (nama,email,no_hp,whatsapp_number,password_hash,ktm,kampus,role,status_akun,status_verifikasi,submitted_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)'
-  ).run(nama, email, no_hp, whatsapp_number, hash(password), ktm, kampus, role, status_akun, status_verifikasi);
+  let r;
+  try {
+    r = await db.prepare(
+      'INSERT INTO mahasiswa (nama,email,no_hp,whatsapp_number,password_hash,ktm,kampus,role,status_akun,status_verifikasi,submitted_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)'
+    ).run(nama, email, no_hp, whatsapp_number, hash(password), ktm, kampus, role, status_akun, status_verifikasi);
+  } catch (e) {
+    const msg = String(e?.message || e || '').toLowerCase();
+    if (msg.includes('unique') || msg.includes('constraint')) {
+      throw err(409, 'Email kampus sudah terdaftar. Silakan gunakan email lain atau langsung masuk.');
+    }
+    throw e;
+  }
   const id = Number(r.lastInsertRowid);
   const pesan = role === 'pemilik_kost'
     ? 'Pendaftaran berhasil. Akun Anda sedang direview oleh Admin.'
@@ -180,9 +185,8 @@ router.get(['/saya', '/me'], user, async (req, res) => {
   for (const txItem of txRows) {
     const isCod = /cod|cash|bayar\s*di\s*tempat|tunai/i.test(txItem.metode_pembayaran || '');
     if (isCod && (!txItem.cod_pin || String(txItem.cod_pin).trim() === '')) {
-      const generatedPin = String(Math.floor(1000 + Math.random() * 9000));
-      await db.prepare('UPDATE transaksi SET cod_pin=? WHERE id_transaksi=?').run(generatedPin, txItem.id_transaksi);
-      txItem.cod_pin = generatedPin;
+      // PIN ditampilkan kosong; generate via POST /saya/cod-pin/:id agar tidak ada side-effect tulis di GET
+      txItem.cod_pin = null;
     }
   }
   m.transaksi = txRows.map(txItem => ({ ...txItem, is_pembeli: true }));
@@ -236,7 +240,29 @@ router.get(['/saya', '/me'], user, async (req, res) => {
   res.json(m);
 });
 
-// Cek status verifikasi publik (bisa via sesi user atau query nama / email)
+// Generate COD PIN secara atomic: hanya set jika belum ada, kembalikan PIN yang sudah tersimpan.
+router.post('/saya/cod-pin/:id', user, async (req, res) => {
+  const id_transaksi = posInt(Number(req.params.id), 'id_transaksi');
+  const tx = await db.prepare(
+    'SELECT id_transaksi, id_mahasiswa, cod_pin, metode_pembayaran FROM transaksi WHERE id_transaksi=?'
+  ).get(id_transaksi);
+  if (!tx) throw err(404, 'transaksi tidak ditemukan');
+  if (tx.id_mahasiswa !== req.uid) throw err(403, 'bukan transaksi Anda');
+  const isCod = /cod|cash|bayar\s*di\s*tempat|tunai/i.test(tx.metode_pembayaran || '');
+  if (!isCod) throw err(400, 'transaksi bukan COD');
+  if (tx.cod_pin && String(tx.cod_pin).trim()) {
+    return res.json({ ok: true, cod_pin: tx.cod_pin });
+  }
+  const pin = String(Math.floor(1000 + Math.random() * 9000));
+  // UPDATE ... WHERE cod_pin IS NULL: atomic, tidak overwrite jika race condition
+  await db.prepare(
+    'UPDATE transaksi SET cod_pin=? WHERE id_transaksi=? AND cod_pin IS NULL'
+  ).run(pin, id_transaksi);
+  const updated = await db.prepare('SELECT cod_pin FROM transaksi WHERE id_transaksi=?').get(id_transaksi);
+  res.json({ ok: true, cod_pin: updated.cod_pin });
+});
+
+// Cek status verifikasi (butuh sesi; atau token valid)
 router.get('/status-verifikasi', async (req, res) => {
   let m = null;
   const bearer = (req.get('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
@@ -247,16 +273,10 @@ router.get('/status-verifikasi', async (req, res) => {
     if (nama === 'km_token') cookieToken = val.join('=');
   }
   const tokenStr = bearer || cookieToken;
-  const match = /^(\d{1,15})\./.exec(tokenStr);
-  if (match) {
-    const uid = Number(match[1]);
+  // Validasi tanda tangan penuh sebelum pakai ID dari token
+  const uid = verifyToken(tokenStr);
+  if (uid !== null) {
     m = await db.prepare('SELECT id_mahasiswa, nama, email, status_verifikasi, role FROM mahasiswa WHERE id_mahasiswa=?').get(uid);
-  }
-  if (!m && typeof req.query.email === 'string' && req.query.email.trim()) {
-    m = await db.prepare('SELECT id_mahasiswa, nama, email, status_verifikasi, role FROM mahasiswa WHERE LOWER(TRIM(email))=LOWER(TRIM(?))').get(req.query.email.trim());
-  }
-  if (!m && typeof req.query.nama === 'string' && req.query.nama.trim()) {
-    m = await db.prepare('SELECT id_mahasiswa, nama, email, status_verifikasi, role FROM mahasiswa WHERE LOWER(TRIM(nama))=LOWER(TRIM(?))').get(req.query.nama.trim());
   }
   if (!m) {
     return res.json({ status_verifikasi: 'pending' });
@@ -278,21 +298,8 @@ function detectImageMime(buffer) {
   return null;
 }
 
-// Hapus file lama dari disk dengan aman (cegah path traversal)
-function hapusFileLokal(fotoPath) {
-  if (!fotoPath || typeof fotoPath !== 'string') return;
-  if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://') || fotoPath.startsWith('data:')) return;
-  try {
-    const baseDir = path.resolve(process.cwd(), 'public');
-    const cleanPath = path.normalize(fotoPath).replace(/^(\.\.(\/|\\|$))+/, '');
-    const fullPath = path.resolve(baseDir, cleanPath.replace(/^[/\\]+/, ''));
-    if (fullPath.startsWith(baseDir) && fullPath !== baseDir && fs.existsSync(fullPath)) {
-      fs.unlinkSync(fullPath);
-    }
-  } catch (_e) {
-    // Jangan gagal kalau file sudah tidak ada
-  }
-}
+// hapusFileLokal dihapus: semua foto di Cloudinary, tidak ada file lokal
+function hapusFileLokal(_fotoPath) { /* noop: Cloudinary only */ }
 
 // Mahasiswa: unggah foto profil (mendukung multipart file atau base64)
 const handleUploadFoto = async (req, res) => {
@@ -400,6 +407,8 @@ router.patch(['/saya/data-diri', '/profil/data-diri'], user, handleUpdateDataDir
 router.put(['/saya/data-diri', '/profil/data-diri'], user, handleUpdateDataDiri);
 
 router.post('/verifikasi', user, upload.single('ktm'), async (req, res) => {
+  const akun = await db.prepare('SELECT status_verifikasi FROM mahasiswa WHERE id_mahasiswa=?').get(req.uid);
+  if (akun?.status_verifikasi === 'terverifikasi') throw err(400, 'Akun Anda sudah terverifikasi');
   let rawKtm = req.file ? req.file.buffer : (req.body?.ktm ? str(req.body?.ktm, 'ktm', 800_000) : null);
   if (!rawKtm) throw err(400, 'ktm wajib diunggah');
   const ktm = await uploadToCloudinary(rawKtm, req.file?.mimetype);

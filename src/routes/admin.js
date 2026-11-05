@@ -41,7 +41,7 @@ const handleGetStats = async (_req, res) => {
   });
 };
 
-router.get(['/admin/stats', '/stats'], handleGetStats);
+router.get(['/admin/stats', '/stats'], admin, handleGetStats);
 
 // 2. KELOLA PENGGUNA (User Management)
 const handleGetUsers = async (_req, res) => {
@@ -336,6 +336,12 @@ router.post('/laporan', user, async (req, res) => {
   const id_target = posInt(Number(req.body?.id_target), 'id_target');
   const alasan = str(req.body?.alasan, 'alasan', 200).trim();
   const keterangan = req.body?.keterangan ? String(req.body.keterangan).trim().slice(0, 1000) : null;
+
+  let targetAda = null;
+  if (tipe === 'barang') targetAda = await db.prepare('SELECT 1 FROM barang WHERE id_barang=?').get(id_target);
+  else if (tipe === 'kos') targetAda = await db.prepare('SELECT 1 FROM kos WHERE id_kos=?').get(id_target);
+  else if (tipe === 'user') targetAda = await db.prepare('SELECT 1 FROM mahasiswa WHERE id_mahasiswa=?').get(id_target);
+  if (!targetAda) throw err(404, 'target laporan tidak ditemukan');
 
   const r = await db.prepare(`
     INSERT INTO laporan (id_pelapor, tipe_target, id_target, alasan, keterangan)

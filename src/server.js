@@ -49,7 +49,7 @@ app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-app.use(express.json({ limit: '5mb' })); // KTM dan foto barang dikirim sebagai data URL
+app.use(express.json({ limit: '4mb' })); // Vercel ~4.5MB body limit; foto sudah di-resize di browser
 
 const apiPrefixes = ['/api', '/chat', '/auth', '/admin'];
 
@@ -105,7 +105,7 @@ app.use(['/api', '/api/chat', '/chat', '/api/auth', '/auth', '/admin', '/sewa', 
 app.use(express.static(join(import.meta.dirname, '..', 'public')));
 
 app.use((e, _req, res, _next) => {
-  if (e.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'payload terlalu besar: maksimal 5MB per file' });
+  if (e.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'payload terlalu besar: maksimal 4MB per file' });
   if (e.code === 'LIMIT_FILE_COUNT') return res.status(400).json({ error: 'maksimal 5 foto' });
   if (e.type === 'entity.parse.failed') return res.status(400).json({ error: 'JSON tidak valid' });
   if (e.type === 'entity.too.large') return res.status(413).json({ error: 'payload terlalu besar' });
@@ -122,3 +122,5 @@ if (import.meta.filename === process.argv[1]) {
   const port = process.env.PORT || 3000;
   app.listen(port, () => console.log(`Kampus Market jalan di http://localhost:${port}`));
 }
+
+export default app;

@@ -6,7 +6,7 @@ import { v2 as cloudinary } from 'cloudinary';
 export const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB per file
+    fileSize: 4 * 1024 * 1024, // 4MB per file (Vercel body limit ~4.5MB)
     files: 5,                  // Maksimal 5 foto
   },
   fileFilter: (_req, file, cb) => {
@@ -17,23 +17,46 @@ export const upload = multer({
   },
 });
 
+// Cek apakah Cloudinary benar-benar dikonfigurasi (bukan placeholder).
+// Kalau tidak valid, upload disimpan sebagai data URL agar flow lokal tetap jalan.
+const CLOUDINARY_URL = process.env.CLOUDINARY_URL || '';
+const CLOUDINARY_ENABLED = (() => {
+  if (!CLOUDINARY_URL) return false;
+  if (/KEYASLI|SECRETASLI|api_key|api_secret/i.test(CLOUDINARY_URL)) return false;
+  try {
+    const u = new URL(CLOUDINARY_URL);
+    return u.protocol === 'cloudinary:' && Boolean(u.username && u.password && u.host);
+  } catch {
+    return false;
+  }
+})();
+
+const toDataUrl = (buffer, mimetype = 'image/jpeg') =>
+  `data:${mimetype};base64,${buffer.toString('base64')}`;
+
 /**
  * Upload single buffer to Cloudinary using upload_stream.
- * Jika CLOUDINARY_URL tidak diatur (mis. offline/tes lokal),
+ * Jika CLOUDINARY_URL tidak diatur / masih placeholder (mis. offline/tes lokal),
  * fallback ke data URL agar flow aplikasi tetap berjalan tanpa internet.
  */
 export const uploadStream = (buffer, options = {}) => {
   return new Promise((resolve, reject) => {
-    if (!process.env.CLOUDINARY_URL) {
-      const mime = options.mimetype || 'image/jpeg';
-      const base64 = buffer.toString('base64');
-      return resolve(`data:${mime};base64,${base64}`);
-    }
+    const mime = options.mimetype || 'image/jpeg';
+    const fallback = () => resolve(toDataUrl(buffer, mime));
+
+    if (!CLOUDINARY_ENABLED) return fallback();
 
     const stream = cloudinary.uploader.upload_stream(
       { folder: 'kampus-market', resource_type: 'image', ...options },
       (error, result) => {
-        if (error) return reject(error);
+        if (error) {
+          // Kredensial ditolak saat dev: jangan gagalkan upload, simpan sebagai data URL.
+          if (process.env.NODE_ENV !== 'production' && (error.http_code === 401 || error.http_code === 403)) {
+            console.warn('[upload] Cloudinary menolak kredensial, memakai fallback data URL.');
+            return fallback();
+          }
+          return reject(error);
+        }
         resolve(result.secure_url || result.url);
       }
     );
@@ -55,7 +78,7 @@ export const uploadToCloudinary = async (item, mimeType = 'image/jpeg') => {
   if (typeof item === 'string') {
     const trimmed = item.trim();
     if (trimmed.startsWith('data:image/')) {
-      if (!process.env.CLOUDINARY_URL) return trimmed;
+      if (!CLOUDINARY_ENABLED) return trimmed;
       const match = trimmed.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
       if (match) {
         const mime = match[1];

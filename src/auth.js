@@ -37,6 +37,18 @@ const dariCookie = (req) => {
   return '';
 };
 
+// Validasi token dan kembalikan id numerik, atau null jika tidak valid / kadaluarsa.
+export const verifyToken = (tokenStr) => {
+  const m = TOKEN.exec(tokenStr || '');
+  if (!m) return null;
+  const [, id, exp, sig] = m;
+  try {
+    if (!timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(sign(`${id}.${exp}`), 'hex'))) return null;
+  } catch { return null; }
+  if (Number(exp) <= Date.now()) return null;
+  return Number(id);
+};
+
 export const user = async (req, _res, next) => {
   try {
     const bearer = (req.get('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();

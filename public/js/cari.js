@@ -1174,17 +1174,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Open & Close modal
-  const openModal = () => {
-    if (filterModal) {
-      filterModal.classList.add('open');
-      updateFilterPreview();
+  const openModal = (pushHistory = true) => {
+    if (!filterModal) return;
+    filterModal.classList.add('open');
+    updateFilterPreview();
+    // Simpan state agar tombol back menutup sheet filter lebih dulu
+    if (pushHistory && (!history.state || !history.state.filterOpen)) {
+      history.pushState({ filterOpen: true }, '', location.href);
     }
   };
   const closeModal = () => {
-    if (filterModal) filterModal.classList.remove('open');
+    if (!filterModal) return;
+    filterModal.classList.remove('open');
+    // Buang state filter jika ditutup lewat tombol/backdrop/terapkan
+    if (history.state && history.state.filterOpen) {
+      history.back();
+    }
   };
 
-  filterChip?.addEventListener('click', openModal);
+  filterChip?.addEventListener('click', () => openModal());
   document.getElementById('closeFilterBtn')?.addEventListener('click', closeModal);
 
   // Close modal on backdrop click or Escape
@@ -1282,28 +1290,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const filterParam = urlParams.get('filter');
   if (filterParam === 'open' || filterParam === '1') {
-    openModal();
+    // Dibuka langsung dari tombol filter beranda: jangan tambah state,
+    // supaya tombol back langsung kembali ke halaman sebelumnya.
+    openModal(false);
   }
 
-  // Back button: aturan eksplisit cari.html -> beranda.html
+  // Back button: kembali ke halaman sebelumnya (fallback beranda)
   document.getElementById('backBtn')?.addEventListener('click', (e) => {
     e.preventDefault();
     if (typeof goBack === 'function') {
-      goBack('/beranda.html', { forceFallback: true });
+      goBack('/beranda.html');
     } else {
       window.location.href = '/beranda.html';
     }
   });
 
-  // Android Back: hindari loop antara Cari dan Cari Kos
-  window.history.pushState({ page: 'cari' }, '', window.location.href);
+  // Android Back: tutup sheet filter dulu, lalu ikuti riwayat browser
   window.addEventListener('popstate', () => {
     if (filterModal && filterModal.classList.contains('open')) {
-      closeModal();
-      window.history.pushState({ page: 'cari' }, '', window.location.href);
-      return;
+      filterModal.classList.remove('open');
     }
-    window.location.href = '/beranda.html';
   });
 
   // Initial distance calculation, chips, and render

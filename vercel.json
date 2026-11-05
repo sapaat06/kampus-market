@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "regions": ["sin1"],
+  "functions": { "api/index.js": { "includeFiles": "{src,public}/**" } },
+  "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
+}

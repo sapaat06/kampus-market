@@ -440,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('filterKosBtn')?.addEventListener('click', (e) => {
     e.stopPropagation();
-    location.href = '/filter-kos.html';
+    location.href = '/filter-kos.html?from=beranda';
   });
 
   // Search Bar 2: Filter Barang & Enter search

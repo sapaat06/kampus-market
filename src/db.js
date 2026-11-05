@@ -1,12 +1,17 @@
 import { createClient } from '@libsql/client';
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-const defaultUrl = process.env.DB && process.env.DB === ':memory:'
-  ? ':memory:'
-  : (process.env.DB ? (process.env.DB.startsWith('file:') ? process.env.DB : `file:${process.env.DB}`) : 'file:app.db');
+const resolveUrl = () => {
+  if (process.env.TURSO_DATABASE_URL) return process.env.TURSO_DATABASE_URL;
+  if (process.env.NODE_ENV === 'production')
+    throw new Error('TURSO_DATABASE_URL wajib diisi di production');
+  if (process.env.DB === ':memory:') return ':memory:';
+  if (process.env.DB) return process.env.DB.startsWith('file:') ? process.env.DB : `file:${process.env.DB}`;
+  return 'file:app.db';
+};
 
 export const client = createClient({
-  url: process.env.TURSO_DATABASE_URL || defaultUrl,
+  url: resolveUrl(),
   authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
@@ -189,6 +194,8 @@ export async function initDb() {
       durasi_bulan INTEGER NOT NULL DEFAULT 3,
       total_harga INTEGER NOT NULL DEFAULT 3600000,
       status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','accepted','rejected','cancelled','selesai')),
+      status_bayar TEXT NOT NULL DEFAULT 'unpaid' CHECK (status_bayar IN ('unpaid','paid','expired')),
+      expire_at TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE IF NOT EXISTS pesanan (
@@ -335,9 +342,20 @@ export async function initDb() {
     if (!kolomKos.includes('alasan_penolakan')) {
       try { await client.execute('ALTER TABLE kos ADD COLUMN alasan_penolakan TEXT'); } catch {}
     }
+
+    const tableInfoPengajuan = await client.execute('PRAGMA table_info(pengajuan_sewa_kos)');
+    const kolomPengajuan = tableInfoPengajuan.rows.map((k) => k.name);
+    if (!kolomPengajuan.includes('status_bayar')) {
+      try { await client.execute("ALTER TABLE pengajuan_sewa_kos ADD COLUMN status_bayar TEXT NOT NULL DEFAULT 'unpaid'"); } catch {}
+    }
+    if (!kolomPengajuan.includes('expire_at')) {
+      try { await client.execute('ALTER TABLE pengajuan_sewa_kos ADD COLUMN expire_at TEXT'); } catch {}
+    }
   } catch (errMigrasi) {
     console.log('Catatan migrasi database:', errMigrasi.message);
   }
 }
 
-await initDb();
+// Jalankan via: npm run migrate
+// (bukan saat startup agar serverless tidak migrasi tiap cold start)
+// await initDb();

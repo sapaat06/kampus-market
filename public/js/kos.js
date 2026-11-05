@@ -94,6 +94,48 @@ const mKosNama = document.getElementById('mKosNama');
 const mKosContent = document.getElementById('mKosContent');
 const mKosClose = document.getElementById('mKosClose');
 
+let statusCountdownTimer = null;
+function hentikanCountdown() {
+  if (statusCountdownTimer) {
+    clearInterval(statusCountdownTimer);
+    statusCountdownTimer = null;
+  }
+}
+
+function formatSisa(ms) {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+// QR dummy deterministik: hanya ilustrasi, bukan QRIS asli.
+function buatQrDummy(seed, size = 132) {
+  const n = 21;
+  let h = 2166136261;
+  for (const ch of String(seed)) {
+    h ^= ch.charCodeAt(0);
+    h = Math.imul(h, 16777619);
+  }
+  const finder = (x, y) => `
+    <rect x="${x}" y="${y}" width="7" height="7" fill="none" stroke="#0F172A" stroke-width="1"/>
+    <rect x="${x + 2}" y="${y + 2}" width="3" height="3"/>`;
+  const diFinder = (r, c) =>
+    (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7);
+
+  let kotak = '';
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      if (diFinder(r, c)) continue;
+      h ^= h << 13; h ^= h >>> 17; h ^= h << 5;
+      if ((h >>> 0) % 2 === 0) continue;
+      kotak += `<rect x="${c}" y="${r}" width="1" height="1"/>`;
+    }
+  }
+
+  return `<svg viewBox="-1 -1 ${n + 2} ${n + 2}" width="${size}" height="${size}" role="img" aria-label="QR simulasi" style="background:#FFFFFF;border-radius:8px;border:1px solid #E2E8F0">
+    ${kotak}${finder(0, 0)}${finder(n - 7, 0)}${finder(0, n - 7)}
+  </svg>`;
+}
+
 function mapKosItem(k) {
   const id = Number(k.id_kos ?? k.id ?? 1);
   const name = k.nama_kos ?? k.name ?? 'Kos Kampus';
@@ -316,6 +358,7 @@ function renderKos() {
 
 function openDetailKos(k) {
   if (!modalKos) return;
+  hentikanCountdown();
   mKosNama.textContent = k.name;
   mKosContent.innerHTML = `
     <div style="border-radius:14px;overflow:hidden;height:140px;background:#EDEAF7">
@@ -404,6 +447,7 @@ const isRoomAvailable = (st) => st === 'available' || st === 'kosong';
 
 async function openAjukanSewa(k) {
   if (!modalKos) return;
+  hentikanCountdown();
   mKosNama.textContent = 'Ajukan Sewa Kost';
   mKosContent.innerHTML = '<div style="text-align:center;padding:24px 0;color:#64748B;font-size:13px">Memuat data kamar...</div>';
 
@@ -635,11 +679,15 @@ async function openAjukanSewa(k) {
 
 function openStatusPengajuan(k, selectedBulan = 3, selectedRoom = 'A-02', resData = null) {
   if (!modalKos) return;
+  hentikanCountdown();
   mKosNama.textContent = 'Status Pengajuan Kost';
 
   const reqId = resData?.id_pengajuan ? `KST-REQ-${String(resData.id_pengajuan).padStart(3, '0')}` : 'KST-REQ-001';
   const now = new Date();
   const dateStr = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) + ' • ' + now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+  const totalBayar = Number(resData?.total_harga) || (k.price * selectedBulan);
+  const expireRaw = resData?.expire_at ? new Date(resData.expire_at).getTime() : NaN;
+  const expireMs = Number.isFinite(expireRaw) ? expireRaw : Date.now() + 15 * 60 * 1000;
 
   mKosContent.innerHTML = `
     <div style="background:#DCFCE7;border-radius:14px;padding:12px;display:flex;align-items:center;gap:10px">
@@ -670,11 +718,25 @@ function openStatusPengajuan(k, selectedBulan = 3, selectedRoom = 'A-02', resDat
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px">
         <span style="color:#64748B">Total Biaya Sewa</span>
-        <span style="font-weight:700;color:#008F83">Rp${(k.price * selectedBulan).toLocaleString('id-ID')}</span>
+        <span style="font-weight:700;color:#008F83">Rp${totalBayar.toLocaleString('id-ID')}</span>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px">
         <span style="color:#64748B">Periode</span>
         <span style="font-weight:600;color:#475569">Mulai 1 Nov 2026 (${selectedBulan} bln)</span>
+      </div>
+    </div>
+
+    <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="background:#FEF3C7;color:#92400E;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;letter-spacing:.4px">MODE DEMO</span>
+        <span style="font-size:11px;color:#64748B">QRIS simulasi, tanpa pembayaran nyata</span>
+      </div>
+      <div id="qrisBayarArea" style="display:flex;flex-direction:column;align-items:center;gap:6px;width:100%">
+        ${buatQrDummy(reqId)}
+        <div style="font-size:11px;color:#64748B">Nominal pembayaran</div>
+        <div style="font-size:18px;font-weight:800;color:#0F172A">Rp${totalBayar.toLocaleString('id-ID')}</div>
+        <div style="font-size:12px;color:#64748B">Berlaku <span id="qrisCountdown" style="font-weight:800;color:#DC2626">15:00</span></div>
+        <button id="btnSimulasiBayar" class="modal-btn" type="button" style="margin-top:2px">Simulasikan Pembayaran</button>
       </div>
     </div>
 
@@ -692,16 +754,80 @@ function openStatusPengajuan(k, selectedBulan = 3, selectedRoom = 'A-02', resDat
     </div>
   `;
 
+  const elCountdown = document.getElementById('qrisCountdown');
+  const btnBayar = document.getElementById('btnSimulasiBayar');
+
+  const renderSisa = () => {
+    const sisa = expireMs - Date.now();
+    if (elCountdown) elCountdown.textContent = formatSisa(sisa);
+    if (sisa <= 0) {
+      hentikanCountdown();
+      if (btnBayar) {
+        btnBayar.disabled = true;
+        btnBayar.textContent = 'Pembayaran Kedaluwarsa';
+      }
+    }
+  };
+  renderSisa();
+  if (expireMs > Date.now()) statusCountdownTimer = setInterval(renderSisa, 1000);
+
+  btnBayar?.addEventListener('click', async () => {
+    if (!resData?.id_pengajuan) return;
+    btnBayar.disabled = true;
+    btnBayar.textContent = 'Memproses Pembayaran...';
+    try {
+      const token = localStorage.getItem('km_token') || '';
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const resp = await fetch(`/api/kos/pengajuan/${resData.id_pengajuan}/simulasi-bayar`, {
+        method: 'POST',
+        headers,
+        body: '{}'
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.error || 'Pembayaran simulasi gagal.');
+      hentikanCountdown();
+      tampilkanBuktiBayar(data, totalBayar);
+    } catch (e) {
+      if (btnBayar) {
+        btnBayar.disabled = false;
+        btnBayar.textContent = 'Simulasikan Pembayaran';
+      }
+      alert(e.message || 'Pembayaran simulasi gagal.');
+    }
+  });
+
   document.getElementById('btnTutupStatus')?.addEventListener('click', () => {
+    hentikanCountdown();
     modalKos.classList.remove('open');
   });
 }
 
+function tampilkanBuktiBayar(data, nominal) {
+  const area = document.getElementById('qrisBayarArea');
+  if (!area) return;
+  const total = Number(data?.total_harga) || nominal;
+  const waktu = new Date(data?.paid_at || Date.now()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+  area.innerHTML = `
+    <div style="width:44px;height:44px;border-radius:50%;background:#DCFCE7;display:flex;align-items:center;justify-content:center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div style="font-size:14px;font-weight:800;color:#166534">Pembayaran Berhasil</div>
+    <div style="font-size:12px;color:#475569">Rp${total.toLocaleString('id-ID')} • ${esc(waktu)}</div>
+    <div style="font-size:11px;font-weight:700;color:#92400E;background:#FEF3C7;padding:3px 10px;border-radius:999px">MODE DEMO</div>
+    <div style="font-size:11px;color:#64748B;text-align:center">Kamar sudah dikunci. Menunggu konfirmasi pemilik kos.</div>
+  `;
+}
+
 mKosClose?.addEventListener('click', () => {
+  hentikanCountdown();
   modalKos?.classList.remove('open');
 });
 modalKos?.addEventListener('click', (e) => {
-  if (e.target === modalKos) modalKos.classList.remove('open');
+  if (e.target === modalKos) {
+    hentikanCountdown();
+    modalKos.classList.remove('open');
+  }
 });
 
 // Event listener untuk tombol filter tipe kos (Semua, Putra, Putri, Campur)
@@ -801,7 +927,7 @@ chipPrice?.addEventListener('click', () => {
 });
 
 chipFilter?.addEventListener('click', () => {
-  location.href = '/filter-kos.html';
+  location.href = '/filter-kos.html?from=kos';
 });
 
 // Load filters from sessionStorage if set

@@ -215,6 +215,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnHapusFoto = document.getElementById('btnHapusFoto');
   const btnBatalFoto = document.getElementById('btnBatalFoto');
 
+  // Klik programatik pada input file tidak boleh dianggap klik avatar,
+  // supaya bottom sheet pilihan foto tidak terbuka lagi.
+  fotoInput?.addEventListener('click', (e) => e.stopPropagation());
+
   const bukaSheetFoto = () => {
     if (!sheetFotoProfil) return;
     if (currentUserFoto) {
@@ -233,6 +237,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (avatarCircle) {
     avatarCircle.addEventListener('click', (e) => {
+      if (e.target === fotoInput) return;
       e.stopPropagation();
       bukaSheetFoto();
     });
@@ -300,6 +305,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       KM.ui.loading('Mengompres dan mengunggah foto...');
       try {
+        tutupSheetFoto();
         const compressed = await kompresGambar(file);
         const resp = await KM.patch('/profil/foto', { foto: compressed });
         currentUserFoto = resp?.foto || compressed;
@@ -316,6 +322,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         KM.ui.tutup();
         KM.ui.error('Gagal Mengunggah Foto', e.message || 'Foto profil tidak bisa disimpan. Coba lagi.');
       } finally {
+        tutupSheetFoto();
         fotoInput.value = '';
       }
     });
