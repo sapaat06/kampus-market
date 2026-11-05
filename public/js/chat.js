@@ -379,6 +379,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (filePreviewName) filePreviewName.textContent = pendingFile ? pendingFile.name : '';
   }
 
+  async function sendMultipart(roomId, text, file) {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('pesan', text || '');
+    if (KM.token && KM.token.get && KM.token.get()) {
+      const r = await fetch(`/api/chat/rooms/${roomId}/messages`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { authorization: 'Bearer ' + KM.token.get() },
+        body: fd,
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.status === 401 && KM.sesi?.clear) KM.sesi.clear();
+      if (!r.ok) throw Object.assign(new Error(j.error || 'Gagal mengirim lampiran'), { status: r.status });
+      return j;
+    }
+    return KM.post(`/chat/rooms/${roomId}/messages`, fd);
+  }
+
   btnAttach?.addEventListener('click', () => chatFileInput?.click());
   filePreviewRemove?.addEventListener('click', () => { if (chatFileInput) chatFileInput.value = ''; setPendingFile(null); });
   chatFileInput?.addEventListener('change', () => {
@@ -400,10 +419,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       let newMsg;
       if (pendingFile) {
-        const fd = new FormData();
-        fd.append('file', pendingFile);
-        if (text) fd.append('pesan', text);
-        newMsg = await KM.post(`/chat/rooms/${activeRoomId}/messages`, fd);
+        newMsg = await sendMultipart(activeRoomId, text, pendingFile);
         if (chatFileInput) chatFileInput.value = '';
         setPendingFile(null);
       } else {
