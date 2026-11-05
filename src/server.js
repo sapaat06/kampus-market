@@ -137,4 +137,3 @@ if (import.meta.filename === process.argv[1]) {
   app.listen(port, () => console.log(`Kampus Market jalan di http://localhost:${port}`));
 }
 
-export default app;
